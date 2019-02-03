@@ -1,0 +1,93 @@
+package com.mirrorfly.gateway.service;
+
+import java.util.List;
+
+import org.apache.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.mirrorfly.gateway.dto.RegisterDto;
+import com.mirrorfly.gateway.dto.RegisterInfoDto;
+import com.mirrorfly.gateway.dto.RegisterResponseDto;
+import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.model.ChatUser;
+import com.mirrorfly.gateway.model.Otp;
+import com.mirrorfly.gateway.model.Settings;
+import com.mirrorfly.gateway.model.Users;
+import com.mirrorfly.gateway.repo.ChatUserRepo;
+import com.mirrorfly.gateway.repo.OtpRepo;
+import com.mirrorfly.gateway.repo.SettingsRepo;
+import com.mirrorfly.gateway.repo.UserRepo;
+import com.mirrorfly.gateway.response.Response;
+import com.mirrorfly.gateway.util.GatewayConstants;
+import com.mirrorfly.gateway.util.GatewayUtil;
+
+@Service
+public class RegisterService {
+
+	@Autowired
+	private SettingsRepo settingsRepo;
+
+	@Autowired
+	private OtpRepo otpRepo;
+
+	@Autowired
+	private TokenService tokenService;
+
+	@Autowired
+	private PasswordService passwordService;
+
+	@Autowired
+	private ChatUserRepo chatUserRepo;
+
+	@Autowired
+	private UserRepo userRepo;
+
+	public Response<RegisterInfoDto> getRegisterInfo() {
+		Settings settings = settingsRepo.findAll().get(0);
+		RegisterInfoDto info = new RegisterInfoDto();
+		info.setDomain(settings.getDomain());
+		info.setMailLogin(settings.getMailLogin());
+		Response<RegisterInfoDto> response = new Response<>();
+		response.setStatus(HttpStatus.SC_OK);
+		response.setData(info);
+		response.setMessage(GatewayConstants.DATA_RETRIEVED);
+		return response;
+	}
+
+	public Response<RegisterInfoDto> registerNewUser(RegisterDto registerDto) {
+		List<Otp> otpList = otpRepo.findOtpByMobileNumber(registerDto.getMobileNumber(), registerDto.getOtp(),
+				GatewayUtil.getPagination(0, 1));
+		if (otpList == null == otpList.isEmpty()) {
+			throw new BadDataException(GatewayConstants.INVALID_OTP);
+		}
+		Otp otp = otpList.get(0);
+		if (otp.getCreatedAt().plusMinutes(7).isAfter(GatewayUtil.getCurrentDateTime())) {
+			throw new BadDataException(GatewayConstants.INVALID_OTP);
+		}
+		ChatUser chatUser = chatUserRepo.findByMobileNumber(registerDto.getMobileNumber());
+		if (chatUser == null) {
+			chatUser = new ChatUser();
+			chatUser.setUsername(registerDto.getMobileNumber());
+			chatUser.setMobileNumber(registerDto.getMobileNumber());
+			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
+		}
+		chatUser.setDeviceToken(registerDto.getDeviceToken());
+		chatUser.setDevicetype(registerDto.getDeviceType());
+		chatUserRepo.save(chatUser);
+		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
+		registerResponseDto.setPassword(passwordService.generateRandomPassword());
+		registerResponseDto.setToken(tokenService.getToken(registerDto.getMobileNumber(), registerDto.getDeviceType(),
+				registerDto.getDeviceType()));
+		registerResponseDto.setUsername(registerDto.getMobileNumber());
+		Users users = new Users();
+		users.setPassword(registerResponseDto.getPassword());
+		users.setUsername(registerDto.getMobileNumber());
+		userRepo.save(users);
+		Response<RegisterInfoDto> response = new Response<>();
+		response.setStatus(HttpStatus.SC_OK);
+		response.setMessage(GatewayConstants.DATA_RETRIEVED);
+		return response;
+	}
+
+}
