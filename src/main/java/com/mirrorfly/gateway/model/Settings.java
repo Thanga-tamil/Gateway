@@ -24,8 +24,9 @@ public class Settings implements Serializable {
 	private static final long serialVersionUID = 6576324953564602096L;
 
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
-	private String id;
+	private Long id;
 
 	@Column(name = "domain")
 	private String domain;

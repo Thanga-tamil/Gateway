@@ -28,8 +28,7 @@ public class OtpService {
 		otp.setMobileNumber(mobileNumber);
 		otpRepo.save(otp);
 		Response<String> response = new Response<>();
-		response.setData(otp.getOtp());
-		response.setMessage(GatewayConstants.DATA_RETRIEVED);
+		response.setMessage(GatewayConstants.OTP_SENT);
 		response.setStatus(HttpStatus.SC_OK);
 		return response;
 	}

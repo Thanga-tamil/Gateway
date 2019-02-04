@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
@@ -21,8 +23,9 @@ public class Otp implements Serializable {
 	private static final long serialVersionUID = 6576324953564602096L;
 
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
-	private String id;
+	private Long id;
 
 	@Column(name = "otp")
 	private String otp;
@@ -30,7 +33,7 @@ public class Otp implements Serializable {
 	@Column(name = "username")
 	private String username;
 
-	@Column(name = "mobileNumber")
+	@Column(name = "mobile_number")
 	private String mobileNumber;
 
 	@Column(name = "status")

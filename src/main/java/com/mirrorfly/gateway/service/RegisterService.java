@@ -55,14 +55,14 @@ public class RegisterService {
 		return response;
 	}
 
-	public Response<RegisterInfoDto> registerNewUser(RegisterDto registerDto) {
+	public Response<RegisterResponseDto> registerNewUser(RegisterDto registerDto) {
 		List<Otp> otpList = otpRepo.findOtpByMobileNumber(registerDto.getMobileNumber(), registerDto.getOtp(),
 				GatewayUtil.getPagination(0, 1));
-		if (otpList == null == otpList.isEmpty()) {
+		if (otpList == null || otpList.isEmpty()) {
 			throw new BadDataException(GatewayConstants.INVALID_OTP);
 		}
 		Otp otp = otpList.get(0);
-		if (otp.getCreatedAt().plusMinutes(7).isAfter(GatewayUtil.getCurrentDateTime())) {
+		if (GatewayUtil.getCurrentDateTime().isAfter(otp.getCreatedAt().plusMinutes(7))) {
 			throw new BadDataException(GatewayConstants.INVALID_OTP);
 		}
 		ChatUser chatUser = chatUserRepo.findByMobileNumber(registerDto.getMobileNumber());
@@ -84,8 +84,9 @@ public class RegisterService {
 		users.setPassword(registerResponseDto.getPassword());
 		users.setUsername(registerDto.getMobileNumber());
 		userRepo.save(users);
-		Response<RegisterInfoDto> response = new Response<>();
+		Response<RegisterResponseDto> response = new Response<>();
 		response.setStatus(HttpStatus.SC_OK);
+		response.setData(registerResponseDto);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
 	}

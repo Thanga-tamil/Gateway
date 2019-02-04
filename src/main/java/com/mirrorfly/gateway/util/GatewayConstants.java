@@ -110,6 +110,8 @@ public class GatewayConstants {
 
 	public static final String DATA_RETRIEVED = "Data retrieved successfully";
 
+	public static final String OTP_SENT = "OTP Sent successfully";
+
 	public static final String BAD_CREDENTIALS_TWO = "Entered password credentials are not match, Account will be locked after 3 rd attempt";
 
 	public static final String BAD_CREDENTIALS_THREE = "Entered credentials are not match, Account has been locked";

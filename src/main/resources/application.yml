@@ -23,7 +23,6 @@ jackson:
   serialization:
     WRITE_DATES_AS_TIMESTAMPS: false
 token_Expiry_Time: 60
-
 logging:
   file: /var/logs/mirrorfly/gateway.log
   pattern:

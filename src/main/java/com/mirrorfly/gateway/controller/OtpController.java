@@ -1,6 +1,7 @@
 package com.mirrorfly.gateway.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,7 +26,7 @@ public class OtpController {
 	 * @param otp this has mobilenumber.
 	 * @return success full response verify otp for authorization.
 	 */
-	@PostMapping("/requestotp")
+	@GetMapping("/requestotp")
 	public @ResponseBody Response<String> requestOtp(@RequestParam(required = true) String mobileNumber) {
 		return otpService.requestOtp(mobileNumber);
 	}
