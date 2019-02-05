@@ -17,10 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mirrorfly.gateway.response.Response;
 
-
 /**
- * This Container class used to catch the Exceptions arise from the code.
- * And to Handle those Exceptions with proper error message and error code.
+ * This Container class used to catch the Exceptions arise from the code. And to
+ * Handle those Exceptions with proper error message and error code.
  */
 @ControllerAdvice
 @RestController
@@ -31,7 +30,7 @@ public class GlobalExceptionHandler {
 	/**
 	 * Function to catch Exception by checking the argument is valid or not
 	 * 
-	 * @param ex exception message
+	 * @param ex       exception message
 	 * @param response HttpServletResponse
 	 * @return Exception Status and Message
 	 */
@@ -48,7 +47,7 @@ public class GlobalExceptionHandler {
 	/**
 	 * This method used to catch NoDataFound Exception.
 	 * 
-	 * @param ex exception
+	 * @param ex       exception
 	 * @param response Http response
 	 * @return response status and message
 	 */
@@ -61,7 +60,7 @@ public class GlobalExceptionHandler {
 	/**
 	 * This method used to catch CommonException Exception.
 	 * 
-	 * @param ex exception
+	 * @param ex       exception
 	 * @param response Http response
 	 * @return response status and message
 	 */
@@ -87,7 +86,7 @@ public class GlobalExceptionHandler {
 	/**
 	 * Method to catch Array index bound exception on runtime
 	 * 
-	 * @param ex exception message
+	 * @param ex       exception message
 	 * @param response HttpServletResponse
 	 * @return Exception Status and Message
 	 */
@@ -256,7 +255,7 @@ public class GlobalExceptionHandler {
 	/**
 	 * This method used to catch Validation Exception.
 	 * 
-	 * @param ex exception
+	 * @param ex       exception
 	 * @param response Http response
 	 * @return response status and message
 	 */
@@ -264,6 +263,19 @@ public class GlobalExceptionHandler {
 	public Response<String> validationException(ConstraintViolationException ex, HttpServletResponse response) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
+	}
+
+	/**
+	 * This method used to catch NoDataFound Exception.
+	 * 
+	 * @param ex       exception
+	 * @param response Http response
+	 * @return response status and message
+	 */
+	@ExceptionHandler(value = UserUnAuthorizedException.class)
+	public Response<String> userUnAuthorizedException(NoDataFoundException ex, HttpServletResponse response) {
+		LOGGER.error(ex.getLocalizedMessage());
+		return setStatusAndMessage(HttpServletResponse.SC_UNAUTHORIZED, ex.getMessage());
 	}
 
 	/**

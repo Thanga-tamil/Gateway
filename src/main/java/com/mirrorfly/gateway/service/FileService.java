@@ -20,6 +20,7 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
 import com.mirrorfly.gateway.model.FileUploads;
 import com.mirrorfly.gateway.repo.FileUploadRepo;
 import com.mirrorfly.gateway.response.Response;
@@ -47,7 +48,7 @@ public class FileService {
 
 	public ByteArrayOutputStream downloadFile(String authorization, String fileToken) {
 		try {
-			String username = tokenValidation.validateToken(authorization);
+			String username = getUserNameByToken(authorization);
 			S3Object s3object = s3client
 					.getObject(new GetObjectRequest(applicationProperties.getAWSS3BucketName(), fileToken));
 
@@ -80,7 +81,7 @@ public class FileService {
 
 	public Response<String> uploadFile(String authorization, String toUser, String type, MultipartFile file) {
 		Response<String> response = new Response<>();
-		String username = tokenValidation.validateToken(authorization);
+		String username = getUserNameByToken(authorization);
 		try {
 			String extension = FilenameUtils.getExtension(file.getOriginalFilename());
 			String token = username + Instant.now().toEpochMilli() + "." + extension;
@@ -88,6 +89,7 @@ public class FileService {
 			ObjectMetadata metadata = new ObjectMetadata();
 			metadata.setContentLength(file.getSize());
 			s3client.putObject(applicationProperties.getAWSS3BucketName(), token, file.getInputStream(), metadata);
+			response.setData(GatewayConstants.DATA_RETRIEVED);
 		} catch (AmazonServiceException ase) {
 			log.info("Caught an AmazonServiceException from PUT requests, rejected reasons:");
 			log.info("Error Message:    " + ase.getMessage());
@@ -104,9 +106,16 @@ public class FileService {
 			e.printStackTrace();
 		}
 		response.setStatus(HttpStatus.SC_OK);
-		response.setData(GatewayConstants.DATA_RETRIEVED);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
+	}
+
+	private String getUserNameByToken(String authorization) {
+		String username = tokenValidation.validateToken(authorization);
+		if (username == null) {
+			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
+		}
+		return username;
 	}
 
 	private void saveFileToDB(String toUser, MultipartFile file, String username, String token) {
@@ -130,7 +139,7 @@ public class FileService {
 
 	public Response<String> forwardFile(String authorization, String keyName, String type, String file) {
 		Response<String> response = new Response<>();
-		String username = tokenValidation.validateToken(authorization);
+		String username = getUserNameByToken(authorization);
 
 		return response;
 	}
