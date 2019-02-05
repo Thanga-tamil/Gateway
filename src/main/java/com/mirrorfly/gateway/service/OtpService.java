@@ -4,7 +4,10 @@ import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.mirrorfly.gateway.dto.OtpResponseDto;
+import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.Otp;
+import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.OtpRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.GatewayConstants;
@@ -19,7 +22,12 @@ public class OtpService {
 	@Autowired
 	private PasswordService passwordService;
 
-	public Response<String> requestOtp(String mobileNumber) {
+	@Autowired
+	private ChatUserRepo chatUserRepo;
+
+	public Response<OtpResponseDto> requestOtp(String mobileNumber) {
+
+		ChatUser chatUSer = chatUserRepo.findByMobileNumber(mobileNumber);
 		Otp otp = new Otp();
 		otp.setCreatedAt(GatewayUtil.getCurrentDateTime());
 		otp.setOtp(passwordService.generateOtp());
@@ -27,9 +35,15 @@ public class OtpService {
 		otp.setUsername(mobileNumber);
 		otp.setMobileNumber(mobileNumber);
 		otpRepo.save(otp);
-		Response<String> response = new Response<>();
+		OtpResponseDto otpResponseDto = new OtpResponseDto();
+		otpResponseDto.setOtp(otp.getOtp());
+		if (chatUSer != null && chatUSer.getDeviceToken() != null) {
+			otpResponseDto.setDeviceToken(chatUSer.getDeviceToken());
+		}
+		Response<OtpResponseDto> response = new Response<>();
 		response.setMessage(GatewayConstants.OTP_SENT);
 		response.setStatus(HttpStatus.SC_OK);
+		response.setData(otpResponseDto);
 		return response;
 	}
 

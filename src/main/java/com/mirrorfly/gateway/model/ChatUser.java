@@ -61,7 +61,7 @@ public class ChatUser implements Serializable {
 	private String status;
 
 	@Column(name = "is_block")
-	private String isBlock;
+	private Integer isBlock;
 
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;

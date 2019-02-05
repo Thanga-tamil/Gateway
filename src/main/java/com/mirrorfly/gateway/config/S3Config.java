@@ -1,4 +1,4 @@
-package com.mirrorfly.gateway.controller;
+package com.mirrorfly.gateway.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -9,7 +9,6 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.mirrorfly.gateway.config.ApplicationProperties;
 
 @Configuration
 public class S3Config {
