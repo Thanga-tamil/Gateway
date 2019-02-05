@@ -1,7 +1,6 @@
 
 package com.mirrorfly.gateway.token;
 
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +28,18 @@ public class GenerateToken {
 		JWTSigner signer = new JWTSigner("mirror_gateway");
 		Map<String, Object> claims = new HashMap<>();
 		claims.put("user", tokenDetail.getUsername());
+		JWTSigner.Options option = new JWTSigner.Options();
+		option.setAlgorithm(Algorithm.HS256);
+		option.setIssuedAt(true);
+		option.setJwtId(true);
+		option.setNotValidBeforeLeeway(3);
+		return signer.sign(claims, option);
+	}
+
+	public static String generateFileToken(String filename) {
+		JWTSigner signer = new JWTSigner("mirror_media_upload");
+		Map<String, Object> claims = new HashMap<>();
+		claims.put("filename", filename);
 		JWTSigner.Options option = new JWTSigner.Options();
 		option.setAlgorithm(Algorithm.HS256);
 		option.setIssuedAt(true);

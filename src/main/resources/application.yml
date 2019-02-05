@@ -19,6 +19,12 @@ zuul:
       stripPrefix: true
   host:
     socket-timeout-millis: 120000
+
+aws_secret_access_key: I6l1e/dVEavBJaGuKQZ9XoIa7ZvHVret0RW4tV6U
+aws_access_key_id: AKIAI4Z3YLKMMPFNWE5Q
+aws_s3_region: us-east-1
+aws_s3_bucketname: contusfly-demo
+
 jackson:
   serialization:
     WRITE_DATES_AS_TIMESTAMPS: false

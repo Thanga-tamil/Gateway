@@ -1,4 +1,4 @@
-package com.mirrorfly.gateway;
+package com.mirrorfly.gateway.config;
 
 import java.util.Arrays;
 import java.util.List;

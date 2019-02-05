@@ -48,21 +48,18 @@ public class GatewayZuulFilter extends ZuulFilter {
 			ctx.setResponseBody(GatewayConstants.OK);
 			ctx.setSendZuulResponse(false);
 		} else {
-			if (ctx.getRequest().getRequestURL().toString().contains(GatewayConstants.LOGIN)) {
+			HttpServletRequest request = ctx.getRequest();
+			String header = request.getHeader(GatewayConstants.AUTHORIZATION);
+			if (header == null || header.isEmpty()) {
+				sendTokenExpiredResponse(ctx);
 			} else {
-				HttpServletRequest request = ctx.getRequest();
-				String header = request.getHeader(GatewayConstants.AUTHORIZATION);
-				if (header == null || header.isEmpty()) {
+				String username = tokenValidation.validateToken(header);
+				if (username == null) {
 					sendTokenExpiredResponse(ctx);
 				} else {
-					String username = tokenValidation.validateToken(header);
-					if (username == null) {
-						sendTokenExpiredResponse(ctx);
-					} else {
-						HttpServletRequestWrapper wrappedRequest = modifyRequest(request);
-						ctx.setRequest(wrappedRequest);
-						ctx.addZuulRequestHeader(GatewayConstants.USER_NAME_HEADER, username);
-					}
+					HttpServletRequestWrapper wrappedRequest = modifyRequest(request);
+					ctx.setRequest(wrappedRequest);
+					ctx.addZuulRequestHeader(GatewayConstants.USER_NAME_HEADER, username);
 				}
 			}
 		}
