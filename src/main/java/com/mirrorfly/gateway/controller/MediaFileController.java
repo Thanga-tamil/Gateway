@@ -28,7 +28,7 @@ public class MediaFileController {
 	@PostMapping
 	public Response<String> uploadFile(@RequestHeader("Authorization") String authorization,
 			@RequestParam("toUser") String touser,
-			@RequestParam(value = "type", required = false) Integer type,
+			@RequestParam(value = "type", required = false) String type,
 			@RequestParam("file") MultipartFile file) {
 		return mediaFileService.uploadFile(authorization, touser, type, file);
 	}

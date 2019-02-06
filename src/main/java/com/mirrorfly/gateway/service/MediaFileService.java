@@ -24,6 +24,7 @@ import com.mirrorfly.gateway.repo.MediaFilesRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
+import com.mirrorfly.gateway.util.MediaConstants;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -79,19 +80,20 @@ public class MediaFileService {
 		return null;
 	}
 
-	private void checkFileValidation(String fileToken, String username) {
+	private MediaFiles checkFileValidation(String fileToken, String username) {
 		MediaFiles fileUpload = fileUploadRepo.findByFileToken(fileToken);
 		if (fileUpload == null)
 			throw new NoDataFoundException(GatewayConstants.FILE_NOT_AVILABLE);
 		if (fileUpload.getGroupId() == null) {
 			if (username.equals(fileUpload.getFromUser()) || username.equals(fileUpload.getToUser())) {
-				return;
+				return fileUpload;
 			}
 		}
+		return fileUpload;
 
 	}
 
-	public Response<String> uploadFile(String authorization, String toUser, Integer type, MultipartFile file) {
+	public Response<String> uploadFile(String authorization, String toUser, String type, MultipartFile file) {
 		Response<String> response = new Response<>();
 		String username = tokenService.getUserNameByToken(authorization);
 		try {
@@ -122,7 +124,7 @@ public class MediaFileService {
 		return response;
 	}
 
-	private void saveFileToDB(String toUser, String fileName, String contentType, Integer type, String username,
+	private void saveFileToDB(String toUser, String fileName, String contentType, String type, String username,
 			String token) {
 		MediaFiles fileUpload = new MediaFiles();
 		fileUpload.setCreatedAt(GatewayUtil.getCurrentDateTime());
@@ -131,7 +133,7 @@ public class MediaFileService {
 		// fileUpload.setFilePath(filePath);
 		fileUpload.setFromIsDeleted(0);
 		fileUpload.setFromUser(username);
-		if (2 == type)
+		if (MediaConstants.GROUP.equals(type))
 			fileUpload.setGroupId(toUser);
 		fileUpload.setGroupIsDeleted(0);
 		fileUpload.setIsActive(0);
@@ -147,7 +149,7 @@ public class MediaFileService {
 	public Response<String> forwardFile(String authorization, String keyName, String type, String file) {
 		Response<String> response = new Response<>();
 		String username = tokenService.getUserNameByToken(authorization);
-
+		// checkFileValidation(fileToken, username);
 		return response;
 	}
 
