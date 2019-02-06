@@ -4,8 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
@@ -20,11 +18,10 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.mirrorfly.gateway.config.ApplicationProperties;
-import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
-import com.mirrorfly.gateway.model.FileUploads;
-import com.mirrorfly.gateway.repo.FileUploadRepo;
+import com.mirrorfly.gateway.exception.NoDataFoundException;
+import com.mirrorfly.gateway.model.MediaFiles;
+import com.mirrorfly.gateway.repo.MediaFilesRepo;
 import com.mirrorfly.gateway.response.Response;
-import com.mirrorfly.gateway.token.GenerateToken;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
@@ -32,23 +29,26 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
-public class FileService {
+public class MediaFileService {
 
 	@Autowired
 	private AmazonS3 s3client;
 
 	@Autowired
-	private TokenValidation tokenValidation;
+	private TokenService tokenService;
 
 	@Autowired
-	private FileUploadRepo fileUploadRepo;
+	private MediaFilesRepo fileUploadRepo;
 
 	@Autowired
 	private ApplicationProperties applicationProperties;
 
 	public ByteArrayOutputStream downloadFile(String authorization, String fileToken) {
 		try {
-			String username = getUserNameByToken(authorization);
+			String username = tokenService.getUserNameByToken(authorization);
+
+			checkFileValidation(fileToken, username);
+
 			S3Object s3object = s3client
 					.getObject(new GetObjectRequest(applicationProperties.getAWSS3BucketName(), fileToken));
 
@@ -79,17 +79,29 @@ public class FileService {
 		return null;
 	}
 
-	public Response<String> uploadFile(String authorization, String toUser, String type, MultipartFile file) {
+	private void checkFileValidation(String fileToken, String username) {
+		MediaFiles fileUpload = fileUploadRepo.findByFileToken(fileToken);
+		if (fileUpload == null)
+			throw new NoDataFoundException(GatewayConstants.FILE_NOT_AVILABLE);
+		if (fileUpload.getGroupId() == null) {
+			if (username.equals(fileUpload.getFromUser()) || username.equals(fileUpload.getToUser())) {
+				return;
+			}
+		}
+
+	}
+
+	public Response<String> uploadFile(String authorization, String toUser, Integer type, MultipartFile file) {
 		Response<String> response = new Response<>();
-		String username = getUserNameByToken(authorization);
+		String username = tokenService.getUserNameByToken(authorization);
 		try {
 			String extension = FilenameUtils.getExtension(file.getOriginalFilename());
 			String token = username + Instant.now().toEpochMilli() + "." + extension;
-			saveFileToDB(toUser, file, username, token);
+			saveFileToDB(toUser, file.getOriginalFilename(), file.getContentType(), type, username, token);
 			ObjectMetadata metadata = new ObjectMetadata();
 			metadata.setContentLength(file.getSize());
 			s3client.putObject(applicationProperties.getAWSS3BucketName(), token, file.getInputStream(), metadata);
-			response.setData(GatewayConstants.DATA_RETRIEVED);
+			response.setData(token);
 		} catch (AmazonServiceException ase) {
 			log.info("Caught an AmazonServiceException from PUT requests, rejected reasons:");
 			log.info("Error Message:    " + ase.getMessage());
@@ -110,27 +122,22 @@ public class FileService {
 		return response;
 	}
 
-	private String getUserNameByToken(String authorization) {
-		String username = tokenValidation.validateToken(authorization);
-		if (username == null) {
-			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
-		}
-		return username;
-	}
-
-	private void saveFileToDB(String toUser, MultipartFile file, String username, String token) {
-		FileUploads fileUpload = new FileUploads();
+	private void saveFileToDB(String toUser, String fileName, String contentType, Integer type, String username,
+			String token) {
+		MediaFiles fileUpload = new MediaFiles();
 		fileUpload.setCreatedAt(GatewayUtil.getCurrentDateTime());
-		fileUpload.setFileName(token);
+		fileUpload.setFileName(fileName);
+		fileUpload.setFileToken(token);
 		// fileUpload.setFilePath(filePath);
 		fileUpload.setFromIsDeleted(0);
 		fileUpload.setFromUser(username);
-		// fileUpload.setGroupId(groupId);
+		if (2 == type)
+			fileUpload.setGroupId(toUser);
 		fileUpload.setGroupIsDeleted(0);
 		fileUpload.setIsActive(0);
 		fileUpload.setIsProfile(0);
 		fileUpload.setIsServer(0);
-		fileUpload.setMimeType(file.getContentType());
+		fileUpload.setMimeType(contentType);
 		fileUpload.setToIsDeleted(0);
 		fileUpload.setToUser(toUser);
 		fileUpload.setUpdatedAt(GatewayUtil.getCurrentDateTime());
@@ -139,7 +146,7 @@ public class FileService {
 
 	public Response<String> forwardFile(String authorization, String keyName, String type, String file) {
 		Response<String> response = new Response<>();
-		String username = getUserNameByToken(authorization);
+		String username = tokenService.getUserNameByToken(authorization);
 
 		return response;
 	}

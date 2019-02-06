@@ -16,27 +16,28 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mirrorfly.gateway.response.Response;
-import com.mirrorfly.gateway.service.FileService;
+import com.mirrorfly.gateway.service.MediaFileService;
 
 @RestController
 @RequestMapping("/media")
-public class FileController {
+public class MediaFileController {
 
 	@Autowired
-	private FileService fileservice;
+	private MediaFileService mediaFileService;
 
 	@PostMapping
 	public Response<String> uploadFile(@RequestHeader("Authorization") String authorization,
-			@RequestParam("toUser") String touser, @RequestParam("type") String type,
+			@RequestParam("toUser") String touser,
+			@RequestParam(value = "type", required = false) Integer type,
 			@RequestParam("file") MultipartFile file) {
-		return fileservice.uploadFile(authorization, touser, type, file);
+		return mediaFileService.uploadFile(authorization, touser, type, file);
 	}
 
 	@PostMapping("/forward")
 	public Response<String> uploadForwardFile(@RequestHeader("Authorization") String authorization,
 			@RequestParam("toUser") String touser, @RequestParam("type") String type,
 			@RequestParam("fileToken") String fileToken) {
-		return fileservice.forwardFile(authorization, touser, type, fileToken);
+		return mediaFileService.forwardFile(authorization, touser, type, fileToken);
 	}
 
 	/*
@@ -45,7 +46,7 @@ public class FileController {
 	@GetMapping("/{fileToken}")
 	public ResponseEntity<byte[]> downloadFile(@RequestHeader("Authorization") String authorization,
 			@PathVariable String fileToken) {
-		ByteArrayOutputStream downloadInputStream = fileservice.downloadFile(authorization, fileToken);
+		ByteArrayOutputStream downloadInputStream = mediaFileService.downloadFile(authorization, fileToken);
 
 		return ResponseEntity.ok().contentType(contentType(fileToken))
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileToken + "\"")

@@ -15,7 +15,7 @@ import lombok.Data;
 @Entity
 @Table(name = "chat_media_files")
 @Data
-public class FileUploads implements Serializable {
+public class MediaFiles implements Serializable {
 
 	/**
 	 * 
@@ -28,7 +28,7 @@ public class FileUploads implements Serializable {
 	private Long id;
 
 	@Column(name = "file_id")
-	private String fileId;
+	private String fileToken;
 
 	@Column(name = "from_user")
 	private String fromUser;

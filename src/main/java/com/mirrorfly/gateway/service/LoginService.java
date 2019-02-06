@@ -8,20 +8,12 @@ import com.mirrorfly.gateway.dto.LoginDetailsDto;
 import com.mirrorfly.gateway.dto.LoginDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.Users;
-import com.mirrorfly.gateway.repo.OtpRepo;
-import com.mirrorfly.gateway.repo.SettingsRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.GatewayConstants;
 
 @Service
 public class LoginService {
-
-	@Autowired
-	private SettingsRepo settingsRepo;
-
-	@Autowired
-	private OtpRepo otpRepo;
 
 	@Autowired
 	private TokenService tokenService;
@@ -43,6 +35,15 @@ public class LoginService {
 		response.setStatus(HttpStatus.SC_OK);
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
+		return response;
+	}
+
+	public Response<String> logout(String authorization) {
+		String username = tokenService.getUserNameByToken(authorization);
+		tokenService.deleteToken(authorization);
+		Response<String> response = new Response<>();
+		response.setStatus(HttpStatus.SC_OK);
+		response.setMessage(GatewayConstants.LOG_OUT);
 		return response;
 	}
 

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mirrorfly.gateway.service.TokenValidation;
+import com.mirrorfly.gateway.service.TokenService;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
@@ -20,7 +20,7 @@ import com.netflix.zuul.context.RequestContext;
 public class GatewayZuulFilter extends ZuulFilter {
 
 	@Autowired
-	private TokenValidation tokenValidation;
+	private TokenService tokenService;
 
 	@Override
 	public String filterType() {
@@ -53,7 +53,7 @@ public class GatewayZuulFilter extends ZuulFilter {
 			if (header == null || header.isEmpty()) {
 				sendTokenExpiredResponse(ctx);
 			} else {
-				String username = tokenValidation.validateToken(header);
+				String username = tokenService.validateToken(header);
 				if (username == null) {
 					sendTokenExpiredResponse(ctx);
 				} else {

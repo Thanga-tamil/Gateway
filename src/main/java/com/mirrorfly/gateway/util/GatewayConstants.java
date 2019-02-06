@@ -44,6 +44,8 @@ public class GatewayConstants {
 
 	public static final String MOBILE_NO_VALID = "Mobile Not Valid";
 
+	public static final String MOBILE_NO_AVAIL = "Mobile Not Available";
+
 	public static final String TOKEN_EXPIRED = "Token Expired";
 
 	public static final String TOKEN_NOT_AVAILABLE = "Token Not Available";
@@ -110,6 +112,8 @@ public class GatewayConstants {
 
 	public static final String DATA_RETRIEVED = "Data retrieved successfully";
 
+	public static final String LOG_OUT = "Logout successfully";
+
 	public static final String OTP_SENT = "OTP Sent successfully";
 
 	public static final String BAD_CREDENTIALS_TWO = "Entered password credentials are not match, Account will be locked after 3 rd attempt";
@@ -143,6 +147,8 @@ public class GatewayConstants {
 	public static final String TOKEN_EXPIRED_JSON = "{ \"status\" : 401, \"message\" : \"Token Expired\", \"error\" : true}";
 
 	public static final String HOST_ERROR = "{ \"status\" : 401, \"message\" : \"Ip not Whitelisted\", \"error\" : true}";
+
+	public static final String FILE_NOT_AVILABLE = "File Not Available";
 
 	private GatewayConstants() {
 	}

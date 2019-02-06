@@ -5,6 +5,8 @@ import lombok.Data;
 @Data
 public class OtpDto {
 
-	private String phoneNumber;
+	private String mobileNumber;
+
+	private String emailId;
 
 }
