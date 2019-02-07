@@ -2,8 +2,8 @@ package com.mirrorfly.gateway.service;
 
 import java.util.List;
 
-import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.mirrorfly.gateway.dto.RegisterDto;
@@ -49,7 +49,7 @@ public class RegisterService {
 		info.setDomain(settings.getDomain());
 		info.setMailLogin(settings.getMailLogin());
 		Response<RegisterInfoDto> response = new Response<>();
-		response.setStatus(HttpStatus.SC_OK);
+		response.setStatus(HttpStatus.OK.value());
 		response.setData(info);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
@@ -85,7 +85,7 @@ public class RegisterService {
 		users.setUsername(registerDto.getMobileNumber());
 		userRepo.save(users);
 		Response<RegisterResponseDto> response = new Response<>();
-		response.setStatus(HttpStatus.SC_OK);
+		response.setStatus(HttpStatus.OK.value());
 		response.setData(registerResponseDto);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;

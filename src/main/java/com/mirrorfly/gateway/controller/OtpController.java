@@ -13,7 +13,7 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.OtpService;
 
 @RestController
-@RequestMapping
+@RequestMapping("/api/v1")
 public class OtpController {
 
 	@Autowired

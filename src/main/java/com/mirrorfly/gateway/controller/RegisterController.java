@@ -15,7 +15,7 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.RegisterService;
 
 @RestController
-@RequestMapping("/register")
+@RequestMapping("/api/v1/register")
 public class RegisterController {
 
 	@Autowired

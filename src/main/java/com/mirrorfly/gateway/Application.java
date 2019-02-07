@@ -1,15 +1,14 @@
 package com.mirrorfly.gateway;
 
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 @SpringBootApplication
-@EnableZuulProxy
 public class Application {
 
 	/**
@@ -18,7 +17,13 @@ public class Application {
 	 * @param args array.
 	 */
 	public static void main(String[] args) {
-		SpringApplication.run(Application.class, args);
+
+		//SpringApplication.run(Application.class, args);
+
+		SpringApplication application = new SpringApplication(Application.class);
+		application.setWebApplicationType(WebApplicationType.REACTIVE);
+		application.run(args);
+	
 	}
 
 	/**
@@ -44,5 +49,6 @@ public class Application {
 		urlBasedCorsConfigurationSource.registerCorsConfiguration("/**", corsConfig);
 		return new CorsFilter(urlBasedCorsConfigurationSource);
 	}
+
 
 }

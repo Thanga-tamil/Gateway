@@ -1,8 +1,8 @@
 package com.mirrorfly.gateway.exception;
 
 import java.io.FileNotFoundException;
+import java.util.Optional;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.validation.ConstraintViolationException;
 import javax.validation.ValidationException;
 
@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -25,6 +26,25 @@ import com.mirrorfly.gateway.response.Response;
 @RestController
 public class GlobalExceptionHandler {
 
+	/*
+	 * @ExceptionHandler(NoDataFoundException.class) public Response<String>
+	 * notFoundException(final NoDataFoundException e) { return
+	 * setStatusAndMessage(HttpStatus.NOT_FOUND.value(), e.getMessage()); }
+	 */
+	/*
+	 * private Response<String> error(final Exception exception, final HttpStatus
+	 * httpStatus, final String logRef) { final String message =
+	 * Optional.of(exception.getMessage()).orElse(exception.getClass().getSimpleName
+	 * ()); return new ResponseEntity<>(new VndErrors(logRef, message), httpStatus);
+	 * }
+	 */
+
+	/*
+	 * @ExceptionHandler(IllegalArgumentException.class) public
+	 * ResponseEntity<VndErrors> assertionException(final IllegalArgumentException
+	 * e) { return error(e, HttpStatus.NOT_FOUND, e.getLocalizedMessage()); }
+	 */
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
 	/**
@@ -35,8 +55,7 @@ public class GlobalExceptionHandler {
 	 * @return Exception Status and Message
 	 */
 	@ExceptionHandler(value = MethodArgumentNotValidException.class)
-	public Response<String> methodArgumentNotValidException(MethodArgumentNotValidException ex,
-			HttpServletResponse response) {
+	public Response<String> methodArgumentNotValidException(MethodArgumentNotValidException ex) {
 		String errorMsg = ex.getBindingResult().getFieldErrors().stream()
 				.map(DefaultMessageSourceResolvable::getDefaultMessage).findFirst().orElse(ex.getMessage());
 		LOGGER.error(ex.getLocalizedMessage());
@@ -52,9 +71,9 @@ public class GlobalExceptionHandler {
 	 * @return response status and message
 	 */
 	@ExceptionHandler(value = NoDataFoundException.class)
-	public Response<String> noDataFoundException(NoDataFoundException ex, HttpServletResponse response) {
+	public Response<String> noDataFoundException(NoDataFoundException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
-		return setStatusAndMessage(HttpServletResponse.SC_NO_CONTENT, ex.getMessage());
+		return setStatusAndMessage(HttpStatus.NO_CONTENT.value(), ex.getMessage());
 	}
 
 	/**
@@ -65,9 +84,9 @@ public class GlobalExceptionHandler {
 	 * @return response status and message
 	 */
 	@ExceptionHandler(value = CommonException.class)
-	public Response<String> commonException(CommonException ex, HttpServletResponse response) {
+	public Response<String> commonException(CommonException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
-		return setStatusAndMessage(HttpServletResponse.SC_BAD_REQUEST, ex.getMessage());
+		return setStatusAndMessage(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
 	}
 
 	/**
@@ -78,7 +97,7 @@ public class GlobalExceptionHandler {
 	 * @return Exception Status and Message
 	 */
 	@ExceptionHandler(value = FileNotFoundException.class)
-	public Response<String> fileNotFoundException(FileNotFoundException ex, HttpServletResponse response) {
+	public Response<String> fileNotFoundException(FileNotFoundException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.NOT_FOUND.value(), ex.getMessage());
 	}
@@ -91,8 +110,7 @@ public class GlobalExceptionHandler {
 	 * @return Exception Status and Message
 	 */
 	@ExceptionHandler(value = ArrayIndexOutOfBoundsException.class)
-	public Response<String> arrayIndexOutOfBoundsException(ArrayIndexOutOfBoundsException ex,
-			HttpServletResponse response) {
+	public Response<String> arrayIndexOutOfBoundsException(ArrayIndexOutOfBoundsException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
@@ -107,7 +125,7 @@ public class GlobalExceptionHandler {
 	 */
 
 	@ExceptionHandler(value = ClassCastException.class)
-	public Response<String> classCastException(ClassCastException ex, HttpServletResponse response) {
+	public Response<String> classCastException(ClassCastException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
@@ -122,7 +140,7 @@ public class GlobalExceptionHandler {
 	 */
 
 	@ExceptionHandler(value = IllegalArgumentException.class)
-	public Response<String> illegalArgumentException(IllegalArgumentException ex, HttpServletResponse response) {
+	public Response<String> illegalArgumentException(IllegalArgumentException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
 	}
@@ -136,7 +154,7 @@ public class GlobalExceptionHandler {
 	 * @return Exception Status and Message
 	 */
 	@ExceptionHandler(value = NullPointerException.class)
-	public Response<String> nullPointerException(NullPointerException ex, HttpServletResponse response) {
+	public Response<String> nullPointerException(NullPointerException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
@@ -151,7 +169,7 @@ public class GlobalExceptionHandler {
 	 */
 
 	@ExceptionHandler(value = NumberFormatException.class)
-	public Response<String> numberFormatException(NumberFormatException ex, HttpServletResponse response) {
+	public Response<String> numberFormatException(NumberFormatException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
 	}
@@ -165,7 +183,7 @@ public class GlobalExceptionHandler {
 	 * @return Exception Status and Message
 	 */
 	@ExceptionHandler(value = AssertionError.class)
-	public Response<String> assertionError(AssertionError ex, HttpServletResponse response) {
+	public Response<String> assertionError(AssertionError ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
@@ -180,7 +198,7 @@ public class GlobalExceptionHandler {
 	 */
 
 	@ExceptionHandler(value = ExceptionInInitializerError.class)
-	public Response<String> exceptionInInitializerError(ExceptionInInitializerError ex, HttpServletResponse response) {
+	public Response<String> exceptionInInitializerError(ExceptionInInitializerError ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
@@ -193,7 +211,7 @@ public class GlobalExceptionHandler {
 	 * @return Exception Status and Message
 	 */
 	@ExceptionHandler(value = StackOverflowError.class)
-	public Response<String> stackOverflowError(StackOverflowError ex, HttpServletResponse response) {
+	public Response<String> stackOverflowError(StackOverflowError ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
@@ -206,7 +224,7 @@ public class GlobalExceptionHandler {
 	 * @return Exception Status and Message
 	 */
 	@ExceptionHandler(value = NoClassDefFoundError.class)
-	public Response<String> noClassDefFoundError(NoClassDefFoundError ex, HttpServletResponse response) {
+	public Response<String> noClassDefFoundError(NoClassDefFoundError ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
@@ -219,7 +237,7 @@ public class GlobalExceptionHandler {
 	 * @return Exception Status and Message
 	 */
 	@ExceptionHandler(value = RuntimeException.class)
-	public Response<String> resourceNotFoundException(RuntimeException ex, HttpServletResponse response) {
+	public Response<String> resourceNotFoundException(RuntimeException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
@@ -232,7 +250,7 @@ public class GlobalExceptionHandler {
 	 * @return Exception Status and Message
 	 */
 	@ExceptionHandler(value = ConstraintViolationException.class)
-	public Response<String> resourceNotFoundException(ConstraintViolationException ex, HttpServletResponse response) {
+	public Response<String> resourceNotFoundException(ConstraintViolationException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
@@ -247,7 +265,7 @@ public class GlobalExceptionHandler {
 	 */
 
 	@ExceptionHandler(value = Exception.class)
-	public Response<String> exception(Exception ex, HttpServletResponse response) {
+	public Response<String> exception(Exception ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
@@ -260,7 +278,7 @@ public class GlobalExceptionHandler {
 	 * @return response status and message
 	 */
 	@ExceptionHandler(value = ValidationException.class)
-	public Response<String> validationException(ConstraintViolationException ex, HttpServletResponse response) {
+	public Response<String> validationException(ConstraintViolationException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
@@ -273,9 +291,9 @@ public class GlobalExceptionHandler {
 	 * @return response status and message
 	 */
 	@ExceptionHandler(value = UserUnAuthorizedException.class)
-	public Response<String> userUnAuthorizedException(NoDataFoundException ex, HttpServletResponse response) {
+	public Response<String> userUnAuthorizedException(NoDataFoundException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
-		return setStatusAndMessage(HttpServletResponse.SC_UNAUTHORIZED, ex.getMessage());
+		return setStatusAndMessage(HttpStatus.UNAUTHORIZED.value(), ex.getMessage());
 	}
 
 	/**

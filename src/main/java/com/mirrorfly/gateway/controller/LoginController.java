@@ -16,7 +16,7 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.LoginService;
 
 @RestController
-@RequestMapping
+@RequestMapping("/api/v1")
 public class LoginController {
 
 	@Autowired

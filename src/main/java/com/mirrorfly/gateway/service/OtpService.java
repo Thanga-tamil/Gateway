@@ -1,7 +1,7 @@
 package com.mirrorfly.gateway.service;
 
-import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.mirrorfly.gateway.dto.OtpDto;
@@ -47,7 +47,7 @@ public class OtpService {
 		}
 		Response<OtpResponseDto> response = new Response<>();
 		response.setMessage(GatewayConstants.OTP_SENT);
-		response.setStatus(HttpStatus.SC_OK);
+		response.setStatus(HttpStatus.OK.value());
 		response.setData(otpResponseDto);
 		return response;
 	}

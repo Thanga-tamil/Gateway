@@ -1,7 +1,7 @@
 package com.mirrorfly.gateway.service;
 
-import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
@@ -32,7 +32,7 @@ public class LoginService {
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
 		loginDetails.setToken(tokenService.getToken(login.getUsername(), "", ""));
-		response.setStatus(HttpStatus.SC_OK);
+		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
@@ -42,7 +42,7 @@ public class LoginService {
 		String username = tokenService.getUserNameByToken(authorization);
 		tokenService.deleteToken(authorization);
 		Response<String> response = new Response<>();
-		response.setStatus(HttpStatus.SC_OK);
+		response.setStatus(HttpStatus.OK.value());
 		response.setMessage(GatewayConstants.LOG_OUT);
 		return response;
 	}
