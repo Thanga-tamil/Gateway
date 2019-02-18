@@ -65,6 +65,15 @@ public class RegisterService {
 		if (GatewayUtil.getCurrentDateTime().isAfter(otp.getCreatedAt().plusMinutes(7))) {
 			throw new BadDataException(GatewayConstants.INVALID_OTP);
 		}
+		RegisterResponseDto registerResponseDto = registerUser(registerDto);
+		Response<RegisterResponseDto> response = new Response<>();
+		response.setStatus(HttpStatus.OK.value());
+		response.setData(registerResponseDto);
+		response.setMessage(GatewayConstants.DATA_RETRIEVED);
+		return response;
+	}
+
+	private RegisterResponseDto registerUser(RegisterDto registerDto) {
 		ChatUser chatUser = chatUserRepo.findByMobileNumber(registerDto.getMobileNumber());
 		if (chatUser == null) {
 			chatUser = new ChatUser();
@@ -84,11 +93,7 @@ public class RegisterService {
 		users.setPassword(registerResponseDto.getPassword());
 		users.setUsername(registerDto.getMobileNumber());
 		userRepo.save(users);
-		Response<RegisterResponseDto> response = new Response<>();
-		response.setStatus(HttpStatus.OK.value());
-		response.setData(registerResponseDto);
-		response.setMessage(GatewayConstants.DATA_RETRIEVED);
-		return response;
+		return registerResponseDto;
 	}
 
 }

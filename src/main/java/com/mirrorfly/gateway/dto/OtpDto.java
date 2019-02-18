@@ -7,6 +7,10 @@ public class OtpDto {
 
 	private String mobileNumber;
 
-	private String emailId;
+	private String deviceType;
+
+	private String otp;
+
+	private String deviceToken;
 
 }

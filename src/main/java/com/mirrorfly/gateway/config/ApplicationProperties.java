@@ -30,4 +30,8 @@ public class ApplicationProperties {
 		return env.getProperty("aws_s3_bucketname");
 	}
 
+	public String getFcmURL() {
+		return env.getProperty("fcm_url");
+	}
+
 }

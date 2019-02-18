@@ -21,4 +21,6 @@ public class LoginDto {
 	@NotNull(message = "Password cannot be Empty")
 	private String password;
 
+	private String type;
+
 }

@@ -39,7 +39,7 @@ public class LoginService {
 	}
 
 	public Response<String> logout(String authorization) {
-		String username = tokenService.getUserNameByToken(authorization);
+		tokenService.getUserNameByToken(authorization);
 		tokenService.deleteToken(authorization);
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.OK.value());

@@ -3,7 +3,9 @@ package com.mirrorfly.gateway;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -18,12 +20,10 @@ public class Application {
 	 */
 	public static void main(String[] args) {
 
-		//SpringApplication.run(Application.class, args);
-
 		SpringApplication application = new SpringApplication(Application.class);
 		application.setWebApplicationType(WebApplicationType.REACTIVE);
 		application.run(args);
-	
+
 	}
 
 	/**
@@ -50,5 +50,9 @@ public class Application {
 		return new CorsFilter(urlBasedCorsConfigurationSource);
 	}
 
+	@Bean
+	public RestTemplate restTemplate(RestTemplateBuilder builder) {
+		return builder.build();
+	}
 
 }

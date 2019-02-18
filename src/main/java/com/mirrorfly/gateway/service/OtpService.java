@@ -4,8 +4,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.mirrorfly.gateway.dto.FCMRequestDto;
+import com.mirrorfly.gateway.dto.FCMResponseDto;
 import com.mirrorfly.gateway.dto.OtpDto;
 import com.mirrorfly.gateway.dto.OtpResponseDto;
+import com.mirrorfly.gateway.dto.RegisterDto;
+import com.mirrorfly.gateway.dto.VerifyFCMDto;
+import com.mirrorfly.gateway.dto.VerifyFCMResponse;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.Otp;
@@ -27,12 +32,21 @@ public class OtpService {
 	@Autowired
 	private ChatUserRepo chatUserRepo;
 
+	@Autowired
+	private RestService restService;
+
+	@Autowired
+	private RegisterService registerService;
+
 	public Response<OtpResponseDto> requestOtp(OtpDto otpDto) {
 
 		if (otpDto.getMobileNumber() == null) {
 			throw new BadDataException(GatewayConstants.MOBILE_NO_AVAIL);
 		}
 		ChatUser chatUser = chatUserRepo.findByMobileNumber(otpDto.getMobileNumber());
+		if (chatUser != null && chatUser.getIsBlock() == 1) {
+			throw new BadDataException(GatewayConstants.USER_BLOCK);
+		}
 		Otp otp = new Otp();
 		otp.setCreatedAt(GatewayUtil.getCurrentDateTime());
 		otp.setOtp(passwordService.generateOtp());
@@ -44,11 +58,31 @@ public class OtpService {
 		otpResponseDto.setOtp(otp.getOtp());
 		if (chatUser != null && chatUser.getDeviceToken() != null) {
 			otpResponseDto.setDeviceToken(chatUser.getDeviceToken());
+			otpResponseDto.setIsUpdated(1);
 		}
 		Response<OtpResponseDto> response = new Response<>();
 		response.setMessage(GatewayConstants.OTP_SENT);
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(otpResponseDto);
+		return response;
+	}
+
+	public Response<VerifyFCMResponse> verifyFCM(VerifyFCMDto fcmDto) {
+		Response<VerifyFCMResponse> response = new Response<>();
+		FCMRequestDto requestDto = new FCMRequestDto();
+		FCMResponseDto fcm = restService.verifyFCMToken(requestDto);
+		if (fcm.getKind().equals(fcmDto.getMobileNumber())) {
+			throw new BadDataException("Phone Number and UserName Different Existing");
+		}
+		ChatUser chatUser = chatUserRepo.findByMobileNumber(fcmDto.getMobileNumber());
+		if (chatUser == null) {
+			RegisterDto registerDto = new RegisterDto();
+			registerService.registerNewUser(registerDto);
+		}
+		VerifyFCMResponse dto = new VerifyFCMResponse();
+		response.setMessage(GatewayConstants.FCM_SENT);
+		response.setStatus(HttpStatus.OK.value());
+		response.setData(dto);
 		return response;
 	}
 
