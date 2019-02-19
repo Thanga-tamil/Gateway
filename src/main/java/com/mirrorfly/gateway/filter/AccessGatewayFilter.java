@@ -28,6 +28,7 @@ public class AccessGatewayFilter implements GlobalFilter {
 
 	@Autowired
 	private TokenService tokenService;
+	
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -36,6 +37,14 @@ public class AccessGatewayFilter implements GlobalFilter {
 		if (exchange.getRequest().getMethod().equals("OPTIONS")) {
 			exchange.getResponse().setStatusCode(HttpStatus.OK);
 			return Mono.empty();
+		}
+		if (exchange.getRequest().getPath().toString().contains("swagger")
+				|| exchange.getRequest().getPath().toString().contains("api-docs")
+				|| exchange.getRequest().getPath().toString().contains("webjars")
+				|| exchange.getRequest().getPath().toString().contains("api-docs")
+				|| exchange.getRequest().getPath().toString().contains("swagger-resources")) {
+			ServerHttpRequest.Builder builder = request.mutate();
+			return chain.filter(exchange.mutate().request(builder.build()).build());
 		}
 		String header = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 		if (header == null || header.isEmpty()) {
