@@ -37,26 +37,19 @@ public class AccessGatewayFilter implements GlobalFilter {
 			exchange.getResponse().setStatusCode(HttpStatus.OK);
 			return Mono.empty();
 		}
-		if (exchange.getRequest().getPath().toString().contains("login")
-				|| exchange.getRequest().getPath().toString().contains("logout")) {
-			log.debug("Login Method Called");
-			exchange.getResponse().setStatusCode(HttpStatus.OK);
-			return Mono.empty();
+		String header = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+		if (header == null || header.isEmpty()) {
+			log.debug("Header Not Available");
+			return unauthorized(exchange);
 		} else {
-			String header = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-			if (header == null || header.isEmpty()) {
-				log.debug("Header Not Available");
+			String username = tokenService.validateToken(header);
+			if (username == null) {
+				log.debug("unauthorized");
 				return unauthorized(exchange);
-			} else {
-				String username = tokenService.validateToken(header);
-				if (username == null) {
-					log.debug("unauthorized");
-					return unauthorized(exchange);
-				}
-				ServerHttpRequest.Builder builder = request.mutate();
-				builder.header("username", username);
-				return chain.filter(exchange.mutate().request(builder.build()).build());
 			}
+			ServerHttpRequest.Builder builder = request.mutate();
+			builder.header("username", username);
+			return chain.filter(exchange.mutate().request(builder.build()).build());
 		}
 	}
 

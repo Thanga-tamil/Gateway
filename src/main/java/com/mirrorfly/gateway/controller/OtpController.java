@@ -2,6 +2,7 @@ package com.mirrorfly.gateway.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -30,7 +31,7 @@ public class OtpController {
 	 * @return success full response verify otp for authorization.
 	 */
 	@GetMapping("/requestotp")
-	public @ResponseBody Response<OtpResponseDto> requestOtp(@RequestBody OtpDto otpDto) {
+	public @ResponseBody Response<OtpResponseDto> requestOtp(@ModelAttribute OtpDto otpDto) {
 		return otpService.requestOtp(otpDto);
 	}
 

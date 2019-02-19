@@ -2,7 +2,6 @@
 package com.mirrorfly.gateway.config;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.cloud.gateway.config.GatewayProperties;
@@ -26,12 +25,10 @@ public class SwaggerAggregatorController implements SwaggerResourcesProvider {
 
 	private final GatewayProperties gatewayProperties;
 
-	@Override
-
 	public List<SwaggerResource> get() {
 
 		List<SwaggerResource> resources = new ArrayList<>();
-
+		resources.add(swaggerResource("gatewayservice", "/v2/api-docs"));
 		List<String> routes = new ArrayList<>();
 
 		routeLocator.getRoutes().subscribe(route -> routes.add(route.getId()));
@@ -41,8 +38,6 @@ public class SwaggerAggregatorController implements SwaggerResourcesProvider {
 				.forEach(routeDefinition -> routeDefinition.getPredicates().stream()
 
 						.filter(predicateDefinition -> "Path".equalsIgnoreCase(predicateDefinition.getName()))
-
-						.filter(predicateDefinition -> !"pigx-auth".equalsIgnoreCase(routeDefinition.getId()))
 
 						.forEach(predicateDefinition -> resources.add(swaggerResource(routeDefinition.getId(),
 
@@ -67,11 +62,5 @@ public class SwaggerAggregatorController implements SwaggerResourcesProvider {
 		return swaggerResource;
 
 	}
-
-	/*
-	 * @Override public List<SwaggerResource> get() { return
-	 * Arrays.asList(swaggerResource("Login Service", "/v2/api-docs"),
-	 * swaggerResource("chatservice", "/chats/v2/api-docs")); }
-	 */
 
 }

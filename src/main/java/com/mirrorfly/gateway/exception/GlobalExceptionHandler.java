@@ -7,6 +7,7 @@ import javax.validation.ValidationException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cloud.gateway.support.NotFoundException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -37,11 +38,11 @@ public class GlobalExceptionHandler {
 	 * }
 	 */
 
-	/*
-	 * @ExceptionHandler(IllegalArgumentException.class) public
-	 * ResponseEntity<VndErrors> assertionException(final IllegalArgumentException
-	 * e) { return error(e, HttpStatus.NOT_FOUND, e.getLocalizedMessage()); }
-	 */
+	@ExceptionHandler(NotFoundException.class)
+	public Response<String> notFoundException(final NotFoundException e) {
+		LOGGER.error(e.getLocalizedMessage());
+		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage());
+	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
@@ -59,6 +60,19 @@ public class GlobalExceptionHandler {
 		LOGGER.error(ex.getLocalizedMessage());
 		LOGGER.error(errorMsg);
 		return setStatusAndMessage(HttpStatus.BAD_REQUEST.value(), errorMsg);
+	}
+
+	/**
+	 * This method used to catch NoDataFound Exception.
+	 * 
+	 * @param ex       exception
+	 * @param response Http response
+	 * @return response status and message
+	 */
+	@ExceptionHandler(value = BadDataException.class)
+	public Response<String> noDataFoundException(BadDataException ex) {
+		LOGGER.error(ex.getLocalizedMessage());
+		return setStatusAndMessage(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
 	}
 
 	/**
