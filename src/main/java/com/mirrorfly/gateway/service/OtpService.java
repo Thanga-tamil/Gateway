@@ -38,21 +38,21 @@ public class OtpService {
 	@Autowired
 	private RegisterService registerService;
 
-	public Response<OtpResponseDto> requestOtp(OtpDto otpDto) {
+	public Response<OtpResponseDto> requestOtp(String mobileNumber) {
 
-		if (otpDto.getMobileNumber() == null) {
+		if (mobileNumber == null) {
 			throw new BadDataException(GatewayConstants.MOBILE_NO_AVAIL);
 		}
-		ChatUser chatUser = chatUserRepo.findByMobileNumber(otpDto.getMobileNumber());
-		if (chatUser != null && chatUser.getIsBlock() == 1) {
+		ChatUser chatUser = chatUserRepo.findByMobileNumber(mobileNumber);
+		if (chatUser != null && 1 == chatUser.getIsBlock()) {
 			throw new BadDataException(GatewayConstants.USER_BLOCK);
 		}
 		Otp otp = new Otp();
 		otp.setCreatedAt(GatewayUtil.getCurrentDateTime());
 		otp.setOtp(passwordService.generateOtp());
 		otp.setStatus(0);
-		otp.setUsername(otpDto.getMobileNumber());
-		otp.setMobileNumber(otpDto.getMobileNumber());
+		otp.setUsername(mobileNumber);
+		otp.setMobileNumber(mobileNumber);
 		otpRepo.save(otp);
 		OtpResponseDto otpResponseDto = new OtpResponseDto();
 		otpResponseDto.setOtp(otp.getOtp());
@@ -70,10 +70,11 @@ public class OtpService {
 	public Response<VerifyFCMResponse> verifyFCM(VerifyFCMDto fcmDto) {
 		Response<VerifyFCMResponse> response = new Response<>();
 		FCMRequestDto requestDto = new FCMRequestDto();
-		FCMResponseDto fcm = restService.verifyFCMToken(requestDto);
-		if (fcm.getKind().equals(fcmDto.getMobileNumber())) {
-			throw new BadDataException("Phone Number and UserName Different Existing");
-		}
+		/*
+		 * FCMResponseDto fcm = restService.verifyFCMToken(requestDto); if
+		 * (fcm.getKind().equals(fcmDto.getMobileNumber())) { throw new
+		 * BadDataException("Phone Number and UserName Different Existing"); }
+		 */
 		ChatUser chatUser = chatUserRepo.findByMobileNumber(fcmDto.getMobileNumber());
 		if (chatUser == null) {
 			RegisterDto registerDto = new RegisterDto();
