@@ -159,6 +159,8 @@ public class GatewayConstants {
 
 	public static final String FILE_NOT_AVILABLE = "File Not Available";
 
+	public static final String IV = "ddc0f15cc2c90fca";
+
 	private GatewayConstants() {
 	}
 }

@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterResponseDto;
@@ -19,6 +21,7 @@ import com.mirrorfly.gateway.repo.OtpRepo;
 import com.mirrorfly.gateway.repo.SettingsRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.response.Response;
+import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
@@ -55,20 +58,29 @@ public class RegisterService {
 		return response;
 	}
 
-	public Response<RegisterResponseDto> registerNewUser(RegisterDto registerDto) {
-		List<Otp> otpList = otpRepo.findOtpByMobileNumber(registerDto.getMobileNumber(), registerDto.getOtp(),
-				GatewayUtil.getPagination(0, 1));
-		if (otpList == null || otpList.isEmpty()) {
-			throw new BadDataException(GatewayConstants.INVALID_OTP);
-		}
-		Otp otp = otpList.get(0);
-		if (GatewayUtil.getCurrentDateTime().isAfter(otp.getCreatedAt().plusMinutes(7))) {
-			throw new BadDataException(GatewayConstants.INVALID_OTP);
-		}
+	public Response<String> registerNewUser(RegisterDto registerDto) {
+		/*
+		 * List<Otp> otpList =
+		 * otpRepo.findOtpByMobileNumber(registerDto.getMobileNumber(),
+		 * registerDto.getOtp(), GatewayUtil.getPagination(0, 1)); if (otpList == null
+		 * || otpList.isEmpty()) { throw new
+		 * BadDataException(GatewayConstants.INVALID_OTP); } Otp otp = otpList.get(0);
+		 * if
+		 * (GatewayUtil.getCurrentDateTime().isAfter(otp.getCreatedAt().plusMinutes(7)))
+		 * { throw new BadDataException(GatewayConstants.INVALID_OTP); }
+		 */
 		RegisterResponseDto registerResponseDto = registerUser(registerDto);
-		Response<RegisterResponseDto> response = new Response<>();
+		ObjectMapper mapper = new ObjectMapper();
+		String jsonString;
+		try {
+			jsonString = mapper.writeValueAsString(registerResponseDto);
+		} catch (JsonProcessingException e) {
+			throw new BadDataException("Json Parsing Error");
+		}
+		Response<String> response = new Response<>();
+		response.setData(AESEncryption.encryptString(jsonString,
+				registerDto.getMobileNumber() + registerDto.getMobileNumber() + registerDto.getMobileNumber()));
 		response.setStatus(HttpStatus.OK.value());
-		response.setData(registerResponseDto);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
 	}

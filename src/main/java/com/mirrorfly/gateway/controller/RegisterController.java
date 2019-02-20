@@ -45,7 +45,7 @@ public class RegisterController {
 	 */
 
 	@PostMapping
-	public @ResponseBody Response<RegisterResponseDto> registerNewUser(@RequestBody RegisterDto registerDto) {
+	public @ResponseBody Response<String> registerNewUser(@RequestBody RegisterDto registerDto) {
 		return registerService.registerNewUser(registerDto);
 	}
 
