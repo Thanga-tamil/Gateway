@@ -42,7 +42,7 @@ public class GatewaySwaggerConfig extends WebFluxConfigurationSupport {
 	@Bean
 	public Docket api() {
 		return new Docket(DocumentationType.SWAGGER_2).select()
-				.apis(RequestHandlerSelectors.basePackage("com.mirrorfly.chat")).paths(PathSelectors.any()).build()
+				.apis(RequestHandlerSelectors.basePackage("com.mirrorfly.gateway")).paths(PathSelectors.any()).build()
 				.apiInfo(apiEndPointsInfo());
 	}
 
