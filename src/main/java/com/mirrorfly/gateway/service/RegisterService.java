@@ -1,7 +1,5 @@
 package com.mirrorfly.gateway.service;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -13,7 +11,6 @@ import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatUser;
-import com.mirrorfly.gateway.model.Otp;
 import com.mirrorfly.gateway.model.Settings;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
@@ -59,16 +56,6 @@ public class RegisterService {
 	}
 
 	public Response<String> registerNewUser(RegisterDto registerDto) {
-		/*
-		 * List<Otp> otpList =
-		 * otpRepo.findOtpByMobileNumber(registerDto.getMobileNumber(),
-		 * registerDto.getOtp(), GatewayUtil.getPagination(0, 1)); if (otpList == null
-		 * || otpList.isEmpty()) { throw new
-		 * BadDataException(GatewayConstants.INVALID_OTP); } Otp otp = otpList.get(0);
-		 * if
-		 * (GatewayUtil.getCurrentDateTime().isAfter(otp.getCreatedAt().plusMinutes(7)))
-		 * { throw new BadDataException(GatewayConstants.INVALID_OTP); }
-		 */
 		RegisterResponseDto registerResponseDto = registerUser(registerDto);
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonString;

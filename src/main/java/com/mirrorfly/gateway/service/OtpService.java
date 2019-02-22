@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 
 import com.mirrorfly.gateway.dto.FCMRequestDto;
 import com.mirrorfly.gateway.dto.FCMResponseDto;
-import com.mirrorfly.gateway.dto.OtpDto;
 import com.mirrorfly.gateway.dto.OtpResponseDto;
 import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.VerifyFCMDto;
@@ -70,6 +69,7 @@ public class OtpService {
 	public Response<VerifyFCMResponse> verifyFCM(VerifyFCMDto fcmDto) {
 		Response<VerifyFCMResponse> response = new Response<>();
 		FCMRequestDto requestDto = new FCMRequestDto();
+
 		
 		  FCMResponseDto fcm = restService.verifyFCMToken(requestDto); 
 		  if(fcm.getKind().equals(fcmDto.getMobileNumber())) { 
