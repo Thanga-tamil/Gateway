@@ -26,8 +26,14 @@ public class LoginService {
 		if (users == null) {
 			throw new BadDataException(GatewayConstants.USER_NAME_NOT_AVAIL);
 		}
-		if (!users.getPassword().equals(login.getPassword())) {
-			throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
+		if (login.getType() == null || !login.getType().equals("WEB")) {
+			if (!users.getPassword().equals(login.getPassword())) {
+				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
+			}
+		} else {
+			if (!users.getWsPassword().equals(login.getPassword())) {
+				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
+			}
 		}
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();

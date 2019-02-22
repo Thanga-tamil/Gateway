@@ -1,19 +1,34 @@
 package com.mirrorfly.gateway;
 
-import java.util.Arrays;
-import java.util.HashMap;
-
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.gateway.discovery.DiscoveryClientRouteDefinitionLocator;
 import org.springframework.cloud.gateway.discovery.DiscoveryLocatorProperties;
-import org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.web.cors.reactive.CorsUtils;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+
+import reactor.core.publisher.Mono;
 
 @Configuration
 public class RouteConfiguration {
+
+	private static final String ALLOWED_HEADERS = "x-requested-with, authorization, Content-Type, Authorization, credential, X-XSRF-TOKEN,token,username,client";
+
+	private static final String ALLOWED_METHODS = "*";
+
+	private static final String ALLOWED_ORIGIN = "*";
+
+	private static final String ALLOWED_Expose = "*";
+
+	private static final String MAX_AGE = "18000L";
 
 	@Bean
 	DiscoveryClientRouteDefinitionLocator discoveryRoutes(DiscoveryClient dc, DiscoveryLocatorProperties dlp) {
@@ -21,18 +36,26 @@ public class RouteConfiguration {
 	}
 
 	@Bean
-	public CorsConfiguration corsConfiguration(RoutePredicateHandlerMapping routePredicateHandlerMapping) {
-		CorsConfiguration corsConfiguration = new CorsConfiguration().applyPermitDefaultValues();
-		Arrays.asList(HttpMethod.OPTIONS, HttpMethod.PUT, HttpMethod.GET, HttpMethod.DELETE, HttpMethod.POST)
-				.forEach(m -> corsConfiguration.addAllowedMethod(m));
-		corsConfiguration.addAllowedOrigin("*");
-		corsConfiguration.addAllowedHeader("*");
-		routePredicateHandlerMapping.setCorsConfigurations(new HashMap<String, CorsConfiguration>() {
-			{
-				put("/**", corsConfiguration);
+	public WebFilter corsFilter() {
+		return (ServerWebExchange ctx, WebFilterChain chain) -> {
+			ServerHttpRequest request = ctx.getRequest();
+			if (CorsUtils.isCorsRequest(request)) {
+				ServerHttpResponse response = ctx.getResponse();
+				HttpHeaders headers = response.getHeaders();
+				headers.add("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+				headers.add("Access-Control-Allow-Methods", ALLOWED_METHODS);
+				headers.add("Access-Control-Max-Age", MAX_AGE);
+				headers.add("Access-Control-Allow-Headers", ALLOWED_HEADERS);
+				headers.add("Access-Control-Expose-Headers", ALLOWED_Expose);
+				headers.add("Access-Control-Allow-Credentials", "true");
+				if (request.getMethod() == HttpMethod.OPTIONS) {
+					response.setStatusCode(HttpStatus.OK);
+					return Mono.empty();
+				}
 			}
-		});
-		return corsConfiguration;
+			return chain.filter(ctx);
+		};
 	}
+
 
 }

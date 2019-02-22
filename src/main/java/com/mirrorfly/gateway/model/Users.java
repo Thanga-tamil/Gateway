@@ -26,4 +26,7 @@ public class Users implements Serializable {
 	@Column(name = "password")
 	private String password;
 
+	@Column(name = "ws_password")
+	private String wsPassword;
+
 }
