@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
-import com.mirrorfly.gateway.dto.RegisterResponseDto;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.RegisterService;
 

@@ -69,17 +69,15 @@ public class OtpService {
 		Response<VerifyFCMResponse> response = new Response<>();
 		FCMRequestDto requestDto = new FCMRequestDto();
 
-		
-		 String fcm = restService.verifyFCMToken(requestDto); 
-		 if (fcm != null && fcm != "200" ) {
-				throw new BadDataException(GatewayConstants.USER_BLOCK);
-		}
-		 
-		ChatUser chatUser = chatUserRepo.findByMobileNumber(fcmDto.getMobileNumber());
-		if (chatUser == null) {
-			RegisterDto registerDto = new RegisterDto();
-			registerService.registerNewUser(registerDto);
-		}
+		/*
+		 * String fcm = restService.verifyFCMToken(requestDto); if (fcm != null && fcm
+		 * != "200" ) { throw new BadDataException(GatewayConstants.USER_BLOCK); }
+		 * 
+		 * ChatUser chatUser =
+		 * chatUserRepo.findByMobileNumber(fcmDto.getMobileNumber()); if (chatUser ==
+		 * null) { RegisterDto registerDto = new RegisterDto();
+		 * registerService.registerNewUser(registerDto); }
+		 */
 		VerifyFCMResponse dto = new VerifyFCMResponse();
 		response.setMessage(GatewayConstants.FCM_SENT);
 		response.setStatus(HttpStatus.OK.value());
