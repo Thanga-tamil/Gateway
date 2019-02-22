@@ -70,11 +70,12 @@ public class OtpService {
 	public Response<VerifyFCMResponse> verifyFCM(VerifyFCMDto fcmDto) {
 		Response<VerifyFCMResponse> response = new Response<>();
 		FCMRequestDto requestDto = new FCMRequestDto();
-		/*
-		 * FCMResponseDto fcm = restService.verifyFCMToken(requestDto); if
-		 * (fcm.getKind().equals(fcmDto.getMobileNumber())) { throw new
-		 * BadDataException("Phone Number and UserName Different Existing"); }
-		 */
+		
+		  FCMResponseDto fcm = restService.verifyFCMToken(requestDto); 
+		  if(fcm.getKind().equals(fcmDto.getMobileNumber())) { 
+			  throw new BadDataException("Phone Number and UserName Different Existing"); 
+		  }
+		 
 		ChatUser chatUser = chatUserRepo.findByMobileNumber(fcmDto.getMobileNumber());
 		if (chatUser == null) {
 			RegisterDto registerDto = new RegisterDto();

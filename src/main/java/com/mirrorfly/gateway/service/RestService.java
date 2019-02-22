@@ -28,7 +28,7 @@ public class RestService {
 			HttpHeaders headers = new HttpHeaders();
 			headers.add("Accept", MediaType.APPLICATION_JSON_VALUE);
 			headers.setContentType(MediaType.APPLICATION_JSON);
-			FCMResponseDto response = restTemplate.getForObject(applicationProperties.getFcmURL(),
+			FCMResponseDto response = restTemplate.postForObject(applicationProperties.getFcmURL(), fcmRequestDto,
 					FCMResponseDto.class);
 		} catch (Exception ex) {
 			log.error("Error IN FireBase Connection");
