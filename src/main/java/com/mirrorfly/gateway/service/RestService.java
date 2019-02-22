@@ -22,18 +22,19 @@ public class RestService {
 	@Autowired
 	private ApplicationProperties applicationProperties;
 
-	public FCMResponseDto verifyFCMToken(FCMRequestDto fcmRequestDto) {
-		FCMResponseDto request = new FCMResponseDto();
+	public String verifyFCMToken(FCMRequestDto fcmRequestDto) {
+		FCMResponseDto response = null;
 		try {
 			HttpHeaders headers = new HttpHeaders();
 			headers.add("Accept", MediaType.APPLICATION_JSON_VALUE);
 			headers.setContentType(MediaType.APPLICATION_JSON);
-			FCMResponseDto response = restTemplate.getForObject(applicationProperties.getFcmURL(),
+			response = new FCMResponseDto();
+			response = restTemplate.postForObject(applicationProperties.getFcmURL(), fcmRequestDto,
 					FCMResponseDto.class);
 		} catch (Exception ex) {
 			log.error("Error IN FireBase Connection");
 		}
-		return request;
+		return response.getStatusCode();
 	}
 
 }

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.mirrorfly.gateway.dto.FCMRequestDto;
 import com.mirrorfly.gateway.dto.OtpResponseDto;
+import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.VerifyFCMDto;
 import com.mirrorfly.gateway.dto.VerifyFCMResponse;
 import com.mirrorfly.gateway.exception.BadDataException;
@@ -67,11 +68,18 @@ public class OtpService {
 	public Response<VerifyFCMResponse> verifyFCM(VerifyFCMDto fcmDto) {
 		Response<VerifyFCMResponse> response = new Response<>();
 		FCMRequestDto requestDto = new FCMRequestDto();
-		/*
-		 * FCMResponseDto fcm = restService.verifyFCMToken(requestDto); if
-		 * (fcm.getKind().equals(fcmDto.getMobileNumber())) { throw new
-		 * BadDataException("Phone Number and UserName Different Existing"); }
-		 */
+
+		
+		 String fcm = restService.verifyFCMToken(requestDto); 
+		 if (fcm != null && fcm != "200" ) {
+				throw new BadDataException(GatewayConstants.USER_BLOCK);
+		}
+		 
+		ChatUser chatUser = chatUserRepo.findByMobileNumber(fcmDto.getMobileNumber());
+		if (chatUser == null) {
+			RegisterDto registerDto = new RegisterDto();
+			registerService.registerNewUser(registerDto);
+		}
 		VerifyFCMResponse dto = new VerifyFCMResponse();
 		response.setMessage(GatewayConstants.FCM_SENT);
 		response.setStatus(HttpStatus.OK.value());
