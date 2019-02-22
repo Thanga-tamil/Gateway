@@ -4,15 +4,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.annotation.Order;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
-
-import reactor.core.publisher.Mono;
+import org.springframework.web.reactive.config.CorsRegistry;
+import org.springframework.web.reactive.config.WebFluxConfigurer;
+import org.springframework.web.reactive.config.WebFluxConfigurerComposite;
 
 @SpringBootApplication
 public class Application {
@@ -36,28 +32,20 @@ public class Application {
 	 * 
 	 * @return http response
 	 */
+
 	@Bean
-	public CorsFilter corsFilter() {
-		final UrlBasedCorsConfigurationSource urlBasedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
-		final CorsConfiguration corsConfig = new CorsConfiguration();
-		corsConfig.setAllowCredentials(true);
-		corsConfig.addAllowedOrigin("*");
-		corsConfig.addAllowedHeader("*");
-		corsConfig.addAllowedMethod("OPTIONS");
-		corsConfig.addAllowedMethod("HEAD");
-		corsConfig.addAllowedMethod("GET");
-		corsConfig.addAllowedMethod("PUT");
-		corsConfig.addAllowedMethod("POST");
-		corsConfig.addAllowedMethod("DELETE");
-		corsConfig.addAllowedMethod("PATCH");
-		urlBasedCorsConfigurationSource.registerCorsConfiguration("/**", corsConfig);
-		return new CorsFilter(urlBasedCorsConfigurationSource);
+	public WebFluxConfigurer corsConfigurer() {
+		return new WebFluxConfigurerComposite() {
+			@Override
+			public void addCorsMappings(CorsRegistry registry) {
+				registry.addMapping("/**").allowedOrigins("*").allowedMethods("*");
+			}
+		};
 	}
 
 	@Bean
 	public RestTemplate restTemplate(RestTemplateBuilder builder) {
 		return builder.build();
 	}
-
 
 }

@@ -25,7 +25,7 @@ public class ChatUser implements Serializable {
 	private String username;
 
 	@Column(name = "email")
-	private String email;
+	private String emailId;
 
 	@Column(name = "name")
 	private String name;
