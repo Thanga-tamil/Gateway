@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 
 import com.mirrorfly.gateway.dto.FCMRequestDto;
 import com.mirrorfly.gateway.dto.OtpResponseDto;
-import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.VerifyFCMDto;
 import com.mirrorfly.gateway.dto.VerifyFCMResponse;
 import com.mirrorfly.gateway.exception.BadDataException;

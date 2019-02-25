@@ -21,9 +21,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.util.encoders.Base64Encoder;
-import org.springframework.util.Base64Utils;
-
 import lombok.extern.slf4j.Slf4j;
 
 /*****************************************************************
