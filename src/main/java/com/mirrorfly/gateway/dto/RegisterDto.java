@@ -11,6 +11,8 @@ public class RegisterDto {
 
 	private String deviceType;
 
+	private String mode;
+
 	private String deviceToken;
 
 }

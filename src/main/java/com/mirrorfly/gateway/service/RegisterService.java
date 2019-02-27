@@ -82,6 +82,7 @@ public class RegisterService {
 		}
 		chatUser.setDeviceToken(registerDto.getDeviceToken());
 		chatUser.setDevicetype(registerDto.getDeviceType());
+		chatUser.setMode(registerDto.getMode());
 		chatUserRepo.save(chatUser);
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
 		registerResponseDto.setPassword(passwordService.generateRandomPassword());
