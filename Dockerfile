@@ -12,10 +12,10 @@ VOLUME /tmp
 EXPOSE 9090
 
 # The application's jar file
-ARG JAR_FILE=target/tclgateway.jar
+ARG JAR_FILE=target/gatewayservice.jar
 
 # Add the application's jar to the container
-ADD ${JAR_FILE} tclgateway.jar
+ADD ${JAR_FILE} gatewayservice.jar
 
 # Run the jar file 
-ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/tclgateway.jar"]
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/gatewayservice.jar"]
