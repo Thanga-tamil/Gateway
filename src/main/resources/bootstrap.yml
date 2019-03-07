@@ -3,5 +3,5 @@ spring:
     name: gatewayservice
   cloud:
     config:
-      uri: http://localhost:7020
+      uri: http://configservice
      
