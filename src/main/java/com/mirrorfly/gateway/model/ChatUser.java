@@ -31,7 +31,7 @@ public class ChatUser implements Serializable {
 	private String name;
 
 	@Column(name = "status_msg")
-	private String status_msg;
+	private String statusMsg;
 
 	@Column(name = "device_token")
 	private String deviceToken;

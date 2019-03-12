@@ -5,11 +5,14 @@ import java.io.FileNotFoundException;
 import javax.validation.ConstraintViolationException;
 import javax.validation.ValidationException;
 
+import org.hibernate.exception.JDBCConnectionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.support.NotFoundException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -25,26 +28,31 @@ import com.mirrorfly.gateway.response.Response;
 @RestController
 public class GlobalExceptionHandler {
 
-	/*
-	 * @ExceptionHandler(NoDataFoundException.class) public Response<String>
-	 * notFoundException(final NoDataFoundException e) { return
-	 * setStatusAndMessage(HttpStatus.NOT_FOUND.value(), e.getMessage()); }
-	 */
-	/*
-	 * private Response<String> error(final Exception exception, final HttpStatus
-	 * httpStatus, final String logRef) { final String message =
-	 * Optional.of(exception.getMessage()).orElse(exception.getClass().getSimpleName
-	 * ()); return new ResponseEntity<>(new VndErrors(logRef, message), httpStatus);
-	 * }
-	 */
+	private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+	@ExceptionHandler(JDBCConnectionException.class)
+	public Response<String> jdbcConnectionException(final JDBCConnectionException e) {
+		LOGGER.error(e.getLocalizedMessage());
+		return setStatusAndMessage(HttpStatus.NOT_FOUND.value(), e.getMessage());
+	}
+
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public Response<String> httpMessageNotReadableException(final HttpMessageNotReadableException e) {
+		LOGGER.error(e.getLocalizedMessage());
+		return setStatusAndMessage(HttpStatus.NOT_FOUND.value(), e.getMessage());
+	}
+
+	@ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+	public Response<String> httpMediaTypeNotAcceptableException(final HttpMediaTypeNotAcceptableException e) {
+		LOGGER.error(e.getLocalizedMessage());
+		return setStatusAndMessage(HttpStatus.NOT_FOUND.value(), e.getMessage());
+	}
 
 	@ExceptionHandler(NotFoundException.class)
 	public Response<String> notFoundException(final NotFoundException e) {
 		LOGGER.error(e.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage());
 	}
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
 	/**
 	 * Function to catch Exception by checking the argument is valid or not
