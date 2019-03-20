@@ -1,6 +1,7 @@
 package com.mirrorfly.gateway.filter;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -28,7 +29,6 @@ public class AccessGatewayFilter implements GlobalFilter {
 
 	@Autowired
 	private TokenService tokenService;
-	
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -46,7 +46,20 @@ public class AccessGatewayFilter implements GlobalFilter {
 			ServerHttpRequest.Builder builder = request.mutate();
 			return chain.filter(exchange.mutate().request(builder.build()).build());
 		}
-		String header = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+		String origin = exchange.getRequest().getHeaders().getFirst(HttpHeaders.ORIGIN);
+		log.info("Origin {} ", origin);
+		Boolean isCache = false;
+		String header = null;
+		if (exchange.getRequest().getPath().toString().contains("media")
+				&& exchange.getRequest().getQueryParams() != null
+				&& exchange.getRequest().getQueryParams().containsKey("mf")) {
+			List<String> headers = exchange.getRequest().getQueryParams().get("mf");
+			if (headers != null && !headers.isEmpty())
+				header = headers.get(0);
+			isCache = true;
+		}
+		if (!isCache)
+			header = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 		if (header == null || header.isEmpty()) {
 			log.debug("Header Not Available");
 			return unauthorized(exchange);
