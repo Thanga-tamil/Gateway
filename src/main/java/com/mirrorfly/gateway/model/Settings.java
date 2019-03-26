@@ -33,21 +33,6 @@ public class Settings implements Serializable {
 	@Column(name = "admin_user")
 	private String adminUser;
 
-	@Column(name = "secret_key")
-	private String secretKey;
-
-	@Column(name = "access_key")
-	private String accessKey;
-
-	@Column(name = "bucket_name")
-	private String bucketName;
-
-	@Column(name = "bucket_region")
-	private String bucketRegion;
-
-	@Column(name = "bucketVersion")
-	private String bucketVersion;
-
 	@Column(name = "videoLimit")
 	private String videoLimit;
 
