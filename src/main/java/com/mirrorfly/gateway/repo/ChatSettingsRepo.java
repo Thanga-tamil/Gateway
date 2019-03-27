@@ -3,9 +3,9 @@ package com.mirrorfly.gateway.repo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.mirrorfly.gateway.model.Settings;
+import com.mirrorfly.gateway.model.ChatSettings;
 
 @Repository
-public interface SettingsRepo extends JpaRepository<Settings, Long> {
+public interface ChatSettingsRepo extends JpaRepository<ChatSettings, Long> {
 
 }

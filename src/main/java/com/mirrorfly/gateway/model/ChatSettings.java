@@ -15,7 +15,7 @@ import lombok.Data;
 @Entity
 @Table(name = "chat_settings")
 @Data
-public class Settings implements Serializable {
+public class ChatSettings implements Serializable {
 
 	/**
 	 * 
