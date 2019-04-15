@@ -10,12 +10,11 @@ import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
-import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.ChatSettings;
+import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.Users;
-import com.mirrorfly.gateway.repo.ChatUserRepo;
-import com.mirrorfly.gateway.repo.OtpRepo;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
+import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
@@ -27,9 +26,6 @@ public class RegisterService {
 
 	@Autowired
 	private ChatSettingsRepo settingsRepo;
-
-	@Autowired
-	private OtpRepo otpRepo;
 
 	@Autowired
 	private TokenService tokenService;

@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.mirrorfly.gateway.dto.FCMRequestDto;
 import com.mirrorfly.gateway.dto.OtpResponseDto;
 import com.mirrorfly.gateway.dto.VerifyFCMDto;
 import com.mirrorfly.gateway.dto.VerifyFCMResponse;
@@ -28,12 +27,6 @@ public class OtpService {
 
 	@Autowired
 	private ChatUserRepo chatUserRepo;
-
-	@Autowired
-	private RestService restService;
-
-	@Autowired
-	private RegisterService registerService;
 
 	public Response<OtpResponseDto> requestOtp(String mobileNumber) {
 
@@ -66,8 +59,7 @@ public class OtpService {
 
 	public Response<VerifyFCMResponse> verifyFCM(VerifyFCMDto fcmDto) {
 		Response<VerifyFCMResponse> response = new Response<>();
-		FCMRequestDto requestDto = new FCMRequestDto();
-
+		// idToken comes from the HTTP Header
 		/*
 		 * String fcm = restService.verifyFCMToken(requestDto); if (fcm != null && fcm
 		 * != "200" ) { throw new BadDataException(GatewayConstants.USER_BLOCK); }
