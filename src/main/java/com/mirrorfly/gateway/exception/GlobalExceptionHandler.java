@@ -298,7 +298,7 @@ public class GlobalExceptionHandler {
 	 * @return response status and message
 	 */
 	@ExceptionHandler(value = ValidationException.class)
-	public Response<String> validationException(ConstraintViolationException ex) {
+	public Response<String> validationException(ValidationException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
@@ -311,7 +311,7 @@ public class GlobalExceptionHandler {
 	 * @return response status and message
 	 */
 	@ExceptionHandler(value = UserUnAuthorizedException.class)
-	public Response<String> userUnAuthorizedException(NoDataFoundException ex) {
+	public Response<String> userUnAuthorizedException(UserUnAuthorizedException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.UNAUTHORIZED.value(), ex.getMessage());
 	}
