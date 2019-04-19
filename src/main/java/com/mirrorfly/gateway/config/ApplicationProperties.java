@@ -3,6 +3,7 @@ package com.mirrorfly.gateway.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.data.redis.connection.RedisPassword;
 
 @Configuration
 public class ApplicationProperties {
@@ -32,6 +33,14 @@ public class ApplicationProperties {
 
 	public String getFcmURL() {
 		return env.getProperty("fcm_url");
+	}
+
+	public String getRedisHost() {
+		return env.getProperty("spring.redis.host");
+	}
+
+	public String getRedisPort() {
+		return env.getProperty("spring.redis.port");
 	}
 
 }
