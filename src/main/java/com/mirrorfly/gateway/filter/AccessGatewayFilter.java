@@ -9,6 +9,7 @@ import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
@@ -51,6 +52,7 @@ public class AccessGatewayFilter implements GlobalFilter {
 		Boolean isCache = false;
 		String header = null;
 		if (exchange.getRequest().getPath().toString().contains("media")
+				&& exchange.getRequest().getMethod().matches(HttpMethod.GET.toString())
 				&& exchange.getRequest().getQueryParams() != null
 				&& exchange.getRequest().getQueryParams().containsKey("mf")) {
 			List<String> headers = exchange.getRequest().getQueryParams().get("mf");
