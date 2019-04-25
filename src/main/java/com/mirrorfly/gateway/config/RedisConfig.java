@@ -20,7 +20,7 @@ public class RedisConfig {
 		RedisStandaloneConfiguration redisConf = new RedisStandaloneConfiguration();
 		redisConf.setHostName(applicationProperties.getRedisHost());
 		redisConf.setPort(Integer.parseInt(applicationProperties.getRedisPort()));
-		return new LettuceConnectionFactory();
+		return new LettuceConnectionFactory(redisConf);
 	}
 
 	/*

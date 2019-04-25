@@ -3,7 +3,6 @@ package com.mirrorfly.gateway.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.data.redis.connection.RedisPassword;
 
 @Configuration
 public class ApplicationProperties {
