@@ -18,4 +18,4 @@ ARG JAR_FILE=target/gatewayservice.jar
 ADD ${JAR_FILE} gatewayservice.jar
 
 # Run the jar file 
-ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/gatewayservice.jar"]
+ENTRYPOINT exec java $JAVA_OPTS -jar /gatewayservice.jar

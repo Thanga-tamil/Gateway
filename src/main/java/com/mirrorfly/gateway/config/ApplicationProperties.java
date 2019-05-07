@@ -34,4 +34,12 @@ public class ApplicationProperties {
 		return env.getProperty("fcm_url");
 	}
 
+	public String getRedisHost() {
+		return env.getProperty("spring.redis.host");
+	}
+
+	public String getRedisPort() {
+		return env.getProperty("spring.redis.port");
+	}
+
 }

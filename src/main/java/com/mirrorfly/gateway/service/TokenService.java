@@ -1,8 +1,10 @@
 package com.mirrorfly.gateway.service;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
@@ -12,11 +14,33 @@ import com.mirrorfly.gateway.token.GenerateToken;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class TokenService {
 
 	@Autowired
 	private TokenRepo tokenRepo;
+
+	@Autowired
+	private StringRedisTemplate stringRedisTemplate;
+
+	/**
+	 * A Function to Validate token information with header and expire time limit.
+	 * 
+	 * 
+	 * @param header as Bearer in JSON input type
+	 */
+
+	public String validateToken(String token) {
+		String u = stringRedisTemplate.opsForValue().get(token);
+		return u != null ? u : getTokenFromDB(token);
+	}
+
+	public void delete(String token) {
+		stringRedisTemplate.delete(token);
+	}
 
 	public String getToken(String username, String devicetype, String clientIp) {
 		TokenDetail tokenDetail = new TokenDetail();
@@ -27,22 +51,21 @@ public class TokenService {
 		tokenDetail.setToken(GenerateToken.generateToken(tokenDetail));
 		tokenDetail.setUsername(username);
 		tokenRepo.save(tokenDetail);
+
+		saveToRedisChatToken(tokenDetail.getToken(), username);
 		return tokenDetail.getToken();
 
 	}
 
-	/**
-	 * A Function to Validate token information with header and expire time limit.
-	 * 
-	 * 
-	 * @param header as Bearer in JSON input type
-	 */
+	private void saveToRedisChatToken(String token, String username) {
+		stringRedisTemplate.opsForValue().set(token, username, 1, TimeUnit.HOURS);
+	}
 
-	public String validateToken(String header) {
+	private String getTokenFromDB(String header) {
+		log.info("token from Mysql", header);
 		TokenDetail token = tokenRepo.findByToken(header);
 		if (token == null)
 			return null;
-
 		if (LocalDateTime.now().isAfter(token.getTokenExpiryTime())) {
 			tokenRepo.delete(token);
 			return null;
