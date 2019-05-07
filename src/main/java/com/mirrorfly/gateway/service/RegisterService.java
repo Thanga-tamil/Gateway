@@ -10,12 +10,11 @@ import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.ChatUser;
-import com.mirrorfly.gateway.model.Settings;
 import com.mirrorfly.gateway.model.Users;
+import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
-import com.mirrorfly.gateway.repo.OtpRepo;
-import com.mirrorfly.gateway.repo.SettingsRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
@@ -26,10 +25,7 @@ import com.mirrorfly.gateway.util.GatewayUtil;
 public class RegisterService {
 
 	@Autowired
-	private SettingsRepo settingsRepo;
-
-	@Autowired
-	private OtpRepo otpRepo;
+	private ChatSettingsRepo settingsRepo;
 
 	@Autowired
 	private TokenService tokenService;
@@ -44,7 +40,7 @@ public class RegisterService {
 	private UserRepo userRepo;
 
 	public Response<RegisterInfoDto> getRegisterInfo() {
-		Settings settings = settingsRepo.findAll().get(0);
+		ChatSettings settings = settingsRepo.findAll().get(0);
 		RegisterInfoDto info = new RegisterInfoDto();
 		info.setDomain(settings.getDomain());
 		info.setMailLogin(settings.getMailLogin());

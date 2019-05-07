@@ -57,8 +57,8 @@ public class LoginService {
 		if (username != null) {
 			Optional<ChatUser> chatUser = chatUserRepo.findById(username);
 			if (chatUser.isPresent()) {
-				chatUser.get().setDeviceToken(null);
-				chatUser.get().setDevicetype(null);
+				chatUser.get().setDeviceToken("");
+				chatUser.get().setDevicetype("");
 				chatUserRepo.save(chatUser.get());
 			}
 		}
