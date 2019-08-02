@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.mirrorfly.gateway.response.Response;
 
 /**
@@ -46,6 +47,12 @@ public class GlobalExceptionHandler {
 	public Response<String> httpMediaTypeNotAcceptableException(final HttpMediaTypeNotAcceptableException e) {
 		LOGGER.error(e.getLocalizedMessage());
 		return setStatusAndMessage(HttpStatus.NOT_FOUND.value(), e.getMessage());
+	}
+
+	@ExceptionHandler(MismatchedInputException.class)
+	public Response<String> mismatchedInputException(final MismatchedInputException e) {
+		LOGGER.error(e.getLocalizedMessage());
+		return setStatusAndMessage(HttpStatus.BAD_REQUEST.value(), e.getMessage());
 	}
 
 	@ExceptionHandler(NotFoundException.class)
