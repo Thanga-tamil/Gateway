@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import com.mirrorfly.gateway.model.ChatSettings;
 
 @Repository
-public interface ChatSettingsRepo extends JpaRepository<ChatSettings, Long> {
+public interface ChatSettingsRepo extends JpaRepository<ChatSettings, Integer> {
 
 }
