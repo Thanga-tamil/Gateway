@@ -41,5 +41,11 @@ public class ApplicationProperties {
 	public String getRedisPort() {
 		return env.getProperty("spring.redis.port");
 	}
+	
+	public String getApiBaseUrl() {
+		return env.getProperty("api_base_url");
+	}
+	
+	
 
 }

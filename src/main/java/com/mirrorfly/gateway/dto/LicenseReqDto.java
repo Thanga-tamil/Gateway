@@ -5,4 +5,6 @@ import lombok.Data;
 public class LicenseReqDto {
 
 	private String activationKey;
+	
+	private String SDK;
 }
