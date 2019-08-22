@@ -130,6 +130,12 @@ public class GatewayConstants {
 	public static final String BAD_CREDENTIALS_THREE = "Entered credentials are not match, Account has been locked";
 
 	public static final String USER_NAME_NOT_AVAIL = "Username Not Available";
+	
+	public static final String LICENSE_NOT_AVAIL = "License Not Available";
+	
+	public static final String LICENSE_IN_ACTIVE = "License is InActive";
+	
+	public static final String LICENSE_EXPIRED = "License has been Expired. Please contact the provider";
 
 	public static final String USER_IN_ACTIVE = "User is InActive please contact admin";
 

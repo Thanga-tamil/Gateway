@@ -25,7 +25,7 @@ public class ChatSettings implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
-	private Long id;
+	private Integer id;
 
 	@Column(name = "domain")
 	private String domain;
@@ -34,19 +34,19 @@ public class ChatSettings implements Serializable {
 	private String adminUser;
 
 	@Column(name = "videoLimit")
-	private String videoLimit;
+	private Integer videoLimit;
 
 	@Column(name = "mail_login")
 	private String mailLogin;
 
 	@Column(name = "audio_limit")
-	private String audioLimit;
+	private Integer audioLimit;
 
 	@Column(name = "recall_time")
-	private String recallTime;
+	private Integer recallTime;
 
 	@Column(name = "private_time")
-	private String privateTime;
+	private Integer privateTime;
 
 	@Column(name = "status")
 	private String status;
@@ -56,6 +56,24 @@ public class ChatSettings implements Serializable {
 
 	@Column(name = "feedback_to")
 	private String feedbackTo;
+
+	@Column(name = "xmpp_server")
+	private String xmppDomain;
+
+	@Column(name = "xmpp_host")
+	private String xmppHost;
+
+	@Column(name = "signal_server")
+	private String signalServerDomain;
+
+	@Column(name = "xmpp_port")
+	private Integer xmppPort;
+
+	@Column(name = "google_translate")
+	private String googleTranslate;
+
+	@Column(name = "notification_help")
+	private String notificationHelpUrl;
 
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
