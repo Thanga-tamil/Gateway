@@ -8,6 +8,6 @@ import com.mirrorfly.gateway.model.License;
 @Repository
 public interface LicenseRepo extends JpaRepository<License,Long> {
 
-	License findByActivationKey(@Param("activationKey") String activationKey);
+	License findByActivationKeyAndSdk(@Param("activationKey") String activationKey,@Param("sdk") String sdk);
 
 }

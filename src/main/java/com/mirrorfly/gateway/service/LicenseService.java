@@ -9,6 +9,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.dto.LicenseAVResDto;
+import com.mirrorfly.gateway.dto.LicenseChatResDto;
 import com.mirrorfly.gateway.dto.LicenseReqDto;
 import com.mirrorfly.gateway.dto.LicenseResDto;
 import com.mirrorfly.gateway.dto.TurnDto;
@@ -20,6 +23,7 @@ import com.mirrorfly.gateway.repo.ChatServerConfigRepo;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.LicenseRepo;
 import com.mirrorfly.gateway.response.Response;
+import com.mirrorfly.gateway.util.EnumSDKType;
 import com.mirrorfly.gateway.util.GatewayConstants;
 
 @Service
@@ -33,33 +37,50 @@ public class LicenseService {
 	
 	@Autowired
 	private ChatServerConfigRepo chatServerConfigRepo;
+	
+	@Autowired
+	private ApplicationProperties applicationProperties;
 
 	public Response<LicenseResDto> getLicense(LicenseReqDto licenseReq) {
-		License license = licenseRepo.findByActivationKey(licenseReq.getActivationKey());
+		
+		Response<LicenseResDto> response = new Response<>();
+		String SDKType = licenseReq.getSDK();
+		ChatSettings settings = getConfigService();
+		
+		License license = licenseRepo.findByActivationKeyAndSdk(licenseReq.getActivationKey(),SDKType);
 		if (license == null) {
 			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
 		}
 		if (license.getIsActive().equals(1)) {
 			throw new BadDataException(GatewayConstants.LICENSE_IN_ACTIVE);
 		}
+		
 		LocalDate curentDate = LocalDate.now();
 		int days = license.getExpireDate().compareTo(curentDate);
+		
 		if(days < 0) {
 			throw new BadDataException(GatewayConstants.LICENSE_EXPIRED);
 		}
 		
-		ChatSettings settings = getConfigService();
-		LicenseResDto info = new LicenseResDto(); 
-		info.setSignalServer(settings.getSignalServerDomain());
-		getStunAndTurnServers(settings, info);
-		Response<LicenseResDto> response = new Response<>();
-		response.setData(info);
+		if(EnumSDKType.iOSChat.getSdkType().equals(SDKType) || EnumSDKType.AndroidChat.getSdkType().equals(SDKType) ) {
+			LicenseChatResDto info = new LicenseChatResDto(); 
+			info.setXmppDomain(settings.getXmppDomain());
+			info.setXmppPort(settings.getXmppPort());
+			info.setBaseUrl(applicationProperties.getApiBaseUrl());
+			response.setData(info);
+		}else if(EnumSDKType.iOSAVCalls.getSdkType().equals(SDKType) || EnumSDKType.AndroidAVCalls.getSdkType().equals(SDKType)) {
+			LicenseAVResDto info = new LicenseAVResDto();
+			info.setSignalServer(settings.getSignalServerDomain());
+			getStunAndTurnServers(settings, info);
+			response.setData(info);
+		}
+		
 		response.setStatus(HttpServletResponse.SC_OK);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
 	}
 	
-	private void getStunAndTurnServers(ChatSettings settings, LicenseResDto info) {
+	private void getStunAndTurnServers(ChatSettings settings, LicenseAVResDto info) {
 		List<ChatServerConfig> chatServerConfig = chatServerConfigRepo.findByChatConfigId(settings.getId());
 		if (chatServerConfig != null && !chatServerConfig.isEmpty()) {
 			List<String> stuns = new ArrayList<>();

@@ -135,7 +135,7 @@ public class GatewayConstants {
 	
 	public static final String LICENSE_IN_ACTIVE = "License is InActive";
 	
-	public static final String LICENSE_EXPIRED = "License is Expired";
+	public static final String LICENSE_EXPIRED = "License has been Expired. Please contact the provider";
 
 	public static final String USER_IN_ACTIVE = "User is InActive please contact admin";
 
