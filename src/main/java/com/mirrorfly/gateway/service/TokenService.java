@@ -37,16 +37,16 @@ public class TokenService {
 		try {
 			String u = stringRedisTemplate.opsForValue().get(token);
 			return u != null ? u : getTokenFromDB(token);
-		}catch(Exception e) {
-			log.error("Error in redis connection ", e);
+		} catch (Exception e) {
+			log.error("Error in redis connection {}", e.getMessage());
 			return getTokenFromDB(token);
-		}		
+		}
 	}
 
 	public void delete(String token) {
 		try {
 			stringRedisTemplate.delete(token);
-		}catch(Exception e) {
+		} catch (Exception e) {
 			log.error("Error in redis connection ", e);
 		}
 	}
@@ -60,22 +60,17 @@ public class TokenService {
 		tokenDetail.setToken(GenerateToken.generateToken(tokenDetail));
 		tokenDetail.setUsername(username);
 		tokenRepo.save(tokenDetail);
-
-		saveToRedisChatToken(tokenDetail.getToken(), username);
+		try {
+			stringRedisTemplate.opsForValue().set(tokenDetail.getToken(), username, 1, TimeUnit.HOURS);
+		} catch (Exception e) {
+			log.error("Error in redis connection ", e);
+			return tokenDetail.getToken();
+		}
 		return tokenDetail.getToken();
 
 	}
 
-	private void saveToRedisChatToken(String token, String username) {
-		try {
-			stringRedisTemplate.opsForValue().set(token, username, 1, TimeUnit.HOURS);
-		}catch(Exception e) {
-			log.error("Error in redis connection ", e);
-		}
-	}
-
 	private String getTokenFromDB(String header) {
-		log.info("token from Mysql", header);
 		TokenDetail token = tokenRepo.findByToken(header);
 		if (token == null)
 			return null;
