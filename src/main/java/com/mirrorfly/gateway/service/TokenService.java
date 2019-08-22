@@ -34,12 +34,21 @@ public class TokenService {
 	 */
 
 	public String validateToken(String token) {
-		String u = stringRedisTemplate.opsForValue().get(token);
-		return u != null ? u : getTokenFromDB(token);
+		try {
+			String u = stringRedisTemplate.opsForValue().get(token);
+			return u != null ? u : getTokenFromDB(token);
+		}catch(Exception e) {
+			log.error("Error in redis connection ", e);
+			return getTokenFromDB(token);
+		}		
 	}
 
 	public void delete(String token) {
-		stringRedisTemplate.delete(token);
+		try {
+			stringRedisTemplate.delete(token);
+		}catch(Exception e) {
+			log.error("Error in redis connection ", e);
+		}
 	}
 
 	public String getToken(String username, String devicetype, String clientIp) {
@@ -58,7 +67,11 @@ public class TokenService {
 	}
 
 	private void saveToRedisChatToken(String token, String username) {
-		stringRedisTemplate.opsForValue().set(token, username, 1, TimeUnit.HOURS);
+		try {
+			stringRedisTemplate.opsForValue().set(token, username, 1, TimeUnit.HOURS);
+		}catch(Exception e) {
+			log.error("Error in redis connection ", e);
+		}
 	}
 
 	private String getTokenFromDB(String header) {
