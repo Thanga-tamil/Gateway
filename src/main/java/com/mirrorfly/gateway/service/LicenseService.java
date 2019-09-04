@@ -102,7 +102,7 @@ public class LicenseService {
 	}
 
 	public ChatSettings getConfigService() {
-		return chatSettingsRepo.findAll().get(0);
+		return chatSettingsRepo.findAll().get(1);
 	}
 
 }
