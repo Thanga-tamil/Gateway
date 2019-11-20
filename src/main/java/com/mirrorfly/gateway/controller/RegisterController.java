@@ -1,6 +1,7 @@
 package com.mirrorfly.gateway.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -44,7 +45,7 @@ public class RegisterController {
 	 */
 
 	@PostMapping
-	public @ResponseBody Response<String> registerNewUser(@RequestBody RegisterDto registerDto) {
+	public @ResponseBody Response<String> registerNewUser(@Validated @RequestBody RegisterDto registerDto) {
 		return registerService.registerNewUser(registerDto);
 	}
 

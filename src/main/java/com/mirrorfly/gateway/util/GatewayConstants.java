@@ -46,10 +46,14 @@ public class GatewayConstants {
 	public static final String LOGIN_SUCCESS = "Logged In Successfully";
 
 	public static final String OTP_SUCCESS = "Otp Sent Successfully";
+	
+	public static final String OTP_NOT_VALID = "Otp Not Valid";
 
-	public static final String MOBILE_NO_VALID = "Mobile Not Valid";
+	public static final String MOBILE_NOT_VALID = "Mobile Number Not Valid";
 
-	public static final String MOBILE_NO_AVAIL = "Mobile Not Available";
+	public static final String MOBILE_NO_AVAIL = "Mobile Number Not Available";
+	
+	public static final String MOBILE_REQUIRED = "Mobile Number is Required";
 
 	public static final String USER_BLOCK = "User Blocked,Please contact Admin";
 

@@ -33,8 +33,11 @@ public class ChatUser implements Serializable {
 	@Column(name = "status_msg")
 	private String statusMsg;
 
-	@Column(name = "device_token")
-	private String deviceToken;
+	@Column(name = "call_device_token")
+	private String callDeviceToken;
+	
+	@Column(name = "message_device_token")
+	private String messageDeviceToken;
 
 	@Column(name = "country_code")
 	private String countryCode;
@@ -46,7 +49,7 @@ public class ChatUser implements Serializable {
 	private String resource;
 
 	@Column(name = "mode")
-	private String mode;
+	private Integer mode;
 
 	@Column(name = "notification")
 	private String notification;

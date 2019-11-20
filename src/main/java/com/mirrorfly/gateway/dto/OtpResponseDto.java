@@ -7,7 +7,9 @@ public class OtpResponseDto {
 
 	private String otp;
 
-	private String deviceToken = "";
+	private String callDeviceToken = "";
+	
+	private String messageDeviceToken = "";
 
 	private Integer isUpdated = 0;
 
