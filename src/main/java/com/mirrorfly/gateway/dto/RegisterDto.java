@@ -21,8 +21,13 @@ public class RegisterDto {
 
 	private Integer mode;
 
-	private String callDeviceToken;
-	
-	private String messageDeviceToken;
+	/*
+	 * private String callDeviceToken;
+	 * 
+	 * private String messageDeviceToken;
+	 */
+	private String apnsDeviceToken;
+
+	private String voipDeviceToken;
 
 }

@@ -76,8 +76,14 @@ public class RegisterService {
 			chatUser.setMobileNumber(registerDto.getMobileNumber());
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 		}
-		chatUser.setCallDeviceToken(registerDto.getCallDeviceToken());
-		chatUser.setMessageDeviceToken(registerDto.getMessageDeviceToken());
+		/*
+		 * chatUser.setCallDeviceToken(registerDto.getCallDeviceToken());
+		 * chatUser.setMessageDeviceToken(registerDto.getMessageDeviceToken());
+		 */
+
+		chatUser.setApnsDeviceToken(registerDto.getApnsDeviceToken());
+		chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+
 		chatUser.setDevicetype(registerDto.getDeviceType());
 		chatUser.setMode(registerDto.getMode());
 		chatUserRepo.save(chatUser);
