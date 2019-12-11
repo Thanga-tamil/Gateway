@@ -38,14 +38,12 @@ public class ChatUser implements Serializable {
 	 * 
 	 * @Column(name = "message_device_token") private String messageDeviceToken;
 	 */
-	
-	
+
 	@Column(name = "apns_device_token")
 	private String apnsDeviceToken;
-	
+
 	@Column(name = "voip_device_token")
 	private String voipDeviceToken;
-
 
 	@Column(name = "country_code")
 	private String countryCode;
@@ -72,7 +70,7 @@ public class ChatUser implements Serializable {
 	private String status;
 
 	@Column(name = "is_block")
-	private Integer isBlock=0;
+	private Integer isBlock = 0;
 
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
