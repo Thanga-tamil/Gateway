@@ -33,7 +33,6 @@ public class AccessGatewayFilter implements GlobalFilter {
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-		log.debug("check token and user permission....");
 		ServerHttpRequest request = exchange.getRequest();
 		if (exchange.getRequest().getMethod().equals("OPTIONS")) {
 			exchange.getResponse().setStatusCode(HttpStatus.OK);
@@ -47,8 +46,6 @@ public class AccessGatewayFilter implements GlobalFilter {
 			ServerHttpRequest.Builder builder = request.mutate();
 			return chain.filter(exchange.mutate().request(builder.build()).build());
 		}
-		String origin = exchange.getRequest().getHeaders().getFirst(HttpHeaders.ORIGIN);
-		log.info("Origin {} ", origin);
 		Boolean isCache = false;
 		String header = null;
 		if (exchange.getRequest().getPath().toString().contains("media")
@@ -63,12 +60,10 @@ public class AccessGatewayFilter implements GlobalFilter {
 		if (!isCache)
 			header = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 		if (header == null || header.isEmpty()) {
-			log.debug("Header Not Available");
 			return unauthorized(exchange);
 		} else {
 			String username = tokenService.validateToken(header);
 			if (username == null) {
-				log.debug("unauthorized");
 				return unauthorized(exchange);
 			}
 			ServerHttpRequest.Builder builder = request.mutate();

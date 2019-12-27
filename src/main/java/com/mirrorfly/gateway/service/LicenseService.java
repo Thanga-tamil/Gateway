@@ -28,58 +28,61 @@ import com.mirrorfly.gateway.util.GatewayConstants;
 
 @Service
 public class LicenseService {
-	
+
 	@Autowired
 	private LicenseRepo licenseRepo;
-	
+
 	@Autowired
 	private ChatSettingsRepo chatSettingsRepo;
-	
+
 	@Autowired
 	private ChatServerConfigRepo chatServerConfigRepo;
-	
+
 	@Autowired
 	private ApplicationProperties applicationProperties;
 
 	public Response<LicenseResDto> getLicense(LicenseReqDto licenseReq) {
-		
+
 		Response<LicenseResDto> response = new Response<>();
 		String SDKType = licenseReq.getSDK();
 		ChatSettings settings = getConfigService();
-		
-		License license = licenseRepo.findByActivationKeyAndSdk(licenseReq.getActivationKey(),SDKType);
+
+		License license = licenseRepo.findByActivationKeyAndSdk(licenseReq.getActivationKey(), SDKType);
 		if (license == null) {
 			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
 		}
 		if (license.getIsActive().equals(1)) {
 			throw new BadDataException(GatewayConstants.LICENSE_IN_ACTIVE);
 		}
-		
+
 		LocalDate curentDate = LocalDate.now();
 		int days = license.getExpireDate().compareTo(curentDate);
-		
-		if(days < 0) {
+
+		if (days < 0) {
 			throw new BadDataException(GatewayConstants.LICENSE_EXPIRED);
 		}
-		
-		if(EnumSDKType.iOSChat.getSdkType().equals(SDKType) || EnumSDKType.AndroidChat.getSdkType().equals(SDKType) ) {
-			LicenseChatResDto info = new LicenseChatResDto(); 
+
+		if (EnumSDKType.iOSChat.getSdkType().equals(SDKType) || EnumSDKType.AndroidChat.getSdkType().equals(SDKType)
+				|| EnumSDKType.WebChat.getSdkType().equals(SDKType)) {
+			LicenseChatResDto info = new LicenseChatResDto();
 			info.setXmppDomain(settings.getXmppDomain());
 			info.setXmppPort(settings.getXmppPort());
 			info.setBaseUrl(applicationProperties.getApiBaseUrl());
 			response.setData(info);
-		}else if(EnumSDKType.iOSAVCalls.getSdkType().equals(SDKType) || EnumSDKType.AndroidAVCalls.getSdkType().equals(SDKType)) {
+		} else if (EnumSDKType.iOSAVCalls.getSdkType().equals(SDKType)
+				|| EnumSDKType.AndroidAVCalls.getSdkType().equals(SDKType)
+				|| EnumSDKType.WebAVCalls.getSdkType().equals(SDKType)) {
 			LicenseAVResDto info = new LicenseAVResDto();
 			info.setSignalServer(settings.getSignalServerDomain());
 			getStunAndTurnServers(settings, info);
 			response.setData(info);
 		}
-		
+
 		response.setStatus(HttpServletResponse.SC_OK);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
 	}
-	
+
 	private void getStunAndTurnServers(ChatSettings settings, LicenseAVResDto info) {
 		List<ChatServerConfig> chatServerConfig = chatServerConfigRepo.findByChatConfigId(settings.getId());
 		if (chatServerConfig != null && !chatServerConfig.isEmpty()) {
@@ -97,9 +100,9 @@ public class LicenseService {
 			info.setTurns(dtoList);
 		}
 	}
-	
+
 	public ChatSettings getConfigService() {
-		return chatSettingsRepo.findAll().get(0);
+		return chatSettingsRepo.findAll().get(1);
 	}
 
 }
