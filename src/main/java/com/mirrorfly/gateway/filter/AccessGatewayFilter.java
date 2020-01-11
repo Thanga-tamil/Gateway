@@ -50,6 +50,8 @@ public class AccessGatewayFilter implements GlobalFilter {
 		String origin = exchange.getRequest().getHeaders().getFirst(HttpHeaders.ORIGIN);
 		log.info("Origin {} ", origin);
 		Boolean isCache = false;
+		System.out.println("hiiiii" + exchange.getRequest().getURI());
+
 		String header = null;
 		if (exchange.getRequest().getPath().toString().contains("media")
 				&& exchange.getRequest().getMethod().matches(HttpMethod.GET.toString())
@@ -66,6 +68,7 @@ public class AccessGatewayFilter implements GlobalFilter {
 			log.debug("Header Not Available");
 			return unauthorized(exchange);
 		} else {
+
 			String username = tokenService.validateToken(header);
 			if (username == null) {
 				log.debug("unauthorized");
