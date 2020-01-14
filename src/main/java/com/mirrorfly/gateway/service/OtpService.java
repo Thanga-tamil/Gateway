@@ -46,17 +46,8 @@ public class OtpService {
 		otpRepo.save(otp);
 		OtpResponseDto otpResponseDto = new OtpResponseDto();
 		otpResponseDto.setOtp(otp.getOtp());
-		/*
-		 * if (chatUser != null && chatUser.getCallDeviceToken() != null &&
-		 * chatUser.getMessageDeviceToken() != null) {
-		 * otpResponseDto.setCallDeviceToken(chatUser.getCallDeviceToken());
-		 * otpResponseDto.setMessageDeviceToken(chatUser.getMessageDeviceToken());
-		 * otpResponseDto.setIsUpdated(1); }
-		 */
-		
-		if (chatUser != null && chatUser.getApnsDeviceToken() != null && chatUser.getVoipDeviceToken()!= null) {
-			otpResponseDto.setApnsDeviceToken(chatUser.getApnsDeviceToken());
-			otpResponseDto.setVoipDeviceToken(chatUser.getVoipDeviceToken());
+		if (chatUser != null && chatUser.getDeviceToken() != null) {
+			otpResponseDto.setDeviceToken(chatUser.getDeviceToken());
 			otpResponseDto.setIsUpdated(1);
 		}
 		Response<OtpResponseDto> response = new Response<>();

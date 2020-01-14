@@ -35,6 +35,12 @@ public class AdminUser {
 
 	@Column(name = "image")
 	private String image;
+	
+	@Column(name = "hashed_password")
+	private String hashedPassword;
+	
+	@Column(name = "salt_password")
+	private String saltPassword;
 
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;

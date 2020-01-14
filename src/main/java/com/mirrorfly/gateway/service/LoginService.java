@@ -1,5 +1,6 @@
 package com.mirrorfly.gateway.service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.mirrorfly.gateway.dto.AdminLoginDto;
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
 import com.mirrorfly.gateway.dto.LoginDto;
+import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.AdminUser;
 import com.mirrorfly.gateway.model.ChatUser;
@@ -67,8 +69,7 @@ public class LoginService {
 			Optional<ChatUser> chatUser = chatUserRepo.findById(username);
 			if (chatUser.isPresent()) {
 
-				chatUser.get().setApnsDeviceToken("");
-				chatUser.get().setVoipDeviceToken("");
+				chatUser.get().setDeviceToken("");
 				chatUser.get().setDevicetype("");
 				chatUserRepo.save(chatUser.get());
 			}
@@ -80,31 +81,29 @@ public class LoginService {
 	}
 
 	public Response<LoginDetailsDto> adminLogin(AdminLoginDto login) {
-		if (login.getUsername() == null && login.getEmailId() == null)
-			throw new BadDataException("Username or Emaild id doesnot exist");
-		AdminUser mail = null;
+		if (login.getUsername() == null)
+			throw new BadDataException("Please Enter Valid Username");
+
+		AdminUser adminUser = null;
 		if (login.getUsername() != null) {
-			AdminUser adminUser = adminUserRepo.findByUsername(login.getUsername());
+			adminUser = adminUserRepo.findByUsername(login.getUsername());
+			if (adminUser == null)
+				adminUser = adminUserRepo.findByEmailId(login.getUsername());
+
 			if (null == adminUser) {
 				throw new BadDataException(GatewayConstants.USER_NAME_NOT_AVAIL);
 			}
-			if (!adminUser.getPassword().equals(login.getPassword())) {
-				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
-			}
-		} else {
-			mail = adminUserRepo.findByEmailId(login.getEmailId());
 
-			if (null == mail) {
-				throw new BadDataException(GatewayConstants.EMAILID_NOT_VALID);
-			}
-			if (!mail.getPassword().equals(login.getPassword())) {
-				throw new BadDataException(GatewayConstants.PASS_NOT_VALID);
-			}
+			boolean validPassword = PasswordEncryptionService.verifyPassword(login.getPassword(), adminUser.getHashedPassword(),
+					adminUser.getSaltPassword());
+
+			if (!validPassword)
+				throw new BadDataException(GatewayConstants.INVALID_CREDENTAILS);
+
 		}
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
-		loginDetails.setToken(login.getUsername() != null ? tokenService.getToken(login.getUsername(), "", "")
-				: tokenService.getToken(mail.getUsername(), "", ""));
+		loginDetails.setToken(tokenService.getToken(adminUser.getUsername(), "", ""));
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
@@ -127,6 +126,49 @@ public class LoginService {
 			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
 			response.setMessage(GatewayConstants.EMAIL_SENT_FAILED);
 		}
+		return response;
+	}
+
+	public Response<String> resetPassword(PasswordDto passwordDto) {
+		AdminUser mail = adminUserRepo.findByEmailId(passwordDto.getEmailId());
+
+		if (mail == null)
+			throw new BadDataException("Enter the Valid Email Address");
+
+		if (passwordDto.getNewPassword() == null || passwordDto.getNewPassword().isEmpty())
+			throw new BadDataException("Please Enter the New Password");
+
+		if (passwordDto.getConfirmPassword() == null || passwordDto.getConfirmPassword().isEmpty())
+			throw new BadDataException("Please Enter the Confirm Password");
+
+		if (!passwordDto.getNewPassword().equalsIgnoreCase(passwordDto.getConfirmPassword()))
+			throw new BadDataException(GatewayConstants.PASS_CONFIRMATION);
+
+		boolean validPasswordPattern = PasswordEncryptionService.checkPasswordPattern(passwordDto.getNewPassword());
+
+		if (!validPasswordPattern)
+			throw new BadDataException(GatewayConstants.PASWORD_PATTERN_MISMATCH);
+
+		/*** Password Hashing ***/
+
+		Optional<String> saltValue = PasswordEncryptionService.generateSalt(32);
+		Optional<String> passwordValue = PasswordEncryptionService.hashPassword(passwordDto.getNewPassword(),
+				saltValue.get());
+
+		String hashPassword = null;
+		if (passwordValue.isPresent())
+			hashPassword = passwordValue.get();
+
+		/*** End ***/
+
+		mail.setHashedPassword(hashPassword);
+		mail.setSaltPassword(saltValue.get());
+		mail.setUpdatedAt(LocalDateTime.now());
+		adminUserRepo.save(mail);
+
+		Response<String> response = new Response<>();
+		response.setStatus(HttpStatus.OK.value());
+		response.setMessage(GatewayConstants.PASS_CONFIRMATION_SUCCESS);
 		return response;
 	}
 

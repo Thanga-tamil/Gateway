@@ -34,9 +34,6 @@ public class MailingService {
 		this.templates = templates;
 	}
 
-	@Autowired
-	private RestTemplate restTemplate;
-
 	public boolean sendForgotPasswordMail(String toEmail) {
 		String subject = "Forgot Password";
 		String body = "";
