@@ -1,7 +1,5 @@
 package com.mirrorfly.gateway.repo;
 
-import java.util.List;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -30,7 +28,7 @@ public interface AdminUserRepo extends JpaRepository<AdminUser, String> {
 	 * username);
 	 */
 
-	@Query("Select u from AdminUser u where u.username=:username ")
+	@Query("Select u from AdminUser u where u.username=:username and u.isDeleted=0 ")
 	public AdminUser findByUsername(@Param(value = "username") String username);
 	
 	@Query("Select u from AdminUser u where u.emailId=:emailId ")

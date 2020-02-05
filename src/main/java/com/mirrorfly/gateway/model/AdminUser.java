@@ -35,12 +35,15 @@ public class AdminUser {
 
 	@Column(name = "image")
 	private String image;
-	
+
 	@Column(name = "hashed_password")
 	private String hashedPassword;
-	
+
 	@Column(name = "salt_password")
 	private String saltPassword;
+
+	@Column(name = "role_id")
+	private Integer roleId;
 
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
@@ -48,10 +51,7 @@ public class AdminUser {
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
 
-	/*
-	 * @ManyToOne
-	 * 
-	 * @JoinColumn(name = "id") private UserRoles userRole;
-	 */
+	@Column(name = "is_deleted")
+	private Integer isDeleted;
 
 }

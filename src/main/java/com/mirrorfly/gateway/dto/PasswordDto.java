@@ -7,8 +7,8 @@ import lombok.Data;
 @Data
 public class PasswordDto {
 	
-	@NotNull(message = "EmailId cannot be Empty")
-	private String emailId;
+	@NotNull(message = "currentPassword cannot be Empty")
+	private String currentPassword;
 
 	@NotNull(message = "NewPassword cannot be Empty")
 	private String newPassword;

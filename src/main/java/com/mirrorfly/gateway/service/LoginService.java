@@ -14,10 +14,12 @@ import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.AdminUser;
 import com.mirrorfly.gateway.model.ChatUser;
+import com.mirrorfly.gateway.model.UserRoles;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.repo.AdminUserRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
+import com.mirrorfly.gateway.repo.UserRolesRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.GatewayConstants;
 
@@ -38,6 +40,9 @@ public class LoginService {
 
 	@Autowired
 	private ChatUserRepo chatUserRepo;
+
+	@Autowired
+	private UserRolesRepo userRolesRepo;
 
 	public Response<LoginDetailsDto> login(LoginDto login) {
 		Users users = userRepo.findByUsername(login.getUsername());
@@ -81,10 +86,10 @@ public class LoginService {
 	}
 
 	public Response<LoginDetailsDto> adminLogin(AdminLoginDto login) {
-		if (login.getUsername() == null)
-			throw new BadDataException("Please Enter Valid Username");
+		
 
 		AdminUser adminUser = null;
+		UserRoles role  = null;
 		if (login.getUsername() != null) {
 			adminUser = adminUserRepo.findByUsername(login.getUsername());
 			if (adminUser == null)
@@ -94,15 +99,19 @@ public class LoginService {
 				throw new BadDataException(GatewayConstants.USER_NAME_NOT_AVAIL);
 			}
 
-			boolean validPassword = PasswordEncryptionService.verifyPassword(login.getPassword(), adminUser.getHashedPassword(),
-					adminUser.getSaltPassword());
+			boolean validPassword = PasswordEncryptionService.verifyPassword(login.getPassword(),
+					adminUser.getHashedPassword(), adminUser.getSaltPassword());
 
 			if (!validPassword)
-				throw new BadDataException(GatewayConstants.INVALID_CREDENTAILS);
+				throw new BadDataException(GatewayConstants.PASWORD_PATTERN_MISMATCH);
+
+			role = userRolesRepo.findByRoleId(adminUser.getRoleId());
 
 		}
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
+		loginDetails.setPermission(role.getPermissions());
+		loginDetails.setImage(adminUser.getImage());
 		loginDetails.setToken(tokenService.getToken(adminUser.getUsername(), "", ""));
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
@@ -129,11 +138,12 @@ public class LoginService {
 		return response;
 	}
 
-	public Response<String> resetPassword(PasswordDto passwordDto) {
-		AdminUser mail = adminUserRepo.findByEmailId(passwordDto.getEmailId());
+	public Response<String> resetPassword(String username, PasswordDto passwordDto) {
 
-		if (mail == null)
-			throw new BadDataException("Enter the Valid Email Address");
+		AdminUser adminUser = adminUserRepo.findByUsername(username);
+
+		if (adminUser == null)
+			throw new BadDataException("You can't be able to Reset Password");
 
 		if (passwordDto.getNewPassword() == null || passwordDto.getNewPassword().isEmpty())
 			throw new BadDataException("Please Enter the New Password");
@@ -161,10 +171,10 @@ public class LoginService {
 
 		/*** End ***/
 
-		mail.setHashedPassword(hashPassword);
-		mail.setSaltPassword(saltValue.get());
-		mail.setUpdatedAt(LocalDateTime.now());
-		adminUserRepo.save(mail);
+		adminUser.setHashedPassword(hashPassword);
+		adminUser.setSaltPassword(saltValue.get());
+		adminUser.setUpdatedAt(LocalDateTime.now());
+		adminUserRepo.save(adminUser);
 
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.OK.value());

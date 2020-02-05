@@ -9,13 +9,13 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+
+
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name = "user_roles")
 @Data
-@EqualsAndHashCode(callSuper = false)
 public class UserRoles {
 
 	@Id
@@ -33,13 +33,28 @@ public class UserRoles {
 	private String permission;
 
 	@Column(name = "is_active")
-	private String is_active;
-	
+	private Integer isActive;
+
+	@Column(name = "permissions")
+	private String permissions;
+
+	@Column(name = "created_by")
+	private String createdBy;
+
+	@Column(name = "updated_by")
+	private String updatedBy;
+
+	@Column(name = "is_deletable")
+	private Boolean isDeletable;
+
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
 
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
-	
-	
+
+	/*
+	 * @OneToMany(mappedBy = "UserRoles") private Set<AdminUser> adminUser;
+	 */
+
 }

@@ -126,7 +126,7 @@ public class PasswordEncryptionService {
 			return Optional.of(Base64.getEncoder().encodeToString(securePassword));
 
 		} catch (Exception e) {
-			return Optional.empty();
+			return Optional.empty();	
 
 		} finally {
 			spec.clearPassword();
