@@ -1,3 +1,4 @@
+
 package com.mirrorfly.gateway.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mirrorfly.gateway.dto.AdminLoginDto;
+import com.mirrorfly.gateway.dto.ForgetPasswordDto;
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
 import com.mirrorfly.gateway.dto.LoginDto;
 import com.mirrorfly.gateway.response.Response;
@@ -44,6 +47,25 @@ public class LoginController {
 	 * @param login this has username and password.
 	 * @return success full response login screen with token for authorization.
 	 */
+
+	@PostMapping("/admin/login")
+	public @ResponseBody Response<LoginDetailsDto> admin(@Validated @RequestBody AdminLoginDto login) {
+		return loginService.adminLogin(login);
+	}
+
+	/**
+	 * Function to forgot password through loginService. This function return a
+	 * response stating that logout success or error with error code and error
+	 * message.
+	 *
+	 * @param emailId.
+	 * @return success full response login screen with token for authorization.
+	 */
+
+	@PostMapping("/admin/forgotpassword")
+	public @ResponseBody Response<String> login(@Validated @RequestBody ForgetPasswordDto forgetPasswordDto) {
+		return loginService.createVerification(forgetPasswordDto.getEmailId());
+	}
 
 	@GetMapping("/logout")
 	public @ResponseBody Response<String> logout(@RequestHeader("Authorization") String authorization) {

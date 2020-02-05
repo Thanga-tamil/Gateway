@@ -1,18 +1,25 @@
 package com.mirrorfly.gateway.service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.mirrorfly.gateway.dto.AdminLoginDto;
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
 import com.mirrorfly.gateway.dto.LoginDto;
+import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.model.AdminUser;
 import com.mirrorfly.gateway.model.ChatUser;
+import com.mirrorfly.gateway.model.UserRoles;
 import com.mirrorfly.gateway.model.Users;
+import com.mirrorfly.gateway.repo.AdminUserRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
+import com.mirrorfly.gateway.repo.UserRolesRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.GatewayConstants;
 
@@ -20,13 +27,22 @@ import com.mirrorfly.gateway.util.GatewayConstants;
 public class LoginService {
 
 	@Autowired
+	private AdminUserRepo adminUserRepo;
+
+	@Autowired
 	private TokenService tokenService;
+
+	@Autowired
+	private MailingService mailingService;
 
 	@Autowired
 	private UserRepo userRepo;
 
 	@Autowired
 	private ChatUserRepo chatUserRepo;
+
+	@Autowired
+	private UserRolesRepo userRolesRepo;
 
 	public Response<LoginDetailsDto> login(LoginDto login) {
 		Users users = userRepo.findByUsername(login.getUsername());
@@ -57,6 +73,7 @@ public class LoginService {
 		if (username != null) {
 			Optional<ChatUser> chatUser = chatUserRepo.findById(username);
 			if (chatUser.isPresent()) {
+
 				chatUser.get().setDeviceToken("");
 				chatUser.get().setDevicetype("");
 				chatUserRepo.save(chatUser.get());
@@ -65,6 +82,103 @@ public class LoginService {
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.OK.value());
 		response.setMessage(GatewayConstants.LOG_OUT);
+		return response;
+	}
+
+	public Response<LoginDetailsDto> adminLogin(AdminLoginDto login) {
+		
+
+		AdminUser adminUser = null;
+		UserRoles role  = null;
+		if (login.getUsername() != null) {
+			adminUser = adminUserRepo.findByUsername(login.getUsername());
+			if (adminUser == null)
+				adminUser = adminUserRepo.findByEmailId(login.getUsername());
+
+			if (null == adminUser) {
+				throw new BadDataException(GatewayConstants.USER_NAME_NOT_AVAIL);
+			}
+
+			boolean validPassword = PasswordEncryptionService.verifyPassword(login.getPassword(),
+					adminUser.getHashedPassword(), adminUser.getSaltPassword());
+
+			if (!validPassword)
+				throw new BadDataException(GatewayConstants.PASWORD_PATTERN_MISMATCH);
+
+			role = userRolesRepo.findByRoleId(adminUser.getRoleId());
+
+		}
+		Response<LoginDetailsDto> response = new Response<>();
+		LoginDetailsDto loginDetails = new LoginDetailsDto();
+		loginDetails.setPermission(role.getPermissions());
+		loginDetails.setImage(adminUser.getImage());
+		loginDetails.setToken(tokenService.getToken(adminUser.getUsername(), "", ""));
+		response.setStatus(HttpStatus.OK.value());
+		response.setData(loginDetails);
+		response.setMessage(GatewayConstants.DATA_RETRIEVED);
+		return response;
+	}
+
+	public Response<String> createVerification(String emailId) {
+
+		AdminUser mail = adminUserRepo.findByEmailId(emailId);
+
+		if (mail == null)
+			throw new BadDataException("Enter the Valid Email Address");
+
+		boolean flag = mailingService.sendForgotPasswordMail(emailId);
+		Response<String> response = new Response<>();
+		if (flag) {
+			response.setStatus(HttpStatus.OK.value());
+			response.setMessage(GatewayConstants.EMAIL_SENT_SUCCESSFULLY);
+		} else {
+			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+			response.setMessage(GatewayConstants.EMAIL_SENT_FAILED);
+		}
+		return response;
+	}
+
+	public Response<String> resetPassword(String username, PasswordDto passwordDto) {
+
+		AdminUser adminUser = adminUserRepo.findByUsername(username);
+
+		if (adminUser == null)
+			throw new BadDataException("You can't be able to Reset Password");
+
+		if (passwordDto.getNewPassword() == null || passwordDto.getNewPassword().isEmpty())
+			throw new BadDataException("Please Enter the New Password");
+
+		if (passwordDto.getConfirmPassword() == null || passwordDto.getConfirmPassword().isEmpty())
+			throw new BadDataException("Please Enter the Confirm Password");
+
+		if (!passwordDto.getNewPassword().equalsIgnoreCase(passwordDto.getConfirmPassword()))
+			throw new BadDataException(GatewayConstants.PASS_CONFIRMATION);
+
+		boolean validPasswordPattern = PasswordEncryptionService.checkPasswordPattern(passwordDto.getNewPassword());
+
+		if (!validPasswordPattern)
+			throw new BadDataException(GatewayConstants.PASWORD_PATTERN_MISMATCH);
+
+		/*** Password Hashing ***/
+
+		Optional<String> saltValue = PasswordEncryptionService.generateSalt(32);
+		Optional<String> passwordValue = PasswordEncryptionService.hashPassword(passwordDto.getNewPassword(),
+				saltValue.get());
+
+		String hashPassword = null;
+		if (passwordValue.isPresent())
+			hashPassword = passwordValue.get();
+
+		/*** End ***/
+
+		adminUser.setHashedPassword(hashPassword);
+		adminUser.setSaltPassword(saltValue.get());
+		adminUser.setUpdatedAt(LocalDateTime.now());
+		adminUserRepo.save(adminUser);
+
+		Response<String> response = new Response<>();
+		response.setStatus(HttpStatus.OK.value());
+		response.setMessage(GatewayConstants.PASS_CONFIRMATION_SUCCESS);
 		return response;
 	}
 

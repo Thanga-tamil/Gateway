@@ -1,0 +1,19 @@
+package com.mirrorfly.gateway.dto;
+
+import javax.validation.constraints.NotNull;
+
+import lombok.Data;
+
+@Data
+public class PasswordDto {
+	
+	@NotNull(message = "currentPassword cannot be Empty")
+	private String currentPassword;
+
+	@NotNull(message = "NewPassword cannot be Empty")
+	private String newPassword;
+
+	@NotNull(message = "ConfirmPassword cannot be Empty")
+	private String confirmPassword;
+
+}

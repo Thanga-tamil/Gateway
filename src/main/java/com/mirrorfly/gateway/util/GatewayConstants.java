@@ -47,9 +47,13 @@ public class GatewayConstants {
 
 	public static final String OTP_SUCCESS = "Otp Sent Successfully";
 
-	public static final String MOBILE_NO_VALID = "Mobile Not Valid";
+	public static final String OTP_NOT_VALID = "Otp Not Valid";
 
-	public static final String MOBILE_NO_AVAIL = "Mobile Not Available";
+	public static final String MOBILE_NOT_VALID = "Mobile Number Not Valid";
+
+	public static final String MOBILE_NO_AVAIL = "Mobile Number Not Available";
+
+	public static final String MOBILE_REQUIRED = "Mobile Number is Required";
 
 	public static final String USER_BLOCK = "User Blocked,Please contact Admin";
 
@@ -129,12 +133,12 @@ public class GatewayConstants {
 
 	public static final String BAD_CREDENTIALS_THREE = "Entered credentials are not match, Account has been locked";
 
-	public static final String USER_NAME_NOT_AVAIL = "Username Not Available";
-	
+	public static final String USER_NAME_NOT_AVAIL = "Username or EmailId Not Available";
+
 	public static final String LICENSE_NOT_AVAIL = "License Not Available";
-	
+
 	public static final String LICENSE_IN_ACTIVE = "License is InActive";
-	
+
 	public static final String LICENSE_EXPIRED = "License has been Expired. Please contact the provider";
 
 	public static final String USER_IN_ACTIVE = "User is InActive please contact admin";
@@ -142,8 +146,6 @@ public class GatewayConstants {
 	public static final String ACCOUNT_LOCKED = "Account has been locked, please contact adminstrator";
 
 	public static final String LOGO_UPLOAD_SUCCESS = "Logo uploaded successfully";
-
-	public static final String LOGGED_SUCCESSFULLY = "User logged Successfully";
 
 	public static final String IMAGE = "image";
 
@@ -166,6 +168,20 @@ public class GatewayConstants {
 	public static final String FILE_NOT_AVILABLE = "File Not Available";
 
 	public static final String IV = "ddc0f15cc2c90fca";
+
+	public static final String EMAILID_NOT_VALID = "Enter the Valid Email Address";
+
+	public static final String PASS_NOT_VALID = "Enter the Valid Password";
+
+	public static final String EMAIL_SENT_SUCCESSFULLY = "Email Sent Successfully";
+
+	public static final String EMAIL_SENT_FAILED = "Email Sent Failed";
+
+	public static final String PASWORD_PATTERN_MISMATCH = "Password Pattern Fails(Use 8 or more characters with mix of Cap's letters, Numbers & Symbols)";
+
+	public static final String INVALID_CREDENTAILS = "Incorrect email ID or Password";
+	
+
 
 	private GatewayConstants() {
 	}

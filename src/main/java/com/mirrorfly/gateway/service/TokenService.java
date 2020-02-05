@@ -64,7 +64,7 @@ public class TokenService {
 			stringRedisTemplate.opsForValue().set(tokenDetail.getToken(), username, 1, TimeUnit.HOURS);
 		} catch (Exception e) {
 			log.error("Error in redis connection ", e);
-			return tokenDetail.getToken();
+			return tokenDetail.getToken();	
 		}
 		return tokenDetail.getToken();
 
