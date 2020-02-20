@@ -179,7 +179,7 @@ public class GatewayConstants {
 
 	public static final String PASWORD_PATTERN_MISMATCH = "Password Pattern Fails(Use 8 or more characters with mix of Cap's letters, Numbers & Symbols)";
 
-	public static final String INVALID_CREDENTAILS = "Incorrect email ID or Password";
+	public static final String INVALID_CREDENTAILS = "Invalid Credentials";
 	
 
 
