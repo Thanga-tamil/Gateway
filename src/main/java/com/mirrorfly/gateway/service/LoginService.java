@@ -41,9 +41,6 @@ public class LoginService {
 	@Autowired
 	private ChatUserRepo chatUserRepo;
 
-	@Autowired
-	private UserRolesRepo userRolesRepo;
-
 	public Response<LoginDetailsDto> login(LoginDto login) {
 		Users users = userRepo.findByUsername(login.getUsername());
 		if (users == null) {
@@ -89,7 +86,6 @@ public class LoginService {
 		
 
 		AdminUser adminUser = null;
-		UserRoles role  = null;
 		if (login.getUsername() != null) {
 			adminUser = adminUserRepo.findByUsername(login.getUsername());
 			if (adminUser == null)
@@ -103,14 +99,11 @@ public class LoginService {
 					adminUser.getHashedPassword(), adminUser.getSaltPassword());
 
 			if (!validPassword)
-				throw new BadDataException(GatewayConstants.PASWORD_PATTERN_MISMATCH);
-
-			role = userRolesRepo.findByRoleId(adminUser.getRoleId());
+				throw new BadDataException(GatewayConstants.INVALID_CREDENTAILS);
 
 		}
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
-		loginDetails.setPermission(role.getPermissions());
 		loginDetails.setImage(adminUser.getImage());
 		loginDetails.setToken(tokenService.getToken(adminUser.getUsername(), "", ""));
 		response.setStatus(HttpStatus.OK.value());
