@@ -105,7 +105,7 @@ public class GatewayConstants {
 
 	public static final String PASS_CONFIRMATION = "Confirmation new password are not same";
 
-	public static final String PASS_CONFIRMATION_SUCCESS = "Password has been changed successfully";
+	public static final String PASS_CONFIRMATION_SUCCESS = "Password changed successfully! Login to continue...";
 
 	public static final String ADD = "Add";
 
@@ -173,15 +173,17 @@ public class GatewayConstants {
 
 	public static final String PASS_NOT_VALID = "Enter the Valid Password";
 
-	public static final String EMAIL_SENT_SUCCESSFULLY = "Email Sent Successfully";
+	public static final String EMAIL_SENT_SUCCESSFULLY = "An email has been sent to your email address, please check your inbox";
 
 	public static final String EMAIL_SENT_FAILED = "Email Sent Failed";
 
-	public static final String PASWORD_PATTERN_MISMATCH = "Password Pattern Fails(Use 8 or more characters with mix of Cap's letters, Numbers & Symbols)";
+	public static final String PASWORD_PATTERN_MISMATCH = "Password must be atleast 8 characters with the combination of Alpha+Numeric+Symbol";
 
-	public static final String INVALID_CREDENTAILS = "Invalid Credentials";
+	public static final String INVALID_CREDENTAILS = "Invalid credentials. Enter a valid email or username and password";
 	
-
+	public static final String WRONG_PASWORD = "Wrong password! Try again or click Forgot password to reset it";
+	
+	public static final String EMAILID_NOT_REGISTERED = "Couldn't find your account!";
 
 	private GatewayConstants() {
 	}

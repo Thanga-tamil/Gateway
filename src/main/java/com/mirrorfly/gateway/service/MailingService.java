@@ -11,9 +11,9 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
-import org.springframework.web.client.RestTemplate;
 
 import com.mirrorfly.gateway.model.MailProperties;
 
@@ -28,20 +28,23 @@ public class MailingService {
 	private final MailProperties mailProperties;
 	private final Configuration templates;
 
+	@Value("${s3_bucket_base_url}")
+	private String imageUrl;
+	
 	@Autowired
 	MailingService(MailProperties mailProperties, Configuration templates) {
 		this.mailProperties = mailProperties;
 		this.templates = templates;
 	}
 
-	public boolean sendForgotPasswordMail(String toEmail) {
+	public boolean sendForgotPasswordMail(String toEmail, String userName) {
 		String subject = "Forgot Password";
 		String body = "";
 		try {
 			Template t = templates.getTemplate("forgot-password.ftl");
 			Map<String, String> map = new HashMap<>();
-			map.put("RESET_PASSWORD", "www.google.com");
-
+			map.put("RESET_PASSWORD", mailProperties.getResetpasswordapi() + userName);
+			map.put("IMAGE_BASE_URL", imageUrl);
 			body = FreeMarkerTemplateUtils.processTemplateIntoString(t, map);
 		} catch (Exception e) {
 			log.error(this.getClass().getName() + e.getMessage(), e);
