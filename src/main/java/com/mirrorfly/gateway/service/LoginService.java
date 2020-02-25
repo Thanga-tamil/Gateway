@@ -14,12 +14,10 @@ import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.AdminUser;
 import com.mirrorfly.gateway.model.ChatUser;
-import com.mirrorfly.gateway.model.UserRoles;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.repo.AdminUserRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
-import com.mirrorfly.gateway.repo.UserRolesRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.GatewayConstants;
 
@@ -92,14 +90,14 @@ public class LoginService {
 				adminUser = adminUserRepo.findByEmailId(login.getUsername());
 
 			if (null == adminUser) {
-				throw new BadDataException(GatewayConstants.USER_NAME_NOT_AVAIL);
+				throw new BadDataException(GatewayConstants.INVALID_CREDENTAILS);
 			}
 
 			boolean validPassword = PasswordEncryptionService.verifyPassword(login.getPassword(),
 					adminUser.getHashedPassword(), adminUser.getSaltPassword());
 
 			if (!validPassword)
-				throw new BadDataException(GatewayConstants.INVALID_CREDENTAILS);
+				throw new BadDataException(GatewayConstants.WRONG_PASWORD);
 
 		}
 		Response<LoginDetailsDto> response = new Response<>();
@@ -117,9 +115,9 @@ public class LoginService {
 		AdminUser mail = adminUserRepo.findByEmailId(emailId);
 
 		if (mail == null)
-			throw new BadDataException("Enter the Valid Email Address");
+			throw new BadDataException(GatewayConstants.EMAILID_NOT_REGISTERED);
 
-		boolean flag = mailingService.sendForgotPasswordMail(emailId);
+		boolean flag = mailingService.sendForgotPasswordMail(emailId, mail.getUsername());
 		Response<String> response = new Response<>();
 		if (flag) {
 			response.setStatus(HttpStatus.OK.value());

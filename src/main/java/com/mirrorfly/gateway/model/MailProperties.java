@@ -48,7 +48,7 @@ public class MailProperties {
     private SMTP smtp;
     private String from;
     private String fromName;
-    private String verificationapi;
+    private String resetpasswordapi;
 
     public SMTP getSmtp() {
         return smtp;
@@ -74,11 +74,11 @@ public class MailProperties {
         this.fromName = fromName;
     }
 
-    public String getVerificationapi() {
-        return verificationapi;
+    public String getResetpasswordapi() {
+        return resetpasswordapi;
     }
 
-    public void setVerificationapi(String verificationapi) {
-        this.verificationapi = verificationapi;
+    public void setResetpasswordapi(String resetpasswordapi) {
+        this.resetpasswordapi = resetpasswordapi;
     }
 }

@@ -6,9 +6,6 @@ import lombok.Data;
 
 @Data
 public class PasswordDto {
-	
-	@NotNull(message = "currentPassword cannot be Empty")
-	private String currentPassword;
 
 	@NotNull(message = "NewPassword cannot be Empty")
 	private String newPassword;

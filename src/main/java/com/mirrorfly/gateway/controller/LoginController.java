@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,6 +16,7 @@ import com.mirrorfly.gateway.dto.AdminLoginDto;
 import com.mirrorfly.gateway.dto.ForgetPasswordDto;
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
 import com.mirrorfly.gateway.dto.LoginDto;
+import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.LoginService;
 
@@ -65,6 +67,21 @@ public class LoginController {
 	@PostMapping("/admin/forgotpassword")
 	public @ResponseBody Response<String> login(@Validated @RequestBody ForgetPasswordDto forgetPasswordDto) {
 		return loginService.createVerification(forgetPasswordDto.getEmailId());
+	}
+
+	/**
+	 * Function to reset password through loginService. This function return a
+	 * response stating that reset password or error with error code and error
+	 * message.
+	 * 
+	 * @param userName
+	 * @param passwordDto
+	 * @return success full response login screen with token for authorization.
+	 */
+
+	@GetMapping("/admin/resetpassword")
+	public @ResponseBody Response<String> resetpassword(@RequestParam String userName, PasswordDto passwordDto) {
+		return loginService.resetPassword(userName, passwordDto);
 	}
 
 	@GetMapping("/logout")
