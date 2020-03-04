@@ -180,10 +180,14 @@ public class GatewayConstants {
 	public static final String PASWORD_PATTERN_MISMATCH = "Password must be atleast 8 characters with the combination of Alpha+Numeric+Symbol";
 
 	public static final String INVALID_CREDENTAILS = "Invalid credentials. Enter a valid email or username and password";
-	
+
 	public static final String WRONG_PASWORD = "Wrong password! Try again or click Forgot password to reset it";
-	
+
 	public static final String EMAILID_NOT_REGISTERED = "Couldn't find your account!";
+
+	public static final String STATUS_PENDING = "PENDING";
+
+	public static final String STATUS_EXPIRED = "EXPIRED";
 
 	private GatewayConstants() {
 	}

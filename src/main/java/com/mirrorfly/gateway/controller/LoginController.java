@@ -66,7 +66,7 @@ public class LoginController {
 
 	@PostMapping("/admin/forgotpassword")
 	public @ResponseBody Response<String> login(@Validated @RequestBody ForgetPasswordDto forgetPasswordDto) {
-		return loginService.createVerification(forgetPasswordDto.getEmailId());
+		return loginService.sendForgotPasswordEmail(forgetPasswordDto.getEmailId());
 	}
 
 	/**

@@ -46,6 +46,12 @@ public class ApplicationProperties {
 		return env.getProperty("api_base_url");
 	}
 	
+	public String getMailQueue() {
+		return env.getProperty("api.mail.exchange");
+	}
 	
+	public String getResetPasswordRedirectUrl() {
+		return env.getProperty("reset_password_redirect_url");
+	}
 
 }

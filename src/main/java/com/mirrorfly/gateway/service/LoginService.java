@@ -14,9 +14,12 @@ import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.AdminUser;
 import com.mirrorfly.gateway.model.ChatUser;
+import com.mirrorfly.gateway.model.EmailToken;
 import com.mirrorfly.gateway.model.Users;
+import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.AdminUserRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
+import com.mirrorfly.gateway.repo.EmailTokenRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.GatewayConstants;
@@ -31,13 +34,19 @@ public class LoginService {
 	private TokenService tokenService;
 
 	@Autowired
-	private MailingService mailingService;
+	private QueueService queueService;
 
 	@Autowired
 	private UserRepo userRepo;
 
 	@Autowired
 	private ChatUserRepo chatUserRepo;
+
+	@Autowired
+	private EmailTokenService emailTokenService;
+	
+	@Autowired
+	private EmailTokenRepo emailTokenRepo;
 
 	public Response<LoginDetailsDto> login(LoginDto login) {
 		Users users = userRepo.findByUsername(login.getUsername());
@@ -81,7 +90,6 @@ public class LoginService {
 	}
 
 	public Response<LoginDetailsDto> adminLogin(AdminLoginDto login) {
-		
 
 		AdminUser adminUser = null;
 		if (login.getUsername() != null) {
@@ -110,31 +118,35 @@ public class LoginService {
 		return response;
 	}
 
-	public Response<String> createVerification(String emailId) {
+	public Response<String> sendForgotPasswordEmail(String emailId) {
 
 		AdminUser mail = adminUserRepo.findByEmailId(emailId);
 
 		if (mail == null)
 			throw new BadDataException(GatewayConstants.EMAILID_NOT_REGISTERED);
 
-		boolean flag = mailingService.sendForgotPasswordMail(emailId, mail.getUsername());
+		String token = emailTokenService.generateToken(emailId, "forgot-password.html");
+
+		queueService.sendMailNotification(emailId, mail.getName(), token);
 		Response<String> response = new Response<>();
-		if (flag) {
-			response.setStatus(HttpStatus.OK.value());
-			response.setMessage(GatewayConstants.EMAIL_SENT_SUCCESSFULLY);
-		} else {
-			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-			response.setMessage(GatewayConstants.EMAIL_SENT_FAILED);
-		}
+		response.setStatus(HttpStatus.OK.value());
+		response.setMessage(GatewayConstants.EMAIL_SENT_SUCCESSFULLY);
 		return response;
 	}
 
-	public Response<String> resetPassword(String username, PasswordDto passwordDto) {
+	public Response<String> resetPassword(String token, PasswordDto passwordDto) {
 
-		AdminUser adminUser = adminUserRepo.findByUsername(username);
-
-		if (adminUser == null)
+		EmailToken validToken = emailTokenRepo.findByToken(token);
+		
+		if (validToken == null)
 			throw new BadDataException("You can't be able to Reset Password");
+		
+		validToken = emailTokenRepo.findByTokenAndStatus(token, "PENDING");
+		
+		if (validToken == null)
+			throw new BadDataException("Link Expired");
+		
+		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
 
 		if (passwordDto.getNewPassword() == null || passwordDto.getNewPassword().isEmpty())
 			throw new BadDataException("Please Enter the New Password");
@@ -166,6 +178,10 @@ public class LoginService {
 		adminUser.setSaltPassword(saltValue.get());
 		adminUser.setUpdatedAt(LocalDateTime.now());
 		adminUserRepo.save(adminUser);
+		
+		validToken.setStatus(GatewayConstants.STATUS_EXPIRED);
+		validToken.setConfirmedDateTime(LocalDateTime.now());
+		emailTokenRepo.save(validToken);
 
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.OK.value());
