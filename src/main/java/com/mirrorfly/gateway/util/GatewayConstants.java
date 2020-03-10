@@ -177,7 +177,7 @@ public class GatewayConstants {
 
 	public static final String EMAIL_SENT_FAILED = "Email Sent Failed";
 
-	public static final String PASWORD_PATTERN_MISMATCH = "Password must be atleast 8 characters with the combination of Alpha+Numeric+Symbol";
+	public static final String PASWORD_PATTERN_MISMATCH = "Password must be atleast 8 characters with the combination of atleast one capital letter and a symbol.";
 
 	public static final String INVALID_CREDENTAILS = "Invalid credentials. Enter a valid email or username and password";
 
