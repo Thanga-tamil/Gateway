@@ -32,24 +32,21 @@ public class PasswordEncryptionService {
 	public static boolean checkPasswordPattern(String password) {
 		char ch;
 		boolean capitalFlag = false;
-		boolean numberFlag = false;
 		boolean symbolFlag = false;
 
 		if (password.length() < 8)
 			return false;
 
-		Pattern p = Pattern.compile("[^A-Za-z0-9]");
+		Pattern p = Pattern.compile("[^A-Za-z]");
 		Matcher m = p.matcher(password);
 		symbolFlag = m.find();
 
 		for (int i = 0; i < password.length(); i++) {
 			ch = password.charAt(i);
-			if (Character.isDigit(ch)) {
-				numberFlag = true;
-			} else if (Character.isUpperCase(ch)) {
+			if (Character.isUpperCase(ch)) {
 				capitalFlag = true;
 			}
-			if (numberFlag && capitalFlag && symbolFlag)
+			if (capitalFlag && symbolFlag)
 				return true;
 		}
 		return false;
