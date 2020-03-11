@@ -84,6 +84,19 @@ public class LoginController {
 		return loginService.resetPassword(userName, passwordDto);
 	}
 
+	/**
+	 * Function to Activate Account through loginService. This function return a
+	 * response stating that Activate account or error with error code and error
+	 * message. 
+	 * @param token
+	 * @param passwordDto
+	 * @return
+	 */
+	@GetMapping("/admin/activateaccount")
+	public @ResponseBody Response<String> activateAccount(@RequestParam String token, PasswordDto passwordDto) {
+		return loginService.activateAccount(token, passwordDto);
+	}
+
 	@GetMapping("/logout")
 	public @ResponseBody Response<String> logout(@RequestHeader("Authorization") String authorization) {
 		return loginService.logout(authorization);

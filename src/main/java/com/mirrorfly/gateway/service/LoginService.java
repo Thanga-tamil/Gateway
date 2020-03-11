@@ -44,7 +44,7 @@ public class LoginService {
 
 	@Autowired
 	private EmailTokenService emailTokenService;
-	
+
 	@Autowired
 	private EmailTokenRepo emailTokenRepo;
 
@@ -137,15 +137,15 @@ public class LoginService {
 	public Response<String> resetPassword(String token, PasswordDto passwordDto) {
 
 		EmailToken validToken = emailTokenRepo.findByToken(token);
-		
+
 		if (validToken == null)
 			throw new BadDataException("You can't be able to Reset Password");
-		
+
 		validToken = emailTokenRepo.findByTokenAndStatus(token, "PENDING");
-		
+
 		if (validToken == null)
 			throw new BadDataException("Link Expired");
-		
+
 		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
 
 		if (passwordDto.getNewPassword() == null || passwordDto.getNewPassword().isEmpty())
@@ -161,7 +161,53 @@ public class LoginService {
 
 		if (!validPasswordPattern)
 			throw new BadDataException(GatewayConstants.PASWORD_PATTERN_MISMATCH);
+		/*** Password Hashing ***/
 
+		/*** End ***/
+
+		savePassword(passwordDto, validToken, adminUser);
+
+		Response<String> response = new Response<>();
+		response.setStatus(HttpStatus.OK.value());
+		response.setMessage(GatewayConstants.PASS_CONFIRMATION_SUCCESS);
+		return response;
+	}
+
+	public Response<String> activateAccount(String token, PasswordDto passwordDto) {
+		EmailToken validToken = emailTokenRepo.findByToken(token);
+
+		if (validToken == null)
+			throw new BadDataException("You can't be able to Activate Your Account");
+
+		validToken = emailTokenRepo.findByTokenAndStatus(token, "PENDING");
+
+		if (validToken == null)
+			throw new BadDataException("Link Expired");
+
+		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
+
+		if (passwordDto.getNewPassword() == null || passwordDto.getNewPassword().isEmpty())
+			throw new BadDataException("Please Enter the New Password");
+
+		if (passwordDto.getConfirmPassword() == null || passwordDto.getConfirmPassword().isEmpty())
+			throw new BadDataException("Please Enter the Confirm Password");
+
+		if (!passwordDto.getNewPassword().equalsIgnoreCase(passwordDto.getConfirmPassword()))
+			throw new BadDataException(GatewayConstants.PASS_CONFIRMATION);
+
+		boolean validPasswordPattern = PasswordEncryptionService.checkPasswordPattern(passwordDto.getNewPassword());
+
+		if (!validPasswordPattern)
+			throw new BadDataException(GatewayConstants.PASWORD_PATTERN_MISMATCH);
+		savePassword(passwordDto, validToken, adminUser);
+
+		Response<String> response = new Response<>();
+		response.setStatus(HttpStatus.OK.value());
+		response.setMessage(GatewayConstants.ACCOUNT_ACTIVATION_SUCCESS);
+		return response;
+	}
+
+	private void savePassword(PasswordDto passwordDto, EmailToken validToken, AdminUser adminUser) {
 		/*** Password Hashing ***/
 
 		Optional<String> saltValue = PasswordEncryptionService.generateSalt(32);
@@ -173,20 +219,15 @@ public class LoginService {
 			hashPassword = passwordValue.get();
 
 		/*** End ***/
-
 		adminUser.setHashedPassword(hashPassword);
 		adminUser.setSaltPassword(saltValue.get());
 		adminUser.setUpdatedAt(LocalDateTime.now());
 		adminUserRepo.save(adminUser);
-		
+
 		validToken.setStatus(GatewayConstants.STATUS_EXPIRED);
 		validToken.setConfirmedDateTime(LocalDateTime.now());
 		emailTokenRepo.save(validToken);
-
-		Response<String> response = new Response<>();
-		response.setStatus(HttpStatus.OK.value());
-		response.setMessage(GatewayConstants.PASS_CONFIRMATION_SUCCESS);
-		return response;
 	}
+
 
 }
