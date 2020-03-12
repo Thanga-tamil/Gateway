@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.AdminLoginDto;
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
 import com.mirrorfly.gateway.dto.LoginDto;
@@ -16,6 +17,7 @@ import com.mirrorfly.gateway.model.AdminUser;
 import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.EmailToken;
 import com.mirrorfly.gateway.model.Users;
+import com.mirrorfly.gateway.queue.MailPayload;
 import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.AdminUserRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
@@ -47,6 +49,9 @@ public class LoginService {
 
 	@Autowired
 	private EmailTokenRepo emailTokenRepo;
+
+	@Autowired
+	private ApplicationProperties applicationProperties;
 
 	public Response<LoginDetailsDto> login(LoginDto login) {
 		Users users = userRepo.findByUsername(login.getUsername());
@@ -127,7 +132,9 @@ public class LoginService {
 
 		String token = emailTokenService.generateToken(emailId, "forgot-password.html");
 
-		queueService.sendMailNotification(emailId, mail.getName(), token);
+		queueService.sendMailPayload(new MailPayload(GatewayConstants.FORGOT_PASWORD, emailId, mail.getName(), token,
+				applicationProperties.getResetPasswordRedirectUrl()));
+
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.OK.value());
 		response.setMessage(GatewayConstants.EMAIL_SENT_SUCCESSFULLY);

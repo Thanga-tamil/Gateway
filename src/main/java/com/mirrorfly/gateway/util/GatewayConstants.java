@@ -192,6 +192,8 @@ public class GatewayConstants {
 
 	public static final String STATUS_EXPIRED = "EXPIRED";
 
+	public static final String FORGOT_PASWORD = "Forgot Password";
+	
 	private GatewayConstants() {
 	}
 }
