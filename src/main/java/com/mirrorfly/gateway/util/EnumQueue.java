@@ -2,7 +2,7 @@ package com.mirrorfly.gateway.util;
 
 public enum EnumQueue {
 
-	EMAIL_QUEUE("admin_email");
+	EMAIL_QUEUE("email_queue");
 
 	private String queue;
 

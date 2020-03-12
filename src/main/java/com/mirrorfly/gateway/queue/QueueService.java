@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.mirrorfly.gateway.config.ApplicationProperties;
-import com.mirrorfly.gateway.dto.ForgotPasswordDto;
 import com.mirrorfly.gateway.util.EnumQueue;
 
 import lombok.extern.slf4j.Slf4j;
@@ -21,15 +20,10 @@ public class QueueService {
 	@Autowired
 	private ApplicationProperties applicationProperties;
 
-	public boolean sendMailNotification(String emailId, String name, String token) {
+	public boolean sendMailPayload(MailPayload mailPayload) {
 		try {
-			ForgotPasswordDto forgotPasswordDto = new ForgotPasswordDto();
-			forgotPasswordDto.setName(name);
-			forgotPasswordDto.setEmailId(emailId);
-			forgotPasswordDto.setToken(token);
-			forgotPasswordDto.setResetPasswordRedirectUrl(applicationProperties.getResetPasswordRedirectUrl());
 			rabbitTemplate.convertAndSend(applicationProperties.getMailQueue(), EnumQueue.EMAIL_QUEUE.getQueue(),
-					forgotPasswordDto);
+					mailPayload);
 		} catch (AmqpException a) {
 			log.error("Error in Sending to RabbitMQ Mail Exchange", a);
 			return false;
@@ -40,4 +34,5 @@ public class QueueService {
 		}
 		return true;
 	}
+
 }
