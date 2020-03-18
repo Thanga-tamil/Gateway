@@ -94,6 +94,7 @@ public class LoginService {
 		return response;
 	}
 
+	@SuppressWarnings("unused")
 	public Response<LoginDetailsDto> adminLogin(AdminLoginDto login) {
 
 		AdminUser adminUser = null;
@@ -102,6 +103,11 @@ public class LoginService {
 			if (adminUser == null)
 				adminUser = adminUserRepo.findByEmailId(login.getUsername());
 
+			if (adminUser != null) {
+				if (adminUser.getIsActive() == 0) {
+					throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
+				}
+			}
 			if (null == adminUser) {
 				throw new BadDataException(GatewayConstants.INVALID_CREDENTAILS);
 			}
@@ -235,6 +241,5 @@ public class LoginService {
 		validToken.setConfirmedDateTime(LocalDateTime.now());
 		emailTokenRepo.save(validToken);
 	}
-
 
 }

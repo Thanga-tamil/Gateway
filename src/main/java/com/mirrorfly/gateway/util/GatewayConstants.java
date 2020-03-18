@@ -194,6 +194,9 @@ public class GatewayConstants {
 
 	public static final String FORGOT_PASWORD = "Forgot Password";
 	
+	public static final String INACTIVE_ACCOUNT= "Your Account has been Disabled by Admin";
+
+	
 	private GatewayConstants() {
 	}
 }
