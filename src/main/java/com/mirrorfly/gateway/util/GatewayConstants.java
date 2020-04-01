@@ -106,9 +106,8 @@ public class GatewayConstants {
 	public static final String PASS_CONFIRMATION = "Confirmation new password are not same";
 
 	public static final String PASS_CONFIRMATION_SUCCESS = "Password changed successfully! Login to continue...";
-	
-	public static final String ACCOUNT_ACTIVATION_SUCCESS = "Account Activated successfully! Login to continue...";
 
+	public static final String ACCOUNT_ACTIVATION_SUCCESS = "Account Activated successfully! Login to continue...";
 
 	public static final String ADD = "Add";
 
@@ -193,10 +192,9 @@ public class GatewayConstants {
 	public static final String STATUS_EXPIRED = "EXPIRED";
 
 	public static final String FORGOT_PASWORD = "Forgot Password";
-	
-	public static final String INACTIVE_ACCOUNT= "Your Account has been Disabled by Admin";
 
-	
+	public static final String INACTIVE_ACCOUNT = "Your Account has been Disabled by Admin";
+
 	private GatewayConstants() {
 	}
 }

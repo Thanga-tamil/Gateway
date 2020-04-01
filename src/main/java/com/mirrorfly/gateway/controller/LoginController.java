@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mirrorfly.gateway.dto.AdminLoginDto;
+import com.mirrorfly.gateway.dto.AdminLoginResponse;
 import com.mirrorfly.gateway.dto.ForgetPasswordDto;
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
 import com.mirrorfly.gateway.dto.LoginDto;
@@ -51,7 +52,7 @@ public class LoginController {
 	 */
 
 	@PostMapping("/admin/login")
-	public @ResponseBody Response<LoginDetailsDto> admin(@Validated @RequestBody AdminLoginDto login) {
+	public @ResponseBody Response<AdminLoginResponse> admin(@Validated @RequestBody AdminLoginDto login) {
 		return loginService.adminLogin(login);
 	}
 

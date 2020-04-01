@@ -5,6 +5,4 @@ public class LoginDetailsDto {
 
 	private String token;
 
-	private String image;
-
 }
