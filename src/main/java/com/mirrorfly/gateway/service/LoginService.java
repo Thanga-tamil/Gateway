@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.AdminLoginDto;
+import com.mirrorfly.gateway.dto.AdminLoginResponse;
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
 import com.mirrorfly.gateway.dto.LoginDto;
 import com.mirrorfly.gateway.dto.PasswordDto;
@@ -94,7 +95,8 @@ public class LoginService {
 		return response;
 	}
 
-	public Response<LoginDetailsDto> adminLogin(AdminLoginDto login) {
+	@SuppressWarnings("unused")
+	public Response<AdminLoginResponse> adminLogin(AdminLoginDto login) {
 
 		AdminUser adminUser = null;
 		if (login.getUsername() != null) {
@@ -102,6 +104,11 @@ public class LoginService {
 			if (adminUser == null)
 				adminUser = adminUserRepo.findByEmailId(login.getUsername());
 
+			if (adminUser != null) {
+				if (adminUser.getIsActive() == 0) {
+					throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
+				}
+			}
 			if (null == adminUser) {
 				throw new BadDataException(GatewayConstants.INVALID_CREDENTAILS);
 			}
@@ -113,8 +120,8 @@ public class LoginService {
 				throw new BadDataException(GatewayConstants.WRONG_PASWORD);
 
 		}
-		Response<LoginDetailsDto> response = new Response<>();
-		LoginDetailsDto loginDetails = new LoginDetailsDto();
+		Response<AdminLoginResponse> response = new Response<>();
+		AdminLoginResponse loginDetails = new AdminLoginResponse();
 		loginDetails.setImage(adminUser.getImage());
 		loginDetails.setToken(tokenService.getToken(adminUser.getUsername(), "", ""));
 		response.setStatus(HttpStatus.OK.value());
@@ -126,6 +133,11 @@ public class LoginService {
 	public Response<String> sendForgotPasswordEmail(String emailId) {
 
 		AdminUser mail = adminUserRepo.findByEmailId(emailId);
+		if (mail != null) {
+			if (mail.getIsActive() == 0) {
+				throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
+			}
+		}
 
 		if (mail == null)
 			throw new BadDataException(GatewayConstants.EMAILID_NOT_REGISTERED);
@@ -148,12 +160,17 @@ public class LoginService {
 		if (validToken == null)
 			throw new BadDataException("You can't be able to Reset Password");
 
+		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
+		if (adminUser != null) {
+			if (adminUser.getIsActive() == 0) {
+				throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
+			}
+		}
+
 		validToken = emailTokenRepo.findByTokenAndStatus(token, "PENDING");
 
 		if (validToken == null)
 			throw new BadDataException("Link Expired");
-
-		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
 
 		if (passwordDto.getNewPassword() == null || passwordDto.getNewPassword().isEmpty())
 			throw new BadDataException("Please Enter the New Password");
@@ -235,6 +252,5 @@ public class LoginService {
 		validToken.setConfirmedDateTime(LocalDateTime.now());
 		emailTokenRepo.save(validToken);
 	}
-
 
 }

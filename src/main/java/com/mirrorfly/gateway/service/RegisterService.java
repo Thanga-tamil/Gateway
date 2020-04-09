@@ -77,6 +77,7 @@ public class RegisterService {
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 		}
 		chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+		chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
 		chatUser.setDeviceToken(registerDto.getDeviceToken());
 		chatUser.setDevicetype(registerDto.getDeviceType());
 		chatUser.setMode(registerDto.getMode());
