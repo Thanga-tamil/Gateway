@@ -56,6 +56,9 @@ public class ChatUser implements Serializable {
 
 	@Column(name = "device_type")
 	private String devicetype;
+	
+	@Column(name = "device_os_version")
+	private String deviceOsVersion;
 
 	@Column(name = "status")
 	private String status;
