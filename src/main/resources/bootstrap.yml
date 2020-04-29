@@ -3,5 +3,5 @@ spring:
     name: gatewayservice
   cloud:
     config:
-      uri: http://configservice
+            uri: http://configservice:8080
      
