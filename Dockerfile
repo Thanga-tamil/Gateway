@@ -1,13 +1,15 @@
 # Start with a base image containing Java runtime
-FROM openjdk:8-jdk-alpine
+FROM openjdk:8-jre-slim
 
-RUN apk update &&  apk add libbsd libbz2 musl sqlite-libs openssl openjdk8-jre-base  libjpeg-turbo-dev giflib libtasn1 e2fsprogs
+RUN apt-get update
 
 RUN chmod 600 /etc/passwd && chmod 600 /etc/shadow && chmod 600 /etc/group
 
 # Creating appuser and login as appuser
-RUN addgroup -g 1001 -S appuser && adduser -u 1001 -S appuser -G appuser
-RUN chown -R appuser:appuser /var
+RUN addgroup   --system --gid 1001 appuser
+RUN adduser  --system --uid  1001   --group appuser
+RUN  chown -R appuser:appuser /opt
+RUN  chown -R appuser:appuser /opt
 USER appuser
 
 # Add a volume pointing to /tmp
