@@ -19,5 +19,9 @@ public class RegisterDto {
 	private String mode;
 
 	private String deviceToken;
+	
+	private String voipDeviceToken;
+	
+	private String deviceOsVersion;
 
 }
