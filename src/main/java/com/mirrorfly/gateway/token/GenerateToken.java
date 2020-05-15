@@ -1,7 +1,6 @@
 package com.mirrorfly.gateway.token;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Date;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -25,21 +24,19 @@ public class GenerateToken {
 	 */
 	public static String generateToken(TokenDetail tokenDetail) {
 		Algorithm algorithm = Algorithm.HMAC256("mirror_gateway");
-		String token = JWT.create()
-	               .withIssuer("auth0")
-        	       .withClaim("user", tokenDetail.getUsername())           
-	               .sign(algorithm);
-        	return token;
+		Date expiresAt = new Date();
+		String token = JWT.create().withIssuer("auth0").withExpiresAt(expiresAt)
+				.withClaim("user", tokenDetail.getUsername()).sign(algorithm);
+		return token;
 
 	}
 
 	public static String generateFileToken(String filename) {
 		Algorithm algorithm = Algorithm.HMAC256("mirror_gateway");
-        	String token = JWT.create()
-	               	.withIssuer("auth0")
-               		.withClaim("filename", filename)                
-	        	.sign(algorithm);
-	        return token;
+		Date expiresAt = new Date();
+		String token = JWT.create().withIssuer("auth0").withExpiresAt(expiresAt).withClaim("filename", filename)
+				.sign(algorithm);
+		return token;
 	}
 
 }
