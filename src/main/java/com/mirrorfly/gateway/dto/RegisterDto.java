@@ -1,10 +1,5 @@
 package com.mirrorfly.gateway.dto;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
-import com.mirrorfly.gateway.util.GatewayConstants;
-
 import lombok.Data;
 
 @Data
@@ -18,10 +13,10 @@ public class RegisterDto {
 
 	private String mode;
 
-	private String deviceToken;
+	private String deviceToken = "";
 	
-	private String voipDeviceToken;
+	private String voipDeviceToken = "";
 	
-	private String deviceOsVersion;
+	private String deviceOsVersion = "";
 
 }
