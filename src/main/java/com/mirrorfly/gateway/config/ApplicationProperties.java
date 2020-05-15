@@ -37,6 +37,10 @@ public class ApplicationProperties {
 	public String getRedisHost() {
 		return env.getProperty("spring.redis.host");
 	}
+	
+	public String getRedisPassword() {
+		return env.getProperty("spring.redis.password");
+	}
 
 	public String getRedisPort() {
 		return env.getProperty("spring.redis.port");
