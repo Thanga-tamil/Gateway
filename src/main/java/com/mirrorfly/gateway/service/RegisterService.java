@@ -76,8 +76,16 @@ public class RegisterService {
 			chatUser.setMobileNumber(registerDto.getMobileNumber());
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 		}
-		chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-		chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+		if(registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().equals("")) {
+			chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+		} else {
+			chatUser.setVoipDeviceToken(registerDto.getDeviceToken());
+		}
+		if(registerDto.getDeviceOsVersion() != null && !registerDto.getDeviceOsVersion().equals("")) {
+			chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+		} else {
+			chatUser.setDeviceOsVersion("12");
+		}		
 		chatUser.setDeviceToken(registerDto.getDeviceToken());
 		chatUser.setDevicetype(registerDto.getDeviceType());
 		chatUser.setMode(registerDto.getMode());
