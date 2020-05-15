@@ -81,7 +81,7 @@ public class RegisterService {
 		} else {
 			chatUser.setVoipDeviceToken(registerDto.getDeviceToken());
 		}
-		if(registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().equals("")) {
+		if(registerDto.getDeviceOsVersion() != null && !registerDto.getDeviceOsVersion().equals("")) {
 			chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
 		} else {
 			chatUser.setDeviceOsVersion("12");
