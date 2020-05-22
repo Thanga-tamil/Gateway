@@ -84,7 +84,7 @@ public class RegisterService {
 		if(registerDto.getDeviceOsVersion() != null && !registerDto.getDeviceOsVersion().equals("")) {
 			chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
 		} else {
-			chatUser.setDeviceOsVersion("12");
+			chatUser.setDeviceOsVersion("12.0");
 		}		
 		chatUser.setDeviceToken(registerDto.getDeviceToken());
 		chatUser.setDevicetype(registerDto.getDeviceType());
