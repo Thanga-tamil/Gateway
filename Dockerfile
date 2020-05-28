@@ -1,9 +1,7 @@
 # Start with a base image containing Java runtime
 FROM openjdk:8-jre-slim
 
-RUN apt-get update
-
-RUN chmod 600 /etc/passwd && chmod 600 /etc/shadow && chmod 600 /etc/group
+RUN chmod 000 /etc/passwd && chmod 000 /etc/shadow && chmod 000 /etc/group
 
 # Creating appuser and login as appuser
 RUN addgroup   --system --gid 1001 appuser
