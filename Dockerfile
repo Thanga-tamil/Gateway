@@ -6,8 +6,6 @@ RUN chmod 000 /etc/passwd && chmod 000 /etc/shadow && chmod 000 /etc/group
 # Creating appuser and login as appuser
 RUN addgroup   --system --gid 1001 appuser
 RUN adduser  --system --uid  1001   --group appuser
-RUN  chown -R appuser:appuser /opt
-RUN  chown -R appuser:appuser /opt
 USER appuser
 
 # Add a volume pointing to /tmp
