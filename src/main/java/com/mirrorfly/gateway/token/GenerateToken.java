@@ -1,11 +1,9 @@
-
 package com.mirrorfly.gateway.token;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Date;
 
-import com.auth0.jwt.Algorithm;
-import com.auth0.jwt.JWTSigner;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.mirrorfly.gateway.model.TokenDetail;
 
 /**
@@ -25,27 +23,20 @@ public class GenerateToken {
 	 * @return generated token
 	 */
 	public static String generateToken(TokenDetail tokenDetail) {
-		JWTSigner signer = new JWTSigner("mirror_gateway");
-		Map<String, Object> claims = new HashMap<>();
-		claims.put("user", tokenDetail.getUsername());
-		JWTSigner.Options option = new JWTSigner.Options();
-		option.setAlgorithm(Algorithm.HS256);
-		option.setIssuedAt(true);
-		option.setJwtId(true);
-		option.setNotValidBeforeLeeway(3);
-		return signer.sign(claims, option);
+		Algorithm algorithm = Algorithm.HMAC256("mirror_gateway");
+		Date expiresAt = new Date();
+		String token = JWT.create().withIssuer("auth0").withExpiresAt(expiresAt)
+				.withClaim("user", tokenDetail.getUsername()).sign(algorithm);
+		return token;
+
 	}
 
 	public static String generateFileToken(String filename) {
-		JWTSigner signer = new JWTSigner("mirror_media_upload");
-		Map<String, Object> claims = new HashMap<>();
-		claims.put("filename", filename);
-		JWTSigner.Options option = new JWTSigner.Options();
-		option.setAlgorithm(Algorithm.HS256);
-		option.setIssuedAt(true);
-		option.setJwtId(true);
-		option.setNotValidBeforeLeeway(3);
-		return signer.sign(claims, option);
+		Algorithm algorithm = Algorithm.HMAC256("mirror_gateway");
+		Date expiresAt = new Date();
+		String token = JWT.create().withIssuer("auth0").withExpiresAt(expiresAt).withClaim("filename", filename)
+				.sign(algorithm);
+		return token;
 	}
 
 }
