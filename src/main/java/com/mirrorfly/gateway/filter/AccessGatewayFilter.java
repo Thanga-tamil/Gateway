@@ -46,7 +46,8 @@ public class AccessGatewayFilter implements GlobalFilter {
 			ServerHttpRequest.Builder builder = request.mutate();
 			return chain.filter(exchange.mutate().request(builder.build()).build());
 		}
-		Boolean isCache = false;
+		boolean isCache = false;
+
 		String header = null;
 		if (exchange.getRequest().getPath().toString().contains("media")
 				&& exchange.getRequest().getMethod().matches(HttpMethod.GET.toString())
@@ -62,6 +63,7 @@ public class AccessGatewayFilter implements GlobalFilter {
 		if (header == null || header.isEmpty()) {
 			return unauthorized(exchange);
 		} else {
+
 			String username = tokenService.validateToken(header);
 			if (username == null) {
 				return unauthorized(exchange);
@@ -75,7 +77,7 @@ public class AccessGatewayFilter implements GlobalFilter {
 	/**
 	 *
 	 * @param
-	 * @throws IOException
+	 * @throws IOException	
 	 */
 	private Mono<Void> unauthorized(ServerWebExchange serverWebExchange) {
 		try {

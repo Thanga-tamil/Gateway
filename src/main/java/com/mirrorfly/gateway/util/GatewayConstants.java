@@ -47,9 +47,13 @@ public class GatewayConstants {
 
 	public static final String OTP_SUCCESS = "Otp Sent Successfully";
 
-	public static final String MOBILE_NO_VALID = "Mobile Not Valid";
+	public static final String OTP_NOT_VALID = "Otp Not Valid";
 
-	public static final String MOBILE_NO_AVAIL = "Mobile Not Available";
+	public static final String MOBILE_NOT_VALID = "Mobile Number Not Valid";
+
+	public static final String MOBILE_NO_AVAIL = "Mobile Number Not Available";
+
+	public static final String MOBILE_REQUIRED = "Mobile Number is Required";
 
 	public static final String USER_BLOCK = "User Blocked,Please contact Admin";
 
@@ -101,7 +105,9 @@ public class GatewayConstants {
 
 	public static final String PASS_CONFIRMATION = "Confirmation new password are not same";
 
-	public static final String PASS_CONFIRMATION_SUCCESS = "Password has been changed successfully";
+	public static final String PASS_CONFIRMATION_SUCCESS = "Password changed successfully! Login to continue...";
+
+	public static final String ACCOUNT_ACTIVATION_SUCCESS = "Account Activated successfully! Login to continue...";
 
 	public static final String ADD = "Add";
 
@@ -129,12 +135,12 @@ public class GatewayConstants {
 
 	public static final String BAD_CREDENTIALS_THREE = "Entered credentials are not match, Account has been locked";
 
-	public static final String USER_NAME_NOT_AVAIL = "Username Not Available";
-	
+	public static final String USER_NAME_NOT_AVAIL = "Username or EmailId Not Available";
+
 	public static final String LICENSE_NOT_AVAIL = "License Not Available";
-	
+
 	public static final String LICENSE_IN_ACTIVE = "License is InActive";
-	
+
 	public static final String LICENSE_EXPIRED = "License has been Expired. Please contact the provider";
 
 	public static final String USER_IN_ACTIVE = "User is InActive please contact admin";
@@ -142,8 +148,6 @@ public class GatewayConstants {
 	public static final String ACCOUNT_LOCKED = "Account has been locked, please contact adminstrator";
 
 	public static final String LOGO_UPLOAD_SUCCESS = "Logo uploaded successfully";
-
-	public static final String LOGGED_SUCCESSFULLY = "User logged Successfully";
 
 	public static final String IMAGE = "image";
 
@@ -166,6 +170,30 @@ public class GatewayConstants {
 	public static final String FILE_NOT_AVILABLE = "File Not Available";
 
 	public static final String IV = "ddc0f15cc2c90fca";
+
+	public static final String EMAILID_NOT_VALID = "Enter the Valid Email Address";
+
+	public static final String PASS_NOT_VALID = "Enter the Valid Password";
+
+	public static final String EMAIL_SENT_SUCCESSFULLY = "An email has been sent to your email address, please check your inbox";
+
+	public static final String EMAIL_SENT_FAILED = "Email Sent Failed";
+
+	public static final String PASWORD_PATTERN_MISMATCH = "Password must be atleast 8 characters with the combination of atleast one capital letter and a symbol";
+
+	public static final String INVALID_CREDENTAILS = "Invalid credentials. Enter a valid email or username and password";
+
+	public static final String WRONG_PASWORD = "Wrong password! Try again or click Forgot password to reset it";
+
+	public static final String EMAILID_NOT_REGISTERED = "Couldn't find your account!";
+
+	public static final String STATUS_PENDING = "PENDING";
+
+	public static final String STATUS_EXPIRED = "EXPIRED";
+
+	public static final String FORGOT_PASWORD = "Forgot Password";
+
+	public static final String INACTIVE_ACCOUNT = "Your Account has been Disabled by Admin";
 
 	private GatewayConstants() {
 	}

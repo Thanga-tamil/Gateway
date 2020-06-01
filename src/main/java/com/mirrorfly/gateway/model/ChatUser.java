@@ -35,6 +35,9 @@ public class ChatUser implements Serializable {
 
 	@Column(name = "device_token")
 	private String deviceToken;
+	
+	@Column(name = "voip_device_token")
+	private String voipDeviceToken;
 
 	@Column(name = "country_code")
 	private String countryCode;
@@ -56,6 +59,9 @@ public class ChatUser implements Serializable {
 
 	@Column(name = "device_type")
 	private String devicetype;
+	
+	@Column(name = "device_os_version")
+	private String deviceOsVersion;
 
 	@Column(name = "status")
 	private String status;

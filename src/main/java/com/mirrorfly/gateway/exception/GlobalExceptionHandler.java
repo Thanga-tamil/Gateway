@@ -1,7 +1,11 @@
 package com.mirrorfly.gateway.exception;
 
 import java.io.FileNotFoundException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.ValidationException;
 
@@ -17,6 +21,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.support.WebExchangeBindException;
 
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.mirrorfly.gateway.response.Response;
@@ -68,6 +73,7 @@ public class GlobalExceptionHandler {
 	 * @param response HttpServletResponse
 	 * @return Exception Status and Message
 	 */
+
 	@ExceptionHandler(value = MethodArgumentNotValidException.class)
 	public Response<String> methodArgumentNotValidException(MethodArgumentNotValidException ex) {
 		String errorMsg = ex.getBindingResult().getFieldErrors().stream()
@@ -278,8 +284,19 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(value = ConstraintViolationException.class)
 	public Response<String> resourceNotFoundException(ConstraintViolationException ex) {
+		Set<ConstraintViolation<?>> constraintViolations = ex.getConstraintViolations();
+		Set<String> messages = new HashSet<>(constraintViolations.size());
+		messages.addAll(constraintViolations.stream()
+				.map(constraintViolation -> String.format("%s value '%s' %s", constraintViolation.getPropertyPath(),
+						constraintViolation.getInvalidValue(), constraintViolation.getMessage()))
+				.collect(Collectors.toList()));
+		return setStatusAndMessage(HttpStatus.BAD_REQUEST.value(), "sdsd");
+	}
+
+	@ExceptionHandler(value = WebExchangeBindException.class)
+	public Response<String> webExchangeBindException(WebExchangeBindException ex) {
 		LOGGER.error(ex.getLocalizedMessage());
-		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
+		return setStatusAndMessage(HttpStatus.BAD_REQUEST.value(), ex.getFieldError().getDefaultMessage());
 	}
 
 	/**
