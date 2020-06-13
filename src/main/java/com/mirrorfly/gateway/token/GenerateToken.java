@@ -24,7 +24,8 @@ public class GenerateToken {
 	 */
 	public static String generateToken(TokenDetail tokenDetail) {
 		Algorithm algorithm = Algorithm.HMAC256("mirror_gateway");
-		Date expiresAt = new Date();
+		long nowMillis = System.currentTimeMillis();
+	    Date expiresAt = new Date(nowMillis);
 		String token = JWT.create().withIssuer("auth0").withExpiresAt(expiresAt)
 				.withClaim("user", tokenDetail.getUsername()).sign(algorithm);
 		return token;
