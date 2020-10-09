@@ -34,7 +34,7 @@ public class OtpService {
 		if (mobileNumber == null) {
 			throw new BadDataException(GatewayConstants.MOBILE_NO_AVAIL);
 		}
-		ChatUser chatUser = chatUserRepo.findByMobileNumber(mobileNumber);
+		ChatUser chatUser = chatUserRepo.findByUsername(mobileNumber);
 		if (chatUser != null && 1 == chatUser.getIsBlock()) {
 			throw new BadDataException(GatewayConstants.USER_BLOCK);
 		}
