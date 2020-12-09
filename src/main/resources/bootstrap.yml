@@ -2,6 +2,8 @@ spring:
   application:
     name: gatewayservice
   cloud:
-    config:
-      uri: http://configservice
-     
+    consul:
+      host: dev-consul
+      port: 8500
+      config:
+        format: YAML
