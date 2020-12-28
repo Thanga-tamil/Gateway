@@ -69,7 +69,7 @@ public class RegisterService {
 	}
 
 	private RegisterResponseDto registerUser(RegisterDto registerDto) {
-		ChatUser chatUser = chatUserRepo.findByMobileNumber(registerDto.getMobileNumber());
+		ChatUser chatUser = chatUserRepo.findByUsername(registerDto.getMobileNumber());
 		if (chatUser == null) {
 			chatUser = new ChatUser();
 			chatUser.setUsername(registerDto.getMobileNumber());

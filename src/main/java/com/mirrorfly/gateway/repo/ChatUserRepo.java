@@ -9,6 +9,6 @@ import com.mirrorfly.gateway.model.ChatUser;
 @Repository
 public interface ChatUserRepo extends JpaRepository<ChatUser, String> {
 
-	public ChatUser findByMobileNumber(@Param("mobileNumber") String mobileNumber);
+	public ChatUser findByUsername(@Param("username") String username);
 
 }
