@@ -34,6 +34,7 @@ public class TokenService {
 	 */
 
 	public String validateToken(String token) {
+		log.info("requesting token: " + token);
 		try {
 			String u = stringRedisTemplate.opsForValue().get(token);
 			return u != null ? u : getTokenFromDB(token);
