@@ -7,5 +7,3 @@ spring:
       port: 8500
       config:
         format: YAML
-
-     
