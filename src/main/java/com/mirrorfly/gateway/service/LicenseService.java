@@ -6,6 +6,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,8 +20,10 @@ import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatServerConfig;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.License;
+import com.mirrorfly.gateway.model.LicenseLookup;
 import com.mirrorfly.gateway.repo.ChatServerConfigRepo;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
+import com.mirrorfly.gateway.repo.LicenseLookupRepo;
 import com.mirrorfly.gateway.repo.LicenseRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.EnumSDKType;
@@ -40,6 +43,9 @@ public class LicenseService {
 
 	@Autowired
 	private ApplicationProperties applicationProperties;
+
+	@Autowired
+	private LicenseLookupRepo licenseLookupRepo;
 
 	public Response<LicenseResDto> getLicense(LicenseReqDto licenseReq) {
 
@@ -103,6 +109,22 @@ public class LicenseService {
 
 	public ChatSettings getConfigService() {
 		return chatSettingsRepo.findAll().get(1);
+	}
+
+	public Response<String> updateLicense(String key) {
+		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
+		if (!existingKey.isEmpty() && existingKey.get(0) != null) {
+			LicenseLookup data = existingKey.get(0);
+			data.setLkey(key);
+			licenseLookupRepo.save(data);
+		} else {
+			throw new BadDataException("License key not found");
+		}
+		Response<String> response = new Response<>();
+		response.setStatus(HttpStatus.SC_OK);
+		response.setMessage("License updated successfully");
+		response.setData("true");
+		return response;
 	}
 
 }
