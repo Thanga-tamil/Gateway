@@ -2,6 +2,7 @@ package com.mirrorfly.gateway.service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
@@ -10,14 +11,18 @@ import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.LicenseAVResDto;
 import com.mirrorfly.gateway.dto.LicenseChatResDto;
+import com.mirrorfly.gateway.dto.LicenseDataDto;
 import com.mirrorfly.gateway.dto.LicenseReqDto;
 import com.mirrorfly.gateway.dto.LicenseResDto;
 import com.mirrorfly.gateway.dto.LicenseUpdateRequestDto;
 import com.mirrorfly.gateway.dto.TurnDto;
 import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.licenseutil.AESEncryption;
 import com.mirrorfly.gateway.model.ChatServerConfig;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.License;
@@ -115,6 +120,17 @@ public class LicenseService {
 	public Response<String> updateLicense(LicenseUpdateRequestDto request) {
 		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
 		if (!existingKey.isEmpty() && existingKey.get(0) != null) {
+
+			byte[] decodedBytes = Base64.getDecoder().decode(request.getLicenseKey());
+			String decodedString = new String(decodedBytes);
+			String encryptKey = GatewayConstants.ENCRYPTKEY + GatewayConstants.ENCRYPTKEY + GatewayConstants.ENCRYPTKEY;
+			String decyptedString = AESEncryption.decryptString(decodedString, encryptKey);
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				mapper.readValue(decyptedString, LicenseDataDto.class);
+			} catch (JsonProcessingException e) {
+				throw new BadDataException("Invalid license key");
+			}
 			LicenseLookup data = existingKey.get(0);
 			data.setLkey(request.getLicenseKey());
 			licenseLookupRepo.save(data);
