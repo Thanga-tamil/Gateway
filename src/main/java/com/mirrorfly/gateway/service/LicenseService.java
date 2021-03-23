@@ -15,6 +15,7 @@ import com.mirrorfly.gateway.dto.LicenseAVResDto;
 import com.mirrorfly.gateway.dto.LicenseChatResDto;
 import com.mirrorfly.gateway.dto.LicenseReqDto;
 import com.mirrorfly.gateway.dto.LicenseResDto;
+import com.mirrorfly.gateway.dto.LicenseUpdateRequestDto;
 import com.mirrorfly.gateway.dto.TurnDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatServerConfig;
@@ -111,18 +112,18 @@ public class LicenseService {
 		return chatSettingsRepo.findAll().get(1);
 	}
 
-	public Response<String> updateLicense(String key) {
+	public Response<String> updateLicense(LicenseUpdateRequestDto request) {
 		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
 		if (!existingKey.isEmpty() && existingKey.get(0) != null) {
 			LicenseLookup data = existingKey.get(0);
-			data.setLkey(key);
+			data.setLkey(request.getLicenseKey());
 			licenseLookupRepo.save(data);
 		} else {
 			throw new BadDataException("License key not found");
 		}
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.SC_OK);
-		response.setMessage("License updated successfully");
+		response.setMessage("License key updated successfully");
 		response.setData("true");
 		return response;
 	}

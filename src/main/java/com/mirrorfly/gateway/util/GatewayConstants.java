@@ -195,6 +195,10 @@ public class GatewayConstants {
 
 	public static final String INACTIVE_ACCOUNT = "Your Account has been Disabled by Admin";
 
+	public static final String LICENSEKEY_EMPTY = "License key should not be empty";
+	
+	public static final String LICENSEKEY_INVALID = "License key is invalid";
+
 	private GatewayConstants() {
 	}
 }
