@@ -1,8 +1,9 @@
 package com.mirrorfly.gateway.service;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
@@ -121,13 +122,11 @@ public class LicenseService {
 		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
 		if (!existingKey.isEmpty() && existingKey.get(0) != null) {
 
-			byte[] decodedBytes = Base64.getDecoder().decode(request.getLicenseKey());
-			String decodedString = new String(decodedBytes);
 			String encryptKey = GatewayConstants.ENCRYPTKEY + GatewayConstants.ENCRYPTKEY + GatewayConstants.ENCRYPTKEY;
-			String decyptedString = AESEncryption.decryptString(decodedString, encryptKey);
+			String decyptedString = AESEncryption.decryptString(request.getLicenseKey(), encryptKey);
 			ObjectMapper mapper = new ObjectMapper();
 			try {
-				mapper.readValue(decyptedString, LicenseDataDto.class);
+				mapper.readValue(URLDecoder.decode(decyptedString), LicenseDataDto.class);
 			} catch (JsonProcessingException e) {
 				throw new BadDataException("Invalid license key");
 			}

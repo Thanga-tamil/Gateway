@@ -16,7 +16,7 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.LicenseService;
 
 @RestController
-@RequestMapping("license")
+@RequestMapping("/api/v1/license")
 public class LicenseController {
 
 	@Autowired
