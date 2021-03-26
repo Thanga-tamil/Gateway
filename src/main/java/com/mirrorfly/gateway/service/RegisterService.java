@@ -3,12 +3,15 @@ package com.mirrorfly.gateway.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterResponseDto;
+import com.mirrorfly.gateway.dto.UserCountRequestDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.ChatUser;
@@ -38,6 +41,12 @@ public class RegisterService {
 
 	@Autowired
 	private UserRepo userRepo;
+
+	@Autowired
+	private ApplicationProperties applicationProperties;
+
+	@Autowired
+	private RestTemplate restTemplate;
 
 	public Response<RegisterInfoDto> getRegisterInfo() {
 		ChatSettings settings = settingsRepo.findAll().get(0);
@@ -71,21 +80,31 @@ public class RegisterService {
 	private RegisterResponseDto registerUser(RegisterDto registerDto) {
 		ChatUser chatUser = chatUserRepo.findByUsername(registerDto.getMobileNumber());
 		if (chatUser == null) {
+			UserCountRequestDto request = new UserCountRequestDto();
+			request.setLicenseKey(registerDto.getLicenseKey());
+			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/addUserCount";
+			Response<?> response = restTemplate.postForObject(url, request, Response.class);
+			if (response == null) {
+				throw new BadDataException("Error in registration. Please try again later");
+			}
+			if (!response.getStatus().equals(200)) {
+				throw new BadDataException(response.getMessage());
+			}
 			chatUser = new ChatUser();
 			chatUser.setUsername(registerDto.getMobileNumber());
 			chatUser.setMobileNumber(registerDto.getMobileNumber());
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 		}
-		if(registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().equals("")) {
+		if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().equals("")) {
 			chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		} else {
 			chatUser.setVoipDeviceToken(registerDto.getDeviceToken());
 		}
-		if(registerDto.getDeviceOsVersion() != null && !registerDto.getDeviceOsVersion().equals("")) {
+		if (registerDto.getDeviceOsVersion() != null && !registerDto.getDeviceOsVersion().equals("")) {
 			chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
 		} else {
 			chatUser.setDeviceOsVersion("12.0");
-		}		
+		}
 		chatUser.setDeviceToken(registerDto.getDeviceToken());
 		chatUser.setDevicetype(registerDto.getDeviceType());
 		chatUser.setMode(registerDto.getMode());

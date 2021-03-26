@@ -57,5 +57,9 @@ public class ApplicationProperties {
 	public String getResetPasswordRedirectUrl() {
 		return env.getProperty("reset_password_redirect_url");
 	}
+	
+	public String getWebportalApiBaseUrl() {
+		return env.getProperty("webportal.api_base_url");
+	}
 
 }

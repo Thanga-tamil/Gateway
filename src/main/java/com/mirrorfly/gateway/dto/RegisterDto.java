@@ -18,5 +18,7 @@ public class RegisterDto {
 	private String voipDeviceToken = "";
 	
 	private String deviceOsVersion = "";
+	
+	private String licenseKey = "";
 
 }
