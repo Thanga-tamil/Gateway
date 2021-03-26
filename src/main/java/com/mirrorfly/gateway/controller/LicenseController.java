@@ -26,10 +26,10 @@ public class LicenseController {
 	public @ResponseBody Response<LicenseResDto> getLicense(LicenseReqDto license) {
 		return licenseService.getLicense(license);
 	}
-
+	
 	@PostMapping
 	public @ResponseBody Response<String> postLicenseEncyptedData(@Validated @RequestBody LicenseUpdateRequestDto request) {
 		return licenseService.updateLicense(request);
 	}
-
+	
 }
