@@ -3,6 +3,7 @@ package com.mirrorfly.gateway.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -44,7 +45,7 @@ public class RegisterService {
 
 	@Autowired
 	private ApplicationProperties applicationProperties;
-
+	
 	@Autowired
 	private RestTemplate restTemplate;
 
@@ -80,15 +81,16 @@ public class RegisterService {
 	private RegisterResponseDto registerUser(RegisterDto registerDto) {
 		ChatUser chatUser = chatUserRepo.findByUsername(registerDto.getMobileNumber());
 		if (chatUser == null) {
+			if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
+				throw new BadDataException("License key should not be empty");
+			}
 			UserCountRequestDto request = new UserCountRequestDto();
 			request.setLicenseKey(registerDto.getLicenseKey());
 			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/addUserCount";
-			Response<?> response = restTemplate.postForObject(url, request, Response.class);
-			if (response == null) {
-				throw new BadDataException("Error in registration. Please try again later");
-			}
-			if (!response.getStatus().equals(200)) {
-				throw new BadDataException(response.getMessage());
+			try {
+				restTemplate.postForObject(url, request, Response.class);
+			} catch (HttpStatusCodeException e) {
+				handlingExceptionOfApiCall(e);
 			}
 			chatUser = new ChatUser();
 			chatUser.setUsername(registerDto.getMobileNumber());
@@ -119,6 +121,17 @@ public class RegisterService {
 		users.setUsername(registerDto.getMobileNumber());
 		userRepo.save(users);
 		return registerResponseDto;
+	}
+
+	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
+		String responseBody = e.getResponseBodyAsString();
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			Response<?> r = mapper.readValue(responseBody, Response.class);
+			throw new BadDataException(r.getMessage());
+		} catch (JsonProcessingException ex) {
+			throw new BadDataException("Error in registration. Please try again later");
+		}
 	}
 
 }
