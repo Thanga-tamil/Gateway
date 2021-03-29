@@ -62,4 +62,8 @@ public class ApplicationProperties {
 		return env.getProperty("webportal.api_base_url");
 	}
 
+	public String getLicenseKey() {
+		return env.getProperty("licenseKey");
+	}
+
 }

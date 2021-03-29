@@ -121,7 +121,7 @@ public class LicenseService {
 		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
 		if (!existingKey.isEmpty() && existingKey.get(0) != null) {
 
-			String encryptKey = GatewayConstants.ENCRYPTKEY + GatewayConstants.ENCRYPTKEY + GatewayConstants.ENCRYPTKEY;
+			String encryptKey = applicationProperties.getLicenseKey();
 			String decyptedString = AESEncryption.decryptString(request.getLicenseKey(), encryptKey);
 			ObjectMapper mapper = new ObjectMapper();
 			try {

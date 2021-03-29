@@ -201,8 +201,6 @@ public class GatewayConstants {
 	
 	public static final String LICENSEIV = "k%$/@B[jqAx}>8H@";
 	
-	public static final String ENCRYPTKEY = "~!q##E>>vUe*4bCD";
-
 	private GatewayConstants() {
 	}
 }

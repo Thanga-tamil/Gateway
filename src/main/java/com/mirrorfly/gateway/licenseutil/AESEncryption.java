@@ -32,7 +32,7 @@ public class AESEncryption {
 			return crypt.decrypt(encryptedText, key, iv);
 		} catch (Exception ex) {
 			log.error(ex.getMessage());
-			throw new BadDataException("Decyption failed");
+			throw new BadDataException("Decryption failed");
 		}
 	}
 
