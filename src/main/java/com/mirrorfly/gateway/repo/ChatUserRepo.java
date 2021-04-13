@@ -11,4 +11,6 @@ public interface ChatUserRepo extends JpaRepository<ChatUser, String> {
 
 	public ChatUser findByUsername(@Param("username") String username);
 
+	public ChatUser findByUserIdentifier(@Param("userIdentifier") String userIdentifier);
+
 }

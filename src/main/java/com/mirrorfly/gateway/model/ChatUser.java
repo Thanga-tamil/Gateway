@@ -49,7 +49,7 @@ public class ChatUser implements Serializable {
 	private String resource;
 
 	@Column(name = "mode")
-	private String mode;
+	private Integer mode;
 
 	@Column(name = "notification")
 	private String notification;
@@ -71,5 +71,8 @@ public class ChatUser implements Serializable {
 
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
+	
+	@Column(name = "user_identifier")
+	private String userIdentifier;
 
 }
