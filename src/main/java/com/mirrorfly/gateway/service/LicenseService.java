@@ -119,22 +119,12 @@ public class LicenseService {
 
 	public Response<String> updateLicense(LicenseUpdateRequestDto request) {
 		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
+		LicenseLookup data = new LicenseLookup();
 		if (!existingKey.isEmpty() && existingKey.get(0) != null) {
-
-			String encryptKey = applicationProperties.getLicenseKey();
-			String decyptedString = AESEncryption.decryptString(request.getLicenseKey(), encryptKey);
-			ObjectMapper mapper = new ObjectMapper();
-			try {
-				mapper.readValue(URLDecoder.decode(decyptedString), LicenseDataDto.class);
-			} catch (JsonProcessingException e) {
-				throw new BadDataException("Invalid license key");
-			}
-			LicenseLookup data = existingKey.get(0);
-			data.setLkey(request.getLicenseKey());
-			licenseLookupRepo.save(data);
-		} else {
-			throw new BadDataException("License key not found");
+			data = existingKey.get(0);
 		}
+		data.setLkey(request.getLicenseKey());
+		licenseLookupRepo.save(data);
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.SC_OK);
 		response.setMessage("License key updated successfully");
