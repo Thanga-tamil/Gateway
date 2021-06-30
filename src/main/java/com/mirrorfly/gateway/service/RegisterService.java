@@ -70,9 +70,9 @@ public class RegisterService {
 		} catch (JsonProcessingException e) {
 			throw new BadDataException("Json Parsing Error");
 		}
+		String licenseKey =applicationProperties.getLicenseKey();
 		Response<String> response = new Response<>();
-		response.setData(AESEncryption.encryptString(jsonString,
-				registerDto.getUserIdentifier() + registerDto.getUserIdentifier() + registerDto.getUserIdentifier()));
+		response.setData(AESEncryption.encryptString(jsonString,licenseKey + licenseKey + licenseKey));
 		response.setStatus(HttpStatus.OK.value());
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);		
 		return response;
