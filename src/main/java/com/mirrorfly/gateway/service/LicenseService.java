@@ -123,7 +123,8 @@ public class LicenseService {
 		if (!existingKey.isEmpty() && existingKey.get(0) != null) {
 			data = existingKey.get(0);
 		}
-		String encryptKey = applicationProperties.getLicenseKey();
+		String licenseKey = applicationProperties.getLicenseKey();
+		String encryptKey = licenseKey + licenseKey + licenseKey;
 		String decyptedString = AESEncryption.decryptString(request.getLicenseKey(), encryptKey);
 		ObjectMapper mapper = new ObjectMapper();
 		try {
