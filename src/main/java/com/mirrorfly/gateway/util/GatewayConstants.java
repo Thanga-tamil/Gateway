@@ -199,7 +199,7 @@ public class GatewayConstants {
 	
 	public static final String LICENSEKEY_INVALID = "License key is invalid";
 	
-	public static final String LICENSEIV = "k%$/@B[jqAx}>8H@";
+	public static final String LICENSEIV = "ddc0f15cc2c90fca";
 
 	public static final String USER_IDENTIFIER_EMPTY = "User identifier should not be empty";
 
