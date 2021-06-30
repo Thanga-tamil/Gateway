@@ -3,12 +3,16 @@ package com.mirrorfly.gateway.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterResponseDto;
+import com.mirrorfly.gateway.dto.UserCountRequestDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.ChatUser;
@@ -39,6 +43,12 @@ public class RegisterService {
 	@Autowired
 	private UserRepo userRepo;
 
+	@Autowired
+	private ApplicationProperties applicationProperties;
+	
+	@Autowired
+	private RestTemplate restTemplate;
+
 	public Response<RegisterInfoDto> getRegisterInfo() {
 		ChatSettings settings = settingsRepo.findAll().get(0);
 		RegisterInfoDto info = new RegisterInfoDto();
@@ -62,44 +72,85 @@ public class RegisterService {
 		}
 		Response<String> response = new Response<>();
 		response.setData(AESEncryption.encryptString(jsonString,
-				registerDto.getMobileNumber() + registerDto.getMobileNumber() + registerDto.getMobileNumber()));
+				registerDto.getUserIdentifier() + registerDto.getUserIdentifier() + registerDto.getUserIdentifier()));
 		response.setStatus(HttpStatus.OK.value());
-		response.setMessage(GatewayConstants.DATA_RETRIEVED);
+		response.setMessage(GatewayConstants.DATA_RETRIEVED);		
 		return response;
 	}
 
 	private RegisterResponseDto registerUser(RegisterDto registerDto) {
-		ChatUser chatUser = chatUserRepo.findByUsername(registerDto.getMobileNumber());
+		inputDataValidating(registerDto);
+		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
+			UserCountRequestDto request = new UserCountRequestDto();
+			request.setLicenseKey(registerDto.getLicenseKey());
+			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/addUserCount";
+			try {
+				restTemplate.postForObject(url, request, Response.class);
+			} catch (HttpStatusCodeException e) {
+				handlingExceptionOfApiCall(e);
+			}
 			chatUser = new ChatUser();
-			chatUser.setUsername(registerDto.getMobileNumber());
+			chatUser.setUsername(registerDto.getUserIdentifier());
 			chatUser.setMobileNumber(registerDto.getMobileNumber());
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
+			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 		}
-		if(registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().equals("")) {
+		if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().equals("")) {
 			chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		} else {
 			chatUser.setVoipDeviceToken(registerDto.getDeviceToken());
 		}
-		if(registerDto.getDeviceOsVersion() != null && !registerDto.getDeviceOsVersion().equals("")) {
+		if (registerDto.getDeviceOsVersion() != null && !registerDto.getDeviceOsVersion().equals("")) {
 			chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
 		} else {
-			chatUser.setDeviceOsVersion("12.0");
-		}		
+			if(registerDto.getDeviceType().equalsIgnoreCase("ios")) {
+				chatUser.setDeviceOsVersion("12.0");
+			} else {
+				chatUser.setDeviceOsVersion("");
+			}
+		}
 		chatUser.setDeviceToken(registerDto.getDeviceToken());
 		chatUser.setDevicetype(registerDto.getDeviceType());
 		chatUser.setMode(registerDto.getMode());
 		chatUserRepo.save(chatUser);
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
 		registerResponseDto.setPassword(passwordService.generateRandomPassword());
-		registerResponseDto.setToken(tokenService.getToken(registerDto.getMobileNumber(), registerDto.getDeviceType(),
+		registerResponseDto.setToken(tokenService.getToken(registerDto.getUserIdentifier(), registerDto.getDeviceType(),
 				registerDto.getDeviceType()));
-		registerResponseDto.setUsername(registerDto.getMobileNumber());
+		registerResponseDto.setUsername(registerDto.getUserIdentifier());
 		Users users = new Users();
 		users.setPassword(registerResponseDto.getPassword());
-		users.setUsername(registerDto.getMobileNumber());
+		users.setUsername(registerDto.getUserIdentifier());
+		users.setWsPassword(registerResponseDto.getPassword());
 		userRepo.save(users);
 		return registerResponseDto;
+	}
+	
+	private void inputDataValidating(RegisterDto registerDto) {
+		if (registerDto.getUserIdentifier() == null || registerDto.getUserIdentifier().trim().isEmpty()) {
+			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
+		}
+		if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
+			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
+		}
+		if (registerDto.getDeviceType() == null || registerDto.getDeviceType().trim().isEmpty()) {
+			throw new BadDataException(GatewayConstants.DEVICE_TYPE_EMPTY);
+		}
+		if (!registerDto.getDeviceType().equalsIgnoreCase("android") && !registerDto.getDeviceType().equalsIgnoreCase("web") && !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
+			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
+		}
+	}
+
+	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
+		String responseBody = e.getResponseBodyAsString();
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			Response<?> r = mapper.readValue(responseBody, Response.class);
+			throw new BadDataException(r.getMessage());
+		} catch (JsonProcessingException ex) {
+			throw new BadDataException("Error in registration. Please try again later");
+		}
 	}
 
 }
