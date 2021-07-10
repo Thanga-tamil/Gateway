@@ -1,6 +1,5 @@
 package com.mirrorfly.gateway.service;
 
-import java.net.URLDecoder;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,22 +10,20 @@ import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.LicenseAVResDto;
 import com.mirrorfly.gateway.dto.LicenseChatResDto;
-import com.mirrorfly.gateway.dto.LicenseDataDto;
 import com.mirrorfly.gateway.dto.LicenseReqDto;
 import com.mirrorfly.gateway.dto.LicenseResDto;
 import com.mirrorfly.gateway.dto.LicenseUpdateRequestDto;
 import com.mirrorfly.gateway.dto.TurnDto;
 import com.mirrorfly.gateway.exception.BadDataException;
-import com.mirrorfly.gateway.licenseutil.AESEncryption;
 import com.mirrorfly.gateway.model.ChatServerConfig;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.License;
 import com.mirrorfly.gateway.model.LicenseLookup;
+import com.mirrorfly.gateway.queue.LicenseDataPayload;
+import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.ChatServerConfigRepo;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.LicenseLookupRepo;
@@ -52,6 +49,9 @@ public class LicenseService {
 
 	@Autowired
 	private LicenseLookupRepo licenseLookupRepo;
+	
+	@Autowired
+	private QueueService queueService;
 
 	public Response<LicenseResDto> getLicense(LicenseReqDto licenseReq) {
 
@@ -125,6 +125,7 @@ public class LicenseService {
 		}
 		data.setLkey(request.getLicenseKey());
 		licenseLookupRepo.save(data);
+		queueService.sendLicenseDataPayload(new LicenseDataPayload(request.getLicenseKey()));
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.SC_OK);
 		response.setMessage("License key updated successfully");

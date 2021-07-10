@@ -66,4 +66,8 @@ public class ApplicationProperties {
 		return env.getProperty("licenseKey");
 	}
 
+	public String getLicenseDataQueue() {
+		return env.getProperty("queue.licensedata");
+	}
+
 }

@@ -34,5 +34,19 @@ public class QueueService {
 		}
 		return true;
 	}
+	
+	public boolean sendLicenseDataPayload(LicenseDataPayload licenseDataPayload) {
+		try {
+			rabbitTemplate.convertAndSend(applicationProperties.getLicenseDataQueue(), EnumQueue.LICENSE_QUEUE.getQueue(),
+					licenseDataPayload);
+		} catch (AmqpException a) {
+			log.error("Error in Sending to RabbitMQ Mail Exchange", a);
+			return false;
+		} catch (Exception a) {
+			log.error("Error in Sending to Mail Queue", a);
+			return false;
 
+		}
+		return true;
+	}
 }

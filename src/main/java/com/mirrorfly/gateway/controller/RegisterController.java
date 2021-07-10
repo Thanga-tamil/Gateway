@@ -18,9 +18,9 @@ import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterRequestDto;
 import com.mirrorfly.gateway.exception.BadDataException;
-import com.mirrorfly.gateway.licenseutil.AESEncryption;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.RegisterService;
+import com.mirrorfly.gateway.util.AESEncryption;
 
 @RestController
 @RequestMapping("/api/v1/register")
