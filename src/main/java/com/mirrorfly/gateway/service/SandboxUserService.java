@@ -20,8 +20,6 @@ import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
-import com.mirrorfly.gateway.repo.VcardSearch;
-import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
@@ -47,9 +45,6 @@ public class SandboxUserService {
 
 	@Autowired
 	private UserRepo userRepo;
-
-	@Autowired
-	private VcardSearchRepo vcardSearchRepo;
 
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
@@ -92,7 +87,7 @@ public class SandboxUserService {
 				handlingExceptionOfApiCall(e);
 			}
 		}
-		
+
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			jsonString = mapper.writeValueAsString(registerResponseDto);
@@ -176,12 +171,12 @@ public class SandboxUserService {
 		registerResponseDto
 				.setToken(tokenService.getToken(username, registerDto.getDeviceType(), registerDto.getDeviceType()));
 		registerResponseDto.setUsername(username);
-		
+
 		Users users = new Users();
 		users.setPassword(registerResponseDto.getPassword());
 		users.setUsername(username);
 		userRepo.save(users);
-		
+
 		return registerResponseDto;
 	}
 

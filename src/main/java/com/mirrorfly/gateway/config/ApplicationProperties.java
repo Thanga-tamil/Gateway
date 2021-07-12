@@ -74,8 +74,4 @@ public class ApplicationProperties {
 		return env.getProperty("xmpp_domain");
 	}
 	
-	public String getEnvironment() {
-		return env.getProperty("environment");
-	}
-
 }
