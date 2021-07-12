@@ -214,9 +214,7 @@ public class GatewayConstants {
 	public static final String CONTACT_ADD_SUCCESS = "Contact Added successfully";
 	
 	public static final String USER_USERIDENTIFIER_ALREADY_REGISTERED = "This user already registered with different license key";
-	
-	public static final String CUSTOMER_CREATED = "Customer created successfully";
-	
+		
 	private GatewayConstants() {
 	}
 }

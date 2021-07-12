@@ -13,6 +13,6 @@ public class SandboxRegisterResponseDto {
 
 	private Boolean isExisting;
 
-	private Boolean isProfileUpdated;
+	private Boolean isProfileUpdated = false;
 
 }

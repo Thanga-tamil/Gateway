@@ -96,23 +96,25 @@ public class RegisterService {
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 		}
-		if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().equals("")) {
-			chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-		} else {
-			chatUser.setVoipDeviceToken(registerDto.getDeviceToken());
-		}
-		if (registerDto.getDeviceOsVersion() != null && !registerDto.getDeviceOsVersion().equals("")) {
-			chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-		} else {
-			if(registerDto.getDeviceType().equalsIgnoreCase("ios")) {
-				chatUser.setDeviceOsVersion("12.0");
+		if(!registerDto.getDeviceType().equalsIgnoreCase("web")) {
+			if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().equals("")) {
+				chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 			} else {
-				chatUser.setDeviceOsVersion("");
+				chatUser.setVoipDeviceToken(registerDto.getDeviceToken());
 			}
+			if (registerDto.getDeviceOsVersion() != null && !registerDto.getDeviceOsVersion().equals("")) {
+				chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+			} else {
+				if(registerDto.getDeviceType().equalsIgnoreCase("ios")) {
+					chatUser.setDeviceOsVersion("12.0");
+				} else {
+					chatUser.setDeviceOsVersion("");
+				}
+			}
+			chatUser.setDeviceToken(registerDto.getDeviceToken());
+			chatUser.setDevicetype(registerDto.getDeviceType());
+			chatUser.setMode(registerDto.getMode());
 		}
-		chatUser.setDeviceToken(registerDto.getDeviceToken());
-		chatUser.setDevicetype(registerDto.getDeviceType());
-		chatUser.setMode(registerDto.getMode());
 		chatUserRepo.save(chatUser);
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
 		registerResponseDto.setPassword(passwordService.generateRandomPassword());
