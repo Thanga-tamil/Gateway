@@ -72,6 +72,9 @@ public class ChatUser implements Serializable {
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
 	
+	@Column(name = "license_key")
+	private String licenseKey;
+	
 	@Column(name = "user_identifier")
 	private String userIdentifier;
 
