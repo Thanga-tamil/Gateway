@@ -66,4 +66,12 @@ public class ApplicationProperties {
 		return env.getProperty("licenseKey");
 	}
 
+	public String getLicenseDataQueue() {
+		return env.getProperty("queue.licensedata");
+	}
+	
+	public String getXmppDomain() {
+		return env.getProperty("xmpp_domain");
+	}
+	
 }

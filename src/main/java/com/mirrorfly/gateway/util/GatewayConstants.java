@@ -209,6 +209,12 @@ public class GatewayConstants {
 
 	public static final String DEVICE_TYPE_NOT_VALID = "Invalid device type";
 	
+	public static final String USER_NAME_EMPTY = "User name should not be empty";
+	
+	public static final String CONTACT_ADD_SUCCESS = "Contact Added successfully";
+	
+	public static final String USER_USERIDENTIFIER_ALREADY_REGISTERED = "This user already registered with different license key";
+		
 	private GatewayConstants() {
 	}
 }
