@@ -73,7 +73,7 @@ public class SandboxUserService {
 					registerDto.getDeviceType()));
 			registerResponseDto.setIsExisting(true);
 		} else {
-			String username = GatewayUtil.getAlphaNumericString(10);
+			String username = GatewayUtil.getAlphaNumericString(10).toLowerCase();
 			registerResponseDto = registerUser(registerDto, username);
 			registerResponseDto.setIsExisting(false);
 			URI url = UriComponentsBuilder
