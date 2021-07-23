@@ -133,6 +133,30 @@ public class RegisterService {
 		if (registerDto.getUserIdentifier() == null || registerDto.getUserIdentifier().trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
 		}
+		if(registerDto.getUserIdentifier().contains("\"")) {
+			throw new BadDataException("User identifier should not contain double quotes.");
+		}
+		if(registerDto.getUserIdentifier().contains("&")) {
+			throw new BadDataException("User identifier should not contain ampersand.");
+		}
+		if(registerDto.getUserIdentifier().contains("\'")) {
+			throw new BadDataException("User identifier should not contain back slash.");
+		}
+		if(registerDto.getUserIdentifier().contains("/")) {
+			throw new BadDataException("User identifier should not contain forward slash.");
+		}
+		if(registerDto.getUserIdentifier().contains(":")) {
+			throw new BadDataException("User identifier should not contain colon.");
+		}
+		if(registerDto.getUserIdentifier().contains("<")) {
+			throw new BadDataException("User identifier should not contain lesser-than.");
+		}
+		if(registerDto.getUserIdentifier().contains(">")) {
+			throw new BadDataException("User identifier should not contain greater-than.");
+		}
+		if(registerDto.getUserIdentifier().contains("@")) {
+			throw new BadDataException("User identifier should not contain  at sign.");
+		}
 		if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
 		}
