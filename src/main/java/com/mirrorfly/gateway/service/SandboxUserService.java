@@ -64,6 +64,9 @@ public class SandboxUserService {
 				throw new BadDataException(GatewayConstants.USER_USERIDENTIFIER_ALREADY_REGISTERED);
 			}
 			if (!registerDto.getDeviceType().equalsIgnoreCase("web")) {
+				if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().trim().equals("")) {
+					chatUserRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
+				}
 				updateUserMobileDetails(registerDto, chatUser);
 			}
 			Users users = userRepo.findByUsername(chatUser.getUsername());
@@ -145,6 +148,9 @@ public class SandboxUserService {
 		chatUser.setMobileNumber(registerDto.getMobileNumber());
 		chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 		if (!registerDto.getDeviceType().equalsIgnoreCase("web")) {
+			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().trim().equals("")) {
+				chatUserRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
+			}
 			if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().equals("")) {
 				chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 			} else {

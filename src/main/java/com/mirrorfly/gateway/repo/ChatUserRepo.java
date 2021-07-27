@@ -22,4 +22,7 @@ public interface ChatUserRepo extends JpaRepository<ChatUser, String> {
 	@Query("Select r from RosterUser r where r.rosterUserKey.username=:username")
 	public List<RosterUser> getlistBylicenseKey(@Param(value = "username") String username);
 
+	@Query("Update ChatUser c set c.devicetype='',c.mode='',c.deviceToken='',c.voipDeviceToken='' where c.deviceToken = :deviceToken")
+	public void updateDeviceTokenAsEmpty(String deviceToken);
+
 }
