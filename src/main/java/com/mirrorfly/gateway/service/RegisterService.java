@@ -97,6 +97,9 @@ public class RegisterService {
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 		}
 		if(!registerDto.getDeviceType().equalsIgnoreCase("web")) {
+			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().trim().equals("")) {
+				chatUserRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
+			}
 			if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().equals("")) {
 				chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 			} else {
