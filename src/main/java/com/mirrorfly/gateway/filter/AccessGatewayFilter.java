@@ -90,6 +90,7 @@ public class AccessGatewayFilter implements GlobalFilter {
 			DataBuffer buffer = serverWebExchange.getResponse().bufferFactory().wrap(gsonObject.getBytes());
 			return serverWebExchange.getResponse().writeWith(Flux.just(buffer));
 		} catch (IOException e) {
+			log.error("Error in unauthorized", e.getMessage());
 		}
 		return null;
 	}
