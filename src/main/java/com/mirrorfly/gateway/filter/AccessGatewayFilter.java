@@ -38,10 +38,11 @@ public class AccessGatewayFilter implements GlobalFilter {
 			exchange.getResponse().setStatusCode(HttpStatus.OK);
 			return Mono.empty();
 		}
+		String apidoc= "api-docs";
 		if (exchange.getRequest().getPath().toString().contains("swagger")
 				|| exchange.getRequest().getPath().toString().contains("api-docs")
 				|| exchange.getRequest().getPath().toString().contains("webjars")
-				|| exchange.getRequest().getPath().toString().contains("api-docs")
+				|| exchange.getRequest().getPath().toString().contains(apidoc)
 				|| exchange.getRequest().getPath().toString().contains("swagger-resources")) {
 			ServerHttpRequest.Builder builder = request.mutate();
 			return chain.filter(exchange.mutate().request(builder.build()).build());
