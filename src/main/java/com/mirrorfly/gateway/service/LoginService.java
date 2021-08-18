@@ -121,7 +121,7 @@ public class LoginService {
 		Response<AdminLoginResponse> response = new Response<>();
 		AdminLoginResponse loginDetails = new AdminLoginResponse();
 		loginDetails.setImage(adminUser != null ? adminUser.getImage() : "");
-		loginDetails.setToken(tokenService.getToken(adminUser.getUsername(), "", ""));
+		loginDetails.setToken(tokenService.getToken(adminUser != null ? adminUser.getUsername() : "", "", ""));
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
