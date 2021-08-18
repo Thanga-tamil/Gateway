@@ -6,8 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.mirrorfly.gateway.dto.OtpResponseDto;
-import com.mirrorfly.gateway.dto.VerifyFCMDto;
-import com.mirrorfly.gateway.dto.VerifyFCMResponse;
+import com.mirrorfly.gateway.dto.VerifyUserDto;
+import com.mirrorfly.gateway.dto.VerifyUserResponse;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.Otp;
@@ -58,20 +58,14 @@ public class OtpService {
 		return response;
 	}
 
-	public Response<VerifyFCMResponse> verifyFCM(VerifyFCMDto fcmDto) {
-		Response<VerifyFCMResponse> response = new Response<>();
-		// idToken comes from the HTTP Header
-		/*
-		 * String fcm = restService.verifyFCMToken(requestDto); if (fcm != null && fcm
-		 * != "200" ) { throw new BadDataException(GatewayConstants.USER_BLOCK); }
-		 * 
-		 * ChatUser chatUser =
-		 * chatUserRepo.findByMobileNumber(fcmDto.getMobileNumber()); if (chatUser ==
-		 * null) { RegisterDto registerDto = new RegisterDto();
-		 * registerService.registerNewUser(registerDto); }
-		 */
-		VerifyFCMResponse dto = new VerifyFCMResponse();
-		response.setMessage(GatewayConstants.FCM_SENT);
+	public Response<VerifyUserResponse> verifyUser(VerifyUserDto userDto) {
+		Response<VerifyUserResponse> response = new Response<>();
+		VerifyUserResponse dto = new VerifyUserResponse();
+		  ChatUser chatUser = chatUserRepo.findByMobileNumber(userDto.getMobileNumber()); 
+		 if (chatUser != null) { 
+			 dto.setDeviceToken(chatUser.getDeviceToken());
+		}		
+		response.setMessage(GatewayConstants.AVAILABLE);
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(dto);
 		return response;

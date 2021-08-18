@@ -27,6 +27,8 @@ public interface ChatUserRepo extends JpaRepository<ChatUser, String> {
 	@Transactional
 	@Modifying
 	@Query("Update ChatUser c set c.devicetype='',c.deviceToken='',c.voipDeviceToken='' where c.deviceToken = :deviceToken")
-	public void updateDeviceTokenAsEmpty(String deviceToken);
+	public void updateDeviceTokenAsEmpty(String deviceToken); 
+	
+	public ChatUser findByMobileNumber(@Param("mobileNumber") String mobileNumber);
 
 }
