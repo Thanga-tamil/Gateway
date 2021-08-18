@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mirrorfly.gateway.dto.OtpResponseDto;
-import com.mirrorfly.gateway.dto.VerifyFCMDto;
-import com.mirrorfly.gateway.dto.VerifyFCMResponse;
+import com.mirrorfly.gateway.dto.VerifyUserDto;
+import com.mirrorfly.gateway.dto.VerifyUserResponse;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.OtpService;
 
@@ -44,9 +44,9 @@ public class OtpController {
 	 * @param otp this has mobilenumber.
 	 * @return success full response verify otp for authorization.
 	 */
-	@PostMapping("/verifyfcm")
-	public @ResponseBody Response<VerifyFCMResponse> verifyFCM(@RequestBody VerifyFCMDto fcmDto) {
-		return otpService.verifyFCM(fcmDto);
+	@PostMapping("/verifyuser")
+	public @ResponseBody Response<VerifyUserResponse> verifyUser(@RequestBody VerifyUserDto userDto) {
+		return otpService.verifyUser(userDto);
 	}
 
 }
