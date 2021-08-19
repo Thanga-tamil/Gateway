@@ -17,9 +17,11 @@ import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.Users;
+import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
+import com.mirrorfly.gateway.repo.VcardRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
@@ -48,6 +50,9 @@ public class RegisterService {
 	
 	@Autowired
 	private RestTemplate restTemplate;
+	
+	@Autowired
+	private VcardRepo vcardRepo;
 
 	public Response<RegisterInfoDto> getRegisterInfo() {
 		ChatSettings settings = settingsRepo.findAll().get(0);
@@ -63,6 +68,10 @@ public class RegisterService {
 
 	public Response<String> registerNewUser(RegisterDto registerDto) {
 		RegisterResponseDto registerResponseDto = registerUser(registerDto);
+		Vcard vcards = vcardRepo.findByUsername(registerResponseDto.getUsername());
+		if(vcards != null) {
+			registerResponseDto.setIsProfileUpdated(true);   
+		}
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonString;
 		try {
