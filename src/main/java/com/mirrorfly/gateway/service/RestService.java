@@ -29,12 +29,11 @@ public class RestService {
 			headers.add("Accept", MediaType.APPLICATION_JSON_VALUE);
 			headers.setContentType(MediaType.APPLICATION_JSON);
 			response = new FCMResponseDto();
-			response = restTemplate.postForObject(applicationProperties.getFcmURL(), fcmRequestDto,
-					FCMResponseDto.class);
+			response = restTemplate.postForObject(applicationProperties.getFcmURL(), fcmRequestDto,	FCMResponseDto.class);
 		} catch (Exception ex) {
 			log.error("Error IN FireBase Connection");
 		}
-		return response.getStatusCode();
+		return response !=null ? response.getStatusCode() : "";
 	}
 
 }

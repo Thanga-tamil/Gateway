@@ -104,10 +104,8 @@ public class LoginService {
 			if (adminUser == null)
 				adminUser = adminUserRepo.findByEmailId(login.getUsername());
 
-			if (adminUser != null) {
-				if (adminUser.getIsActive() == 0) {
-					throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
-				}
+			if (adminUser != null && adminUser.getIsActive() == 0) {
+ 					throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);				
 			}
 			if (null == adminUser) {
 				throw new BadDataException(GatewayConstants.INVALID_CREDENTAILS);
@@ -122,8 +120,8 @@ public class LoginService {
 		}
 		Response<AdminLoginResponse> response = new Response<>();
 		AdminLoginResponse loginDetails = new AdminLoginResponse();
-		loginDetails.setImage(adminUser.getImage());
-		loginDetails.setToken(tokenService.getToken(adminUser.getUsername(), "", ""));
+		loginDetails.setImage(adminUser != null ? adminUser.getImage() : "");
+		loginDetails.setToken(tokenService.getToken(adminUser != null ? adminUser.getUsername() : "", "", ""));
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
@@ -131,14 +129,10 @@ public class LoginService {
 	}
 
 	public Response<String> sendForgotPasswordEmail(String emailId) {
-
 		AdminUser mail = adminUserRepo.findByEmailId(emailId);
-		if (mail != null) {
-			if (mail.getIsActive() == 0) {
-				throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
-			}
+		if (mail != null && mail.getIsActive() == 0) {
+ 				throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
 		}
-
 		if (mail == null)
 			throw new BadDataException(GatewayConstants.EMAILID_NOT_REGISTERED);
 
@@ -161,10 +155,8 @@ public class LoginService {
 			throw new BadDataException("You can't be able to Reset Password");
 
 		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
-		if (adminUser != null) {
-			if (adminUser.getIsActive() == 0) {
+		if (adminUser != null && adminUser.getIsActive() == 0) {			 
 				throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
-			}
 		}
 
 		validToken = emailTokenRepo.findByTokenAndStatus(token, "PENDING");
@@ -235,8 +227,7 @@ public class LoginService {
 		/*** Password Hashing ***/
 
 		Optional<String> saltValue = PasswordEncryptionService.generateSalt(32);
-		Optional<String> passwordValue = PasswordEncryptionService.hashPassword(passwordDto.getNewPassword(),
-				saltValue.get());
+		Optional<String> passwordValue = PasswordEncryptionService.hashPassword(passwordDto.getNewPassword(),saltValue.isPresent() ? saltValue.get() : "");
 
 		String hashPassword = null;
 		if (passwordValue.isPresent())
@@ -244,7 +235,7 @@ public class LoginService {
 
 		/*** End ***/
 		adminUser.setHashedPassword(hashPassword);
-		adminUser.setSaltPassword(saltValue.get());
+		adminUser.setSaltPassword(saltValue.isPresent() ? saltValue.get() : "");
 		adminUser.setUpdatedAt(LocalDateTime.now());
 		adminUserRepo.save(adminUser);
 

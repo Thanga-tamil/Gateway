@@ -18,8 +18,10 @@ import com.mirrorfly.gateway.dto.SandboxRegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.Users;
+import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
+import com.mirrorfly.gateway.repo.VcardRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
@@ -45,6 +47,9 @@ public class SandboxUserService {
 
 	@Autowired
 	private UserRepo userRepo;
+	
+	@Autowired
+	private VcardRepo vcardRepo;
 
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
@@ -90,7 +95,10 @@ public class SandboxUserService {
 				handlingExceptionOfApiCall(e);
 			}
 		}
-
+		Vcard vcards = vcardRepo.findByUsername(registerResponseDto.getUsername());
+		if(vcards != null) {
+			registerResponseDto.setIsProfileUpdated(true);   
+		}
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			jsonString = mapper.writeValueAsString(registerResponseDto);
