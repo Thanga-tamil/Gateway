@@ -50,6 +50,9 @@ public class LoginService {
 
 	@Autowired
 	private EmailTokenRepo emailTokenRepo;
+	
+	@Autowired
+	private PasswordService passwordService;
 
 	@Autowired
 	private ApplicationProperties applicationProperties;
@@ -87,6 +90,7 @@ public class LoginService {
 				chatUser.get().setDeviceToken("");
 				chatUser.get().setDevicetype("");
 				chatUserRepo.save(chatUser.get());
+				userRepo.updatePasswordByUsername(passwordService.generateRandomPassword(), username);
 			}
 		}
 		Response<String> response = new Response<>();
