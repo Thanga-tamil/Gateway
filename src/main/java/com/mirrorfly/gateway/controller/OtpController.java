@@ -48,5 +48,10 @@ public class OtpController {
 	public @ResponseBody Response<VerifyUserResponse> verifyUser(@RequestBody VerifyUserDto userDto) {
 		return otpService.verifyUser(userDto);
 	}
+	
+	@PostMapping("/verifyfcm")
+	public @ResponseBody Response<VerifyUserResponse> verifyfcm(@RequestBody VerifyUserDto userDto) {
+		return otpService.verifyUser(userDto);
+	}
 
 }
