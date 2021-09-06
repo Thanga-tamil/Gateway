@@ -124,7 +124,7 @@ public class CryptLib {
 		md.update(text.getBytes("UTF-8"));
 		byte[] digest = md.digest();
 
-		StringBuffer result = new StringBuffer();
+		StringBuilder result = new StringBuilder();
 		for (byte b : digest) {
 			/**
 			 * Convert to hex
@@ -151,7 +151,7 @@ public class CryptLib {
 		SecureRandom ranGen = new SecureRandom();
 		byte[] aesKey = new byte[16];
 		ranGen.nextBytes(aesKey);
-		StringBuffer result = new StringBuffer();
+		StringBuilder result = new StringBuilder();
 		for (byte b : aesKey) {
 			/**
 			 * Convert to hex
