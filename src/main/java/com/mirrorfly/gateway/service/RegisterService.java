@@ -1,10 +1,15 @@
 package com.mirrorfly.gateway.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -91,11 +96,13 @@ public class RegisterService {
 		inputDataValidating(registerDto);
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
-			UserCountRequestDto request = new UserCountRequestDto();
-			request.setLicenseKey(registerDto.getLicenseKey());
-			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/addUserCount";
+			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
 			try {
-				restTemplate.postForObject(url, request, Response.class);
+				HttpHeaders headers = new HttpHeaders();
+				headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+				UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url).queryParam("licenseKey", registerDto.getLicenseKey());
+				HttpEntity<?> entity = new HttpEntity<>(headers);
+				restTemplate.exchange(builder.toUriString(),HttpMethod.GET, entity,String.class);
 			} catch (HttpStatusCodeException e) {
 				handlingExceptionOfApiCall(e);
 			}
