@@ -7,6 +7,7 @@
 package com.mirrorfly.gateway.util;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
@@ -121,7 +122,7 @@ public class CryptLib {
 		String resultStr;
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
 
-		md.update(text.getBytes("UTF-8"));
+		md.update(text.getBytes(StandardCharsets.UTF_8));
 		byte[] digest = md.digest();
 
 		StringBuilder result = new StringBuilder();
@@ -190,18 +191,18 @@ public class CryptLib {
 		/**
 		 * _encryptionKey = md5(_encryptionKey); length of the key provided
 		 */
-		int len = _encryptionKey.getBytes("UTF-8").length;
+		int len = _encryptionKey.getBytes(StandardCharsets.UTF_8).length;
 
-		if (_encryptionKey.getBytes("UTF-8").length > _key.length)
+		if (_encryptionKey.getBytes(StandardCharsets.UTF_8).length > _key.length)
 			len = _key.length;
 
-		int ivlen = _initVector.getBytes("UTF-8").length;
+		int ivlen = _initVector.getBytes(StandardCharsets.UTF_8).length;
 
-		if (_initVector.getBytes("UTF-8").length > _iv.length)
+		if (_initVector.getBytes(StandardCharsets.UTF_8).length > _iv.length)
 			ivlen = _iv.length;
 
-		System.arraycopy(_encryptionKey.getBytes("UTF-8"), 0, _key, 0, len);
-		System.arraycopy(_initVector.getBytes("UTF-8"), 0, _iv, 0, ivlen);
+		System.arraycopy(_encryptionKey.getBytes(StandardCharsets.UTF_8), 0, _key, 0, len);
+		System.arraycopy(_initVector.getBytes(StandardCharsets.UTF_8), 0, _iv, 0, ivlen);
 		/**
 		 * Code for Dynamic key
 		 *
@@ -230,7 +231,7 @@ public class CryptLib {
 			 * for more info.
 			 */
 			_cx.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-			byte[] results = _cx.doFinal(_inputText.getBytes("UTF-8"));
+			byte[] results = _cx.doFinal(_inputText.getBytes(StandardCharsets.UTF_8));
 			/**
 			 * Multi-part, transformation and (encryption)
 			 * <p>

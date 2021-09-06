@@ -174,7 +174,11 @@ public class RegisterService {
 		}
 		if(registerDto.getUserIdentifier().contains("@")) {
 			throw new BadDataException("User identifier should not contain  at sign.");
-		}
+		}		
+		inputDataValidation(registerDto);
+	}
+
+	private void inputDataValidation(RegisterDto registerDto) {
 		if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
 		}
@@ -183,7 +187,7 @@ public class RegisterService {
 		}
 		if (!registerDto.getDeviceType().equalsIgnoreCase("android") && !registerDto.getDeviceType().equalsIgnoreCase("web") && !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
-		}
+		}		
 	}
 
 	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
