@@ -95,16 +95,7 @@ public class RegisterService {
 		inputDataValidating(registerDto);
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
-			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
-			try {
-				HttpHeaders headers = new HttpHeaders();
-				headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-				UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url).queryParam("licenseKey", registerDto.getLicenseKey());
-				HttpEntity<?> entity = new HttpEntity<>(headers);
-				restTemplate.exchange(builder.toUriString(),HttpMethod.GET, entity,String.class);
-			} catch (HttpStatusCodeException e) {
-				handlingExceptionOfApiCall(e);
-			}
+			validateLicenseKey(registerDto.getLicenseKey());	// validate license key		
 			chatUser = new ChatUser();
 			chatUser.setUsername(registerDto.getUserIdentifier());
 			chatUser.setMobileNumber(registerDto.getMobileNumber());
@@ -147,6 +138,19 @@ public class RegisterService {
 		return registerResponseDto;
 	}
 	
+	private void validateLicenseKey(String licenseKey) {
+		String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
+		try {
+			HttpHeaders headers = new HttpHeaders();
+			headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url).queryParam("licenseKey", licenseKey);
+			HttpEntity<?> entity = new HttpEntity<>(headers);
+			restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
+		} catch (HttpStatusCodeException e) {
+			handlingExceptionOfApiCall(e);
+		}
+	}
+
 	private void inputDataValidating(RegisterDto registerDto) {
 		if (registerDto.getUserIdentifier() == null || registerDto.getUserIdentifier().trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
