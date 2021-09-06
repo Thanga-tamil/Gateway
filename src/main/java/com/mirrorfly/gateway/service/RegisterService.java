@@ -17,7 +17,6 @@ import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterResponseDto;
-import com.mirrorfly.gateway.dto.UserCountRequestDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.ChatUser;
