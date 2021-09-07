@@ -1,10 +1,15 @@
 package com.mirrorfly.gateway.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,7 +17,6 @@ import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterResponseDto;
-import com.mirrorfly.gateway.dto.UserCountRequestDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.ChatUser;
@@ -91,11 +95,13 @@ public class RegisterService {
 		inputDataValidating(registerDto);
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
-			UserCountRequestDto request = new UserCountRequestDto();
-			request.setLicenseKey(registerDto.getLicenseKey());
-			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/addUserCount";
+			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
 			try {
-				restTemplate.postForObject(url, request, Response.class);
+				HttpHeaders headers = new HttpHeaders();
+				headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+				UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url).queryParam("licenseKey", registerDto.getLicenseKey());
+				HttpEntity<?> entity = new HttpEntity<>(headers);
+				restTemplate.exchange(builder.toUriString(),HttpMethod.GET, entity,String.class);
 			} catch (HttpStatusCodeException e) {
 				handlingExceptionOfApiCall(e);
 			}
@@ -168,7 +174,11 @@ public class RegisterService {
 		}
 		if(registerDto.getUserIdentifier().contains("@")) {
 			throw new BadDataException("User identifier should not contain  at sign.");
-		}
+		}		
+		inputDataValidation(registerDto);
+	}
+
+	private void inputDataValidation(RegisterDto registerDto) {
 		if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
 		}
@@ -177,7 +187,7 @@ public class RegisterService {
 		}
 		if (!registerDto.getDeviceType().equalsIgnoreCase("android") && !registerDto.getDeviceType().equalsIgnoreCase("web") && !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
-		}
+		}		
 	}
 
 	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {

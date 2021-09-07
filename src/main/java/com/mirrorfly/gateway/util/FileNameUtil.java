@@ -2,6 +2,10 @@ package com.mirrorfly.gateway.util;
 
 public class FileNameUtil {
 
+	private FileNameUtil() {
+
+	}
+
 	/**
 	 * The Unix separator character.
 	 */
