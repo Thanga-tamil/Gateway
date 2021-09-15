@@ -21,6 +21,7 @@ import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.RegisterService;
 import com.mirrorfly.gateway.util.AESEncryption;
+import com.mirrorfly.gateway.util.GatewayConstants;
 
 @RestController
 @RequestMapping("/api/v1/register")
@@ -66,7 +67,7 @@ public class RegisterController {
 		try {
 			registerDto = mapper.readValue(URLDecoder.decode(decyptedString), RegisterDto.class);
 		} catch (JsonProcessingException e) {
-			throw new BadDataException("Invalid register data");
+			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
 		}
 		return registerService.registerNewUser(registerDto);
 	}
