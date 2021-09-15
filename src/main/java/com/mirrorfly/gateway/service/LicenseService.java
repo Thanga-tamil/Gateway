@@ -56,10 +56,10 @@ public class LicenseService {
 	public Response<LicenseResDto> getLicense(LicenseReqDto licenseReq) {
 
 		Response<LicenseResDto> response = new Response<>();
-		String SDKType = licenseReq.getSDK();
+		String sdkType = licenseReq.getSDK();
 		ChatSettings settings = getConfigService();
 
-		License license = licenseRepo.findByActivationKeyAndSdk(licenseReq.getActivationKey(), SDKType);
+		License license = licenseRepo.findByActivationKeyAndSdk(licenseReq.getActivationKey(), sdkType);
 		if (license == null) {
 			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
 		}
@@ -74,16 +74,16 @@ public class LicenseService {
 			throw new BadDataException(GatewayConstants.LICENSE_EXPIRED);
 		}
 
-		if (EnumSDKType.iOSChat.getSdkType().equals(SDKType) || EnumSDKType.AndroidChat.getSdkType().equals(SDKType)
-				|| EnumSDKType.WebChat.getSdkType().equals(SDKType)) {
+		if (EnumSDKType.iOSChat.getSdkType().equals(sdkType) || EnumSDKType.AndroidChat.getSdkType().equals(sdkType)
+				|| EnumSDKType.WebChat.getSdkType().equals(sdkType)) {
 			LicenseChatResDto info = new LicenseChatResDto();
 			info.setXmppDomain(settings.getXmppDomain());
 			info.setXmppPort(settings.getXmppPort());
 			info.setBaseUrl(applicationProperties.getApiBaseUrl());
 			response.setData(info);
-		} else if (EnumSDKType.iOSAVCalls.getSdkType().equals(SDKType)
-				|| EnumSDKType.AndroidAVCalls.getSdkType().equals(SDKType)
-				|| EnumSDKType.WebAVCalls.getSdkType().equals(SDKType)) {
+		} else if (EnumSDKType.iOSAVCalls.getSdkType().equals(sdkType)
+				|| EnumSDKType.AndroidAVCalls.getSdkType().equals(sdkType)
+				|| EnumSDKType.WebAVCalls.getSdkType().equals(sdkType)) {
 			LicenseAVResDto info = new LicenseAVResDto();
 			info.setSignalServer(settings.getSignalServerDomain());
 			getStunAndTurnServers(settings, info);
