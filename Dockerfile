@@ -2,7 +2,7 @@
 FROM openjdk:8-jre-slim
 
 RUN apt-get update
-RUN apt-get install libapt-pkg5.0:amd64 libgnutls30:amd64 systemd -y
+RUN apt-get install libgnutls30:amd64 systemd -y
 
 RUN chmod 600 /etc/passwd && chmod 600 /etc/shadow && chmod 600 /etc/group
 
