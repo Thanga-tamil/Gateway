@@ -5,7 +5,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class VerifyFCMDto {
+public class VerifyUserDto {
 
 	@NotNull(message = "Enter your mobile number with country code")
 	private String mobileNumber;

@@ -24,21 +24,19 @@ public class GenerateToken {
 	 * @return generated token
 	 */
 	public static String generateToken(TokenDetail tokenDetail) {
-		Algorithm algorithm = Algorithm.HMAC256("mirror_gateway");
+ 		Algorithm algorithm = Algorithm.HMAC256("mirror_gateway");
 		long nowMillis = System.currentTimeMillis();
 		Date expiresAt = new Date(nowMillis);
-		String token = JWT.create().withIssuer("auth0").withExpiresAt(expiresAt)
+		return  JWT.create().withIssuer("auth0").withExpiresAt(expiresAt)
 				.withClaim("tempData", GatewayUtil.getAlphaNumericString(20)).withClaim("user", tokenDetail.getUsername())
-				.sign(algorithm);
-		return token;
-	}
+				.sign(algorithm); //String -> token 
+ 	}
 
-	public static String generateFileToken(String filename) {
+	public static String generateFileToken(String filename) {		
 		Algorithm algorithm = Algorithm.HMAC256("mirror_gateway");
 		Date expiresAt = new Date();
-		String token = JWT.create().withIssuer("auth0").withExpiresAt(expiresAt).withClaim("filename", filename)
-				.sign(algorithm);
-		return token;
-	}
+		return JWT.create().withIssuer("auth0").withExpiresAt(expiresAt).withClaim("filename", filename)
+				.sign(algorithm); //String -> file token 
+ 	}
 
 }

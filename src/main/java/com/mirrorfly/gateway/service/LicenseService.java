@@ -6,6 +6,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,13 +15,18 @@ import com.mirrorfly.gateway.dto.LicenseAVResDto;
 import com.mirrorfly.gateway.dto.LicenseChatResDto;
 import com.mirrorfly.gateway.dto.LicenseReqDto;
 import com.mirrorfly.gateway.dto.LicenseResDto;
+import com.mirrorfly.gateway.dto.LicenseUpdateRequestDto;
 import com.mirrorfly.gateway.dto.TurnDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatServerConfig;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.License;
+import com.mirrorfly.gateway.model.LicenseLookup;
+import com.mirrorfly.gateway.queue.LicenseDataPayload;
+import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.ChatServerConfigRepo;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
+import com.mirrorfly.gateway.repo.LicenseLookupRepo;
 import com.mirrorfly.gateway.repo.LicenseRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.EnumSDKType;
@@ -41,13 +47,19 @@ public class LicenseService {
 	@Autowired
 	private ApplicationProperties applicationProperties;
 
+	@Autowired
+	private LicenseLookupRepo licenseLookupRepo;
+	
+	@Autowired
+	private QueueService queueService;
+
 	public Response<LicenseResDto> getLicense(LicenseReqDto licenseReq) {
 
 		Response<LicenseResDto> response = new Response<>();
-		String SDKType = licenseReq.getSDK();
+		String sdkType = licenseReq.getSDK();
 		ChatSettings settings = getConfigService();
 
-		License license = licenseRepo.findByActivationKeyAndSdk(licenseReq.getActivationKey(), SDKType);
+		License license = licenseRepo.findByActivationKeyAndSdk(licenseReq.getActivationKey(), sdkType);
 		if (license == null) {
 			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
 		}
@@ -62,16 +74,16 @@ public class LicenseService {
 			throw new BadDataException(GatewayConstants.LICENSE_EXPIRED);
 		}
 
-		if (EnumSDKType.iOSChat.getSdkType().equals(SDKType) || EnumSDKType.AndroidChat.getSdkType().equals(SDKType)
-				|| EnumSDKType.WebChat.getSdkType().equals(SDKType)) {
+		if (EnumSDKType.iOSChat.getSdkType().equals(sdkType) || EnumSDKType.AndroidChat.getSdkType().equals(sdkType)
+				|| EnumSDKType.WebChat.getSdkType().equals(sdkType)) {
 			LicenseChatResDto info = new LicenseChatResDto();
 			info.setXmppDomain(settings.getXmppDomain());
 			info.setXmppPort(settings.getXmppPort());
 			info.setBaseUrl(applicationProperties.getApiBaseUrl());
 			response.setData(info);
-		} else if (EnumSDKType.iOSAVCalls.getSdkType().equals(SDKType)
-				|| EnumSDKType.AndroidAVCalls.getSdkType().equals(SDKType)
-				|| EnumSDKType.WebAVCalls.getSdkType().equals(SDKType)) {
+		} else if (EnumSDKType.iOSAVCalls.getSdkType().equals(sdkType)
+				|| EnumSDKType.AndroidAVCalls.getSdkType().equals(sdkType)
+				|| EnumSDKType.WebAVCalls.getSdkType().equals(sdkType)) {
 			LicenseAVResDto info = new LicenseAVResDto();
 			info.setSignalServer(settings.getSignalServerDomain());
 			getStunAndTurnServers(settings, info);
@@ -103,6 +115,22 @@ public class LicenseService {
 
 	public ChatSettings getConfigService() {
 		return chatSettingsRepo.findAll().get(1);
+	}
+
+	public Response<String> updateLicense(LicenseUpdateRequestDto request) {
+		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
+		LicenseLookup data = new LicenseLookup();
+		if (!existingKey.isEmpty() && existingKey.get(0) != null) {
+			data = existingKey.get(0);
+		}
+		data.setLkey(request.getLicenseKey());
+		licenseLookupRepo.save(data);
+		queueService.sendLicenseDataPayload(new LicenseDataPayload(request.getLicenseKey()));
+		Response<String> response = new Response<>();
+		response.setStatus(HttpStatus.SC_OK);
+		response.setMessage("License key updated successfully");
+		response.setData("true");
+		return response;
 	}
 
 }

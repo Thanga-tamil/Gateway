@@ -27,16 +27,16 @@ public class GatewayUtil {
 	// function to generate a random string of length n
 	public static String getAlphaNumericString(int n) {
             // chose a Character random from this String
-            String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + System.currentTimeMillis()
+            String alphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + System.currentTimeMillis()
                             + "abcdefghijklmnopqrstuvxyz";
             // create StringBuffer size of AlphaNumericString
             StringBuilder sb = new StringBuilder(n);
             for (int i = 0; i < n; i++) {
                     // generate a random number between
-                    // 0 to AlphaNumericString variable length
-                    int index = (int) (AlphaNumericString.length() * Math.random());
+                    // 0 to AlphaNumericString variable length            		
+            	    int index = (int)(alphaNumericString.length() * Math.random());
                     // add Character one by one in end of sb
-                    sb.append(AlphaNumericString.charAt(index));
+                    sb.append(alphaNumericString.charAt(index));
             }
             return sb.toString();
     }

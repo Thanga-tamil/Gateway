@@ -57,5 +57,21 @@ public class ApplicationProperties {
 	public String getResetPasswordRedirectUrl() {
 		return env.getProperty("reset_password_redirect_url");
 	}
+	
+	public String getWebportalApiBaseUrl() {
+		return env.getProperty("webportal.api_base_url");
+	}
 
+	public String getLicenseKey() {
+		return env.getProperty("licenseKey");
+	}
+
+	public String getLicenseDataQueue() {
+		return env.getProperty("queue.licensedata");
+	}
+	
+	public String getXmppDomain() {
+		return env.getProperty("xmpp_domain");
+	}
+	
 }
