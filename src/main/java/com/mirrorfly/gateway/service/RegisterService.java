@@ -135,9 +135,9 @@ public class RegisterService {
 		}
 		chatUserRepo.save(chatUser);
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
-		if(registerDto.getDeviceType().equalsIgnoreCase("web")) {
+		if(registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
 			Users users = userRepo.findByUsername(registerDto.getUserIdentifier());
-			registerResponseDto.setPassword(users.getPassword() != null ? users.getPassword() : "");
+			registerResponseDto.setPassword(users.getPassword() != null ? users.getPassword() : passwordService.generateRandomPassword());
 		}else {
 			registerResponseDto.setPassword(passwordService.generateRandomPassword());
 		}		
