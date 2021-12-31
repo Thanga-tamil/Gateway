@@ -195,6 +195,26 @@ public class GatewayConstants {
 
 	public static final String INACTIVE_ACCOUNT = "Your Account has been Disabled by Admin";
 
+	public static final String LICENSEKEY_EMPTY = "License key should not be empty";
+	
+	public static final String LICENSEKEY_INVALID = "License key is invalid";
+	
+	public static final String LICENSEIV = "ddc0f15cc2c90fca";
+
+	public static final String USER_IDENTIFIER_EMPTY = "User identifier should not be empty";
+
+	public static final String USER_LICENSEKEY_EMPTY = "License Key should not be empty";
+
+	public static final String DEVICE_TYPE_EMPTY = "Device type should not be empty";
+
+	public static final String DEVICE_TYPE_NOT_VALID = "Invalid device type";
+	
+	public static final String USER_NAME_EMPTY = "User name should not be empty";
+	
+	public static final String CONTACT_ADD_SUCCESS = "Contact Added successfully";
+	
+	public static final String USER_USERIDENTIFIER_ALREADY_REGISTERED = "This user already registered with different license key";
+		
 	private GatewayConstants() {
 	}
 }
