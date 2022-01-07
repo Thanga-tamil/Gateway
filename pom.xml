@@ -22,7 +22,7 @@
 		<project.http.version>1.23.0</project.http.version>
 		<spring-boot-admin.version>2.0.3</spring-boot-admin.version>
 		<jackson.version>2.11.0</jackson.version>
-		<log4j2.version>2.17.0</log4j2.version>
+       <log4j2.version>2.17.0</log4j2.version>
 	</properties>
 
 	<dependencies>
@@ -152,11 +152,13 @@
 			<artifactId>logstash-logback-encoder</artifactId>
 			<version>6.3</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
