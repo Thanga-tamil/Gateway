@@ -30,11 +30,11 @@ public class OtpController {
 	 * @param otp this has mobilenumber.
 	 * @return success full response verify otp for authorization.
 	 */
-	@GetMapping("/requestotp")
-	public @ResponseBody Response<OtpResponseDto> requestOtp(
-			@RequestParam(required = true, name = "mobileNumber") String mobileNumber) {
-		return otpService.requestOtp(mobileNumber);
-	}
+//	@GetMapping("/requestotp")
+//	public @ResponseBody Response<OtpResponseDto> requestOtp(
+//			@RequestParam(required = true, name = "mobileNumber") String mobileNumber) {
+//		return otpService.requestOtp(mobileNumber);
+//	}
 
 	/**
 	 * Function to validate mobilenumber by passing through otp service. This
