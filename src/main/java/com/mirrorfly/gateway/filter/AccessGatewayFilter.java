@@ -47,24 +47,11 @@ public class AccessGatewayFilter implements GlobalFilter {
 			ServerHttpRequest.Builder builder = request.mutate();
 			return chain.filter(exchange.mutate().request(builder.build()).build());
 		}
-		boolean isCache = false;
-
-		String header = null;
-		if (exchange.getRequest().getPath().toString().contains("media")
-				&& exchange.getRequest().getMethod().matches(HttpMethod.GET.toString())
-				&& exchange.getRequest().getQueryParams() != null
-				&& exchange.getRequest().getQueryParams().containsKey("mf")) {
-			List<String> headers = exchange.getRequest().getQueryParams().get("mf");
-			if (headers != null && !headers.isEmpty())
-				header = headers.get(0);
-			isCache = true;
-		}
-		if (!isCache)
-			header = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+		String header = null;		
+		header = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 		if (header == null || header.isEmpty()) {
 			return unauthorized(exchange);
 		} else {
-
 			String username = tokenService.validateToken(header);
 			if (username == null) {
 				return unauthorized(exchange);
