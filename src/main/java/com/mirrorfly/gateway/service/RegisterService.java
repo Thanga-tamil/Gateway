@@ -137,7 +137,11 @@ public class RegisterService {
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
 		if(registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
 			Users users = userRepo.findByUsername(registerDto.getUserIdentifier());
-			registerResponseDto.setPassword(users.getPassword() != null ? users.getPassword() : passwordService.generateRandomPassword());
+			if(users != null && users.getPassword() != null) {
+				registerResponseDto.setPassword(users.getPassword());
+			}else {
+				registerResponseDto.setPassword(passwordService.generateRandomPassword());
+			}			
 		}else {
 			registerResponseDto.setPassword(passwordService.generateRandomPassword());
 		}		
