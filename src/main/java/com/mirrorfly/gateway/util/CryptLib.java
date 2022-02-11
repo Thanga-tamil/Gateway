@@ -115,8 +115,10 @@ public class CryptLib {
 	 *
 	 * @throws NoSuchAlgorithmException
 	 * @throws UnsupportedEncodingException
-	 */
-	public static String SHA256(String text, int length) throws NoSuchAlgorithmException {
+	 
+	 SHA256 name changes 
+	*/
+	public static String hasCodeInput(String text, int length) throws NoSuchAlgorithmException {
 
 		String resultStr;
 		MessageDigest md = MessageDigest.getInstance("SHA-256");

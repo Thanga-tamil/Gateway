@@ -12,7 +12,7 @@ public class AESEncryption {
 	public static String encryptString(String msg, String msgId) {
 		try {
 			CryptLib crypt = new CryptLib();
-			String key = CryptLib.SHA256(msgId, 32);
+			String key = CryptLib.hasCodeInput(msgId, 32);
 			String iv = GatewayConstants.IV;
 			return crypt.encrypt(msg, key, iv); // output
  		} catch (Exception ex) {
@@ -24,7 +24,7 @@ public class AESEncryption {
 	public static String decryptString(String encryptedText, String msgID) {
 		try {
 			CryptLib crypt = new CryptLib();
-			String key = CryptLib.SHA256(msgID, 32);
+			String key = CryptLib.hasCodeInput(msgID, 32);
 			String iv = GatewayConstants.IV;
 			return crypt.decrypt(encryptedText, key, iv); //output
 		} catch (Exception ex) {
