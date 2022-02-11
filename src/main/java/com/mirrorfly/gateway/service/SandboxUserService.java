@@ -1,7 +1,6 @@
 package com.mirrorfly.gateway.service;
 
 import java.net.URI;
-import java.security.NoSuchAlgorithmException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -52,7 +51,7 @@ public class SandboxUserService {
 	@Autowired
 	private VcardRepo vcardRepo;
 
-	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) throws NoSuchAlgorithmException {
+	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
 		dataValidating(registerDto);// validate Empty value

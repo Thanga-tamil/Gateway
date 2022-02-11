@@ -29,8 +29,8 @@ public class GatewayUtil {
 	}
 	
 	// function to generate a random string of length n
-	public static String getAlphaNumericString(int n) throws NoSuchAlgorithmException {
-		  Random r = SecureRandom.getInstanceStrong(); 		
+	public static String getAlphaNumericString(int n)  {
+		  Random r = new Random(); 		
             // chose a Character random from this String
             String alphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + System.currentTimeMillis()
                             + "abcdefghijklmnopqrstuvxyz";
