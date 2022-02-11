@@ -160,21 +160,29 @@ public class RegisterService {
 		String userIdentifier = registerDto.getUserIdentifier();				
 		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
-		}else if(userIdentifier.contains("\"")) {
+		}
+		if(userIdentifier.contains("\"")) {
 			throw new BadDataException("User identifier should not contain double quotes.");
-		}else if(userIdentifier.contains("&")) {
+		}
+		if(userIdentifier.contains("&")) {
 			throw new BadDataException("User identifier should not contain ampersand.");
-		}else if(userIdentifier.contains("\'")) {
+		}
+		if(userIdentifier.contains("\'")) {
 			throw new BadDataException("User identifier should not contain back slash.");
-		}else if(userIdentifier.contains("/")) {
+		}
+		if(userIdentifier.contains("/")) {
 			throw new BadDataException("User identifier should not contain forward slash.");
-		}else if(userIdentifier.contains(":")) {
+		}
+		if(userIdentifier.contains(":")) {
 			throw new BadDataException("User identifier should not contain colon.");
-		}else if(userIdentifier.contains("<")) {
+		}
+		if(userIdentifier.contains("<")) {
 			throw new BadDataException("User identifier should not contain lesser-than.");
-		}else if(userIdentifier.contains(">")) {
+		}
+		if(userIdentifier.contains(">")) {
 			throw new BadDataException("User identifier should not contain greater-than.");
-		}else if(userIdentifier.contains("@")) {
+		}
+		if(userIdentifier.contains("@")) {
 			throw new BadDataException("User identifier should not contain  at sign.");
 		}		
 		inputDataValidation(registerDto);
