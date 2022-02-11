@@ -4,6 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class AESEncryption {
+	
+	private AESEncryption() {
+		
+	}
 
 	public static String encryptString(String msg, String msgId) {
 		try {

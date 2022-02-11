@@ -40,13 +40,13 @@ public class OtpService {
 		}
 		Otp otp = new Otp();
 		otp.setCreatedAt(GatewayUtil.getCurrentDateTime());
-		otp.setOtp(passwordService.generateOtp());
+		otp.setOtpNo(passwordService.generateOtp());
 		otp.setStatus(0);
 		otp.setUsername(mobileNumber);
 		otp.setMobileNumber(mobileNumber);
 		otpRepo.save(otp);
 		OtpResponseDto otpResponseDto = new OtpResponseDto();
-		otpResponseDto.setOtp(otp.getOtp());
+		otpResponseDto.setOtp(otp.getOtpNo());
 		if (chatUser != null && chatUser.getDeviceToken() != null) {
 			otpResponseDto.setDeviceToken(chatUser.getDeviceToken());
 			otpResponseDto.setIsUpdated(1);

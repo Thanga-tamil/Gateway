@@ -86,7 +86,7 @@ public class CryptLib {
 			 */
 			MessageDigest digest = MessageDigest.getInstance(MD5);
 			digest.update(inputString.getBytes());
-			byte messageDigest[] = digest.digest();
+			byte[] messageDigest = digest.digest();
 
 			/**
 			 * Create Hex String
@@ -95,8 +95,7 @@ public class CryptLib {
 			for (byte aMessageDigest : messageDigest) {
 				String h = Integer.toHexString(0xFF & aMessageDigest);
 				while (h.length() < 2)
-					h = "0" + h;
-				hexString.append(h);
+					hexString.append("0" + h);
 			}
 			return hexString.toString();
 
@@ -279,7 +278,7 @@ public class CryptLib {
 	 */
 
 	public String encrypt(String plainText, String key, String iv)
-			throws InvalidKeyException, UnsupportedEncodingException, InvalidAlgorithmParameterException,
+			throws InvalidKeyException, InvalidAlgorithmParameterException,
 			IllegalBlockSizeException, BadPaddingException {
 		return encryptDecrypt(plainText, key, EncryptMode.ENCRYPT, iv);
 	}
@@ -301,7 +300,7 @@ public class CryptLib {
 	 * @throws BadPaddingException
 	 */
 	public String decrypt(String encryptedText, String key, String iv)
-			throws InvalidKeyException, UnsupportedEncodingException, InvalidAlgorithmParameterException,
+			throws InvalidKeyException, InvalidAlgorithmParameterException,
 			IllegalBlockSizeException, BadPaddingException {
 		return encryptDecrypt(encryptedText, key, EncryptMode.DECRYPT, iv);
 	}

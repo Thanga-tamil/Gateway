@@ -1,7 +1,5 @@
 package com.mirrorfly.gateway.util;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Random;
 
@@ -12,7 +10,7 @@ public class GatewayUtil {
 	private GatewayUtil() {
 
 	}
-
+	
 	public static PageRequest getPagination(Integer page, Integer size) {
 		page = page != null ? page : 0;
 		size = size != null ? size : 10;
@@ -28,7 +26,7 @@ public class GatewayUtil {
 	}
 	
 	// function to generate a random string of length n
-	public static String getAlphaNumericString(int n) throws NoSuchAlgorithmException {
+	public static String getAlphaNumericString(int n) {
             // chose a Character random from this String
             String alphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + System.currentTimeMillis()
                             + "abcdefghijklmnopqrstuvxyz";
