@@ -181,28 +181,28 @@ public class CryptLib {
 	 * @throws IllegalBlockSizeException
 	 * @throws BadPaddingException
 	 */
-	private String encryptDecrypt(String _inputText, String _encryptionKey, EncryptMode _mode, String _initVector)
-			throws UnsupportedEncodingException, InvalidKeyException, InvalidAlgorithmParameterException,
+	private String encryptDecrypt(String inputText, String encryptionKey, EncryptMode mode, String initVector)
+			throws InvalidKeyException, InvalidAlgorithmParameterException,
 			IllegalBlockSizeException, BadPaddingException {
 		/**
 		 * Output string
 		 */
-		String _out = "";
+		String out = "";
 		/**
 		 * _encryptionKey = md5(_encryptionKey); length of the key provided
 		 */
-		int len = _encryptionKey.getBytes(StandardCharsets.UTF_8).length;
+		int len = encryptionKey.getBytes(StandardCharsets.UTF_8).length;
 
-		if (_encryptionKey.getBytes(StandardCharsets.UTF_8).length > key.length)
+		if (encryptionKey.getBytes(StandardCharsets.UTF_8).length > key.length)
 			len = key.length;
 
-		int ivlen = _initVector.getBytes(StandardCharsets.UTF_8).length;
+		int ivlen = initVector.getBytes(StandardCharsets.UTF_8).length;
 
-		if (_initVector.getBytes(StandardCharsets.UTF_8).length > iv.length)
+		if (initVector.getBytes(StandardCharsets.UTF_8).length > iv.length)
 			ivlen = iv.length;
 
-		System.arraycopy(_encryptionKey.getBytes(StandardCharsets.UTF_8), 0, key, 0, len);
-		System.arraycopy(_initVector.getBytes(StandardCharsets.UTF_8), 0, iv, 0, ivlen);
+		System.arraycopy(encryptionKey.getBytes(StandardCharsets.UTF_8), 0, key, 0, len);
+		System.arraycopy(initVector.getBytes(StandardCharsets.UTF_8), 0, iv, 0, ivlen);
 		/**
 		 * Code for Dynamic key
 		 *
@@ -222,7 +222,7 @@ public class CryptLib {
 		 * Encryption
 		 */
 
-		if (_mode.equals(EncryptMode.ENCRYPT)) {
+		if (mode.equals(EncryptMode.ENCRYPT)) {
 			/**
 			 * Initialize this cipher instance.
 			 * <p>
@@ -231,33 +231,33 @@ public class CryptLib {
 			 * for more info.
 			 */
 			cx.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-			byte[] results = cx.doFinal(_inputText.getBytes(StandardCharsets.UTF_8));
+			byte[] results = cx.doFinal(inputText.getBytes(StandardCharsets.UTF_8));
 			/**
 			 * Multi-part, transformation and (encryption)
 			 * <p>
 			 * Ciphertext
 			 */
-			_out = Base64.getEncoder().encodeToString(results);
+			out = Base64.getEncoder().encodeToString(results);
 		}
 
 		/**
 		 * Decryption
 		 */
 
-		if (_mode.equals(EncryptMode.DECRYPT)) {
+		if (mode.equals(EncryptMode.DECRYPT)) {
 			cx.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);// Initialize this ipher instance
 
-			byte[] decodedValue = Base64.getDecoder().decode(_inputText.getBytes());
+			byte[] decodedValue = Base64.getDecoder().decode(inputText.getBytes());
 			byte[] decryptedVal = cx.doFinal(decodedValue); // Finish
 			/**
 			 * Multi-part transformation(decryption)
 			 */
-			_out = new String(decryptedVal);
+			out = new String(decryptedVal);
 		}
 		/**
 		 * Return encrypted/decrypted string
 		 */
-		return _out;
+		return out;
 	}
 
 	/***

@@ -1,6 +1,9 @@
 package com.mirrorfly.gateway.util;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Random;
 
 import org.springframework.data.domain.PageRequest;
 
@@ -25,16 +28,17 @@ public class GatewayUtil {
 	}
 	
 	// function to generate a random string of length n
-	public static String getAlphaNumericString(int n) {
+	public static String getAlphaNumericString(int n) throws NoSuchAlgorithmException {
             // chose a Character random from this String
             String alphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + System.currentTimeMillis()
                             + "abcdefghijklmnopqrstuvxyz";
             // create StringBuffer size of AlphaNumericString
             StringBuilder sb = new StringBuilder(n);
+            Random r = new Random();
             for (int i = 0; i < n; i++) {
                     // generate a random number between
                     // 0 to AlphaNumericString variable length            		
-            	    int index = (int)(alphaNumericString.length() * Math.random());
+            	    int index = (alphaNumericString.length() * r.nextInt(50));
                     // add Character one by one in end of sb
                     sb.append(alphaNumericString.charAt(index));
             }
