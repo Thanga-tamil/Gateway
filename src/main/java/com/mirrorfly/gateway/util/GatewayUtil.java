@@ -37,7 +37,7 @@ public class GatewayUtil {
              for (int i = 0; i < n; i++) {
                     // generate a random number between
                     // 0 to AlphaNumericString variable length            		
-            	    int index = (alphaNumericString.length() * r.nextInt(50));
+            	    int index = (alphaNumericString.length() * r.nextInt(1));
                     // add Character one by one in end of sb
                     sb.append(alphaNumericString.charAt(index));
             }
