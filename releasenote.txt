@@ -1,8 +1,8 @@
-Release Date: 23-Dec-2021
+Release Date: 17-Feb-2022
 Release Version: 3.1.1
 Build Number: -
 
 This build contains the following improvement
  
 Tasks:
-   customer creating message changes 
+   Sonar fixes  

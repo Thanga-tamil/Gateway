@@ -15,13 +15,16 @@ import org.springframework.stereotype.Service;
 @Service
 public class PasswordEncryptionService {
 
+	private PasswordEncryptionService() {
+	}
+
 	private static final int ITERATIONS = 65536;
 	private static final int KEY_LENGTH = 256;
 	private static final String ALGORITHM = "PBKDF2WithHmacSHA512";
 	
 	
 	public static boolean verifyPassword(String password, String key, String salt) {
-		Optional<String> optEncrypted = hashingPassword(password, salt);
+		Optional<String> optEncrypted = hashPassword(password, salt);
 		if (!optEncrypted.isPresent())
 			return false;
 		return optEncrypted.get().equals(key);
@@ -104,24 +107,4 @@ public class PasswordEncryptionService {
 		}
 	}
 
-	public static Optional<String> hashingPassword(String password, String salt) {
-		char[] chars = password.toCharArray();
-		byte[] bytes = salt.getBytes();
-		
-		PBEKeySpec spec = new PBEKeySpec(chars, bytes, ITERATIONS, KEY_LENGTH);
-		
-		Arrays.fill(chars, Character.MIN_VALUE);
-
-		try {
-			SecretKeyFactory fac = SecretKeyFactory.getInstance(ALGORITHM);
-			byte[] securePassword = fac.generateSecret(spec).getEncoded();
-			return Optional.of(Base64.getEncoder().encodeToString(securePassword));
-
-		} catch (Exception e) {
-			return Optional.empty();	
-
-		} finally {
-			spec.clearPassword();
-		}
-	}
 }

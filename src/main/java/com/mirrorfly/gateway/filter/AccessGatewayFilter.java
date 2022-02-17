@@ -38,17 +38,27 @@ public class AccessGatewayFilter implements GlobalFilter {
 			exchange.getResponse().setStatusCode(HttpStatus.OK);
 			return Mono.empty();
 		}
-		String apidoc = "api-docs";
 		if (exchange.getRequest().getPath().toString().contains("swagger")
-				|| exchange.getRequest().getPath().toString().contains("api-docs")
 				|| exchange.getRequest().getPath().toString().contains("webjars")
-				|| exchange.getRequest().getPath().toString().contains(apidoc)
+				|| exchange.getRequest().getPath().toString().contains("api-docs")
 				|| exchange.getRequest().getPath().toString().contains("swagger-resources")) {
 			ServerHttpRequest.Builder builder = request.mutate();
 			return chain.filter(exchange.mutate().request(builder.build()).build());
 		}
+		boolean isCache = false;
+
 		String header = null;
-		header = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+		if (exchange.getRequest().getPath().toString().contains("media")
+				&& exchange.getRequest().getMethod().matches(HttpMethod.GET.toString())
+				&& exchange.getRequest().getQueryParams() != null
+				&& exchange.getRequest().getQueryParams().containsKey("mf")) {
+			List<String> headers = exchange.getRequest().getQueryParams().get("mf");
+			if (headers != null && !headers.isEmpty())
+				header = headers.get(0);
+			isCache = true;
+		}
+		if (!isCache)
+			header = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 		if (header == null || header.isEmpty()) {
 			return unauthorized(exchange);
 		} else {
@@ -65,7 +75,7 @@ public class AccessGatewayFilter implements GlobalFilter {
 	/**
 	 *
 	 * @param
-	 * @throws IOException
+	 * @throws IOException	
 	 */
 	private Mono<Void> unauthorized(ServerWebExchange serverWebExchange) {
 		try {

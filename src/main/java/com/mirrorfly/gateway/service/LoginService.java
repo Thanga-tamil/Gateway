@@ -162,25 +162,8 @@ public class LoginService {
 		if (adminUser != null && adminUser.getIsActive() == 0) {			 
 				throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
 		}
-
-		validToken = emailTokenRepo.findByTokenAndStatus(token, "PENDING");
-
-		if (validToken == null)
-			throw new BadDataException("Link Expired");
-
-		if (passwordDto.getNewPassword() == null || passwordDto.getNewPassword().isEmpty())
-			throw new BadDataException("Please Enter the New Password");
-
-		if (passwordDto.getConfirmPassword() == null || passwordDto.getConfirmPassword().isEmpty())
-			throw new BadDataException("Please Enter the Confirm Password");
-
-		if (!passwordDto.getNewPassword().equalsIgnoreCase(passwordDto.getConfirmPassword()))
-			throw new BadDataException(GatewayConstants.PASS_CONFIRMATION);
-
-		boolean validPasswordPattern = PasswordEncryptionService.checkPasswordPattern(passwordDto.getNewPassword());
-
-		if (!validPasswordPattern)
-			throw new BadDataException(GatewayConstants.PASWORD_PATTERN_MISMATCH);
+		validatePassword(token, passwordDto);		
+		
 		/*** Password Hashing ***/
 
 		/*** End ***/
@@ -199,12 +182,23 @@ public class LoginService {
 		if (validToken == null)
 			throw new BadDataException("You can't be able to Activate Your Account");
 
-		validToken = emailTokenRepo.findByTokenAndStatus(token, "PENDING");
+		validatePassword(token, passwordDto);
+				
+		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
+		
+		savePassword(passwordDto, validToken, adminUser);
+
+		Response<String> response = new Response<>();
+		response.setStatus(HttpStatus.OK.value());
+		response.setMessage(GatewayConstants.ACCOUNT_ACTIVATION_SUCCESS);
+		return response;
+	}
+
+	private void validatePassword(String token, PasswordDto passwordDto) {
+		EmailToken validToken = emailTokenRepo.findByTokenAndStatus(token, "PENDING");
 
 		if (validToken == null)
 			throw new BadDataException("Link Expired");
-
-		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
 
 		if (passwordDto.getNewPassword() == null || passwordDto.getNewPassword().isEmpty())
 			throw new BadDataException("Please Enter the New Password");
@@ -219,14 +213,9 @@ public class LoginService {
 
 		if (!validPasswordPattern)
 			throw new BadDataException(GatewayConstants.PASWORD_PATTERN_MISMATCH);
-		savePassword(passwordDto, validToken, adminUser);
-
-		Response<String> response = new Response<>();
-		response.setStatus(HttpStatus.OK.value());
-		response.setMessage(GatewayConstants.ACCOUNT_ACTIVATION_SUCCESS);
-		return response;
+		
 	}
-
+	
 	private void savePassword(PasswordDto passwordDto, EmailToken validToken, AdminUser adminUser) {
 		/*** Password Hashing ***/
 

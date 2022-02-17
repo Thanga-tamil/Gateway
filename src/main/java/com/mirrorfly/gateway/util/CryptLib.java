@@ -46,28 +46,28 @@ public class CryptLib {
 	/**
 	 * Cipher to be used for encryption and decryption
 	 */
-	private Cipher _cx;
+	private Cipher cx;
 
 	/**
 	 * Encryption key and initialization vector
 	 */
-	private byte[] _key;
+	private byte[] key;
 
-	private byte[] _iv;
+	private byte[] iv;
 
 	public CryptLib() throws NoSuchAlgorithmException, NoSuchPaddingException {
 		/**
 		 * Initialize the cipher with transformation AES/CBC/PKCS5Padding
 		 */
-		_cx = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		cx = Cipher.getInstance("AES/CBC/PKCS5Padding");
 		/**
 		 * 256 bit key space
 		 */
-		_key = new byte[32];
+		key = new byte[32];
 		/**
 		 * 128 bit IV
 		 */
-		_iv = new byte[16];
+		iv = new byte[16];
 	}
 
 	/**
@@ -86,7 +86,7 @@ public class CryptLib {
 			 */
 			MessageDigest digest = MessageDigest.getInstance(MD5);
 			digest.update(inputString.getBytes());
-			byte messageDigest[] = digest.digest();
+			byte[] messageDigest = digest.digest();
 
 			/**
 			 * Create Hex String
@@ -95,8 +95,7 @@ public class CryptLib {
 			for (byte aMessageDigest : messageDigest) {
 				String h = Integer.toHexString(0xFF & aMessageDigest);
 				while (h.length() < 2)
-					h = "0" + h;
-				hexString.append(h);
+					hexString.append("0" + h);
 			}
 			return hexString.toString();
 
@@ -116,8 +115,10 @@ public class CryptLib {
 	 *
 	 * @throws NoSuchAlgorithmException
 	 * @throws UnsupportedEncodingException
-	 */
-	public static String SHA256(String text, int length) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+	 
+	 SHA256 name changes 
+	*/
+	public static String hasCodeInput(String text, int length) throws NoSuchAlgorithmException {
 
 		String resultStr;
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -181,28 +182,28 @@ public class CryptLib {
 	 * @throws IllegalBlockSizeException
 	 * @throws BadPaddingException
 	 */
-	private String encryptDecrypt(String _inputText, String _encryptionKey, EncryptMode _mode, String _initVector)
-			throws UnsupportedEncodingException, InvalidKeyException, InvalidAlgorithmParameterException,
+	private String encryptDecrypt(String inputText, String encryptionKey, EncryptMode mode, String initVector)
+			throws InvalidKeyException, InvalidAlgorithmParameterException,
 			IllegalBlockSizeException, BadPaddingException {
 		/**
 		 * Output string
 		 */
-		String _out = "";
+		String out = "";
 		/**
 		 * _encryptionKey = md5(_encryptionKey); length of the key provided
 		 */
-		int len = _encryptionKey.getBytes(StandardCharsets.UTF_8).length;
+		int len = encryptionKey.getBytes(StandardCharsets.UTF_8).length;
 
-		if (_encryptionKey.getBytes(StandardCharsets.UTF_8).length > _key.length)
-			len = _key.length;
+		if (encryptionKey.getBytes(StandardCharsets.UTF_8).length > key.length)
+			len = key.length;
 
-		int ivlen = _initVector.getBytes(StandardCharsets.UTF_8).length;
+		int ivlen = initVector.getBytes(StandardCharsets.UTF_8).length;
 
-		if (_initVector.getBytes(StandardCharsets.UTF_8).length > _iv.length)
-			ivlen = _iv.length;
+		if (initVector.getBytes(StandardCharsets.UTF_8).length > iv.length)
+			ivlen = iv.length;
 
-		System.arraycopy(_encryptionKey.getBytes(StandardCharsets.UTF_8), 0, _key, 0, len);
-		System.arraycopy(_initVector.getBytes(StandardCharsets.UTF_8), 0, _iv, 0, ivlen);
+		System.arraycopy(encryptionKey.getBytes(StandardCharsets.UTF_8), 0, key, 0, len);
+		System.arraycopy(initVector.getBytes(StandardCharsets.UTF_8), 0, iv, 0, ivlen);
 		/**
 		 * Code for Dynamic key
 		 *
@@ -211,18 +212,18 @@ public class CryptLib {
 		/**
 		 * Create a new SecretKeySpec
 		 */
-		SecretKeySpec keySpec = new SecretKeySpec(_key, "AES");
+		SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
 		/**
 		 * Create a new IvParameterSpec instance with the bytes from the specified
 		 * buffer iv used as initialization vector.
 		 */
-		IvParameterSpec ivSpec = new IvParameterSpec(_iv);
+		IvParameterSpec ivSpec = new IvParameterSpec(iv);
 
 		/**
 		 * Encryption
 		 */
 
-		if (_mode.equals(EncryptMode.ENCRYPT)) {
+		if (mode.equals(EncryptMode.ENCRYPT)) {
 			/**
 			 * Initialize this cipher instance.
 			 * <p>
@@ -230,34 +231,34 @@ public class CryptLib {
 			 * https://android-developers.blogspot.com/2013/08/some-securerandom-thoughts.html
 			 * for more info.
 			 */
-			_cx.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-			byte[] results = _cx.doFinal(_inputText.getBytes(StandardCharsets.UTF_8));
+			cx.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+			byte[] results = cx.doFinal(inputText.getBytes(StandardCharsets.UTF_8));
 			/**
 			 * Multi-part, transformation and (encryption)
 			 * <p>
 			 * Ciphertext
 			 */
-			_out = Base64.getEncoder().encodeToString(results);
+			out = Base64.getEncoder().encodeToString(results);
 		}
 
 		/**
 		 * Decryption
 		 */
 
-		if (_mode.equals(EncryptMode.DECRYPT)) {
-			_cx.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);// Initialize this ipher instance
+		if (mode.equals(EncryptMode.DECRYPT)) {
+			cx.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);// Initialize this ipher instance
 
-			byte[] decodedValue = Base64.getDecoder().decode(_inputText.getBytes());
-			byte[] decryptedVal = _cx.doFinal(decodedValue); // Finish
+			byte[] decodedValue = Base64.getDecoder().decode(inputText.getBytes());
+			byte[] decryptedVal = cx.doFinal(decodedValue); // Finish
 			/**
 			 * Multi-part transformation(decryption)
 			 */
-			_out = new String(decryptedVal);
+			out = new String(decryptedVal);
 		}
 		/**
 		 * Return encrypted/decrypted string
 		 */
-		return _out;
+		return out;
 	}
 
 	/***
@@ -278,10 +279,10 @@ public class CryptLib {
 	 * @throws BadPaddingException
 	 */
 
-	public String encrypt(String _plainText, String _key, String _iv)
-			throws InvalidKeyException, UnsupportedEncodingException, InvalidAlgorithmParameterException,
+	public String encrypt(String plainText, String key, String iv)
+			throws InvalidKeyException, InvalidAlgorithmParameterException,
 			IllegalBlockSizeException, BadPaddingException {
-		return encryptDecrypt(_plainText, _key, EncryptMode.ENCRYPT, _iv);
+		return encryptDecrypt(plainText, key, EncryptMode.ENCRYPT, iv);
 	}
 
 	/***
@@ -300,10 +301,10 @@ public class CryptLib {
 	 * @throws IllegalBlockSizeException
 	 * @throws BadPaddingException
 	 */
-	public String decrypt(String _encryptedText, String _key, String _iv)
-			throws InvalidKeyException, UnsupportedEncodingException, InvalidAlgorithmParameterException,
+	public String decrypt(String encryptedText, String key, String iv)
+			throws InvalidKeyException, InvalidAlgorithmParameterException,
 			IllegalBlockSizeException, BadPaddingException {
-		return encryptDecrypt(_encryptedText, _key, EncryptMode.DECRYPT, _iv);
+		return encryptDecrypt(encryptedText, key, EncryptMode.DECRYPT, iv);
 	}
 
 	/**

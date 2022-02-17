@@ -156,33 +156,14 @@ public class RegisterService {
 		return registerResponseDto;
 	}
 	
-	private void inputDataValidating(RegisterDto registerDto) {
-		if (registerDto.getUserIdentifier() == null || registerDto.getUserIdentifier().trim().isEmpty()) {
+	private void inputDataValidating(RegisterDto registerDto) {		
+		String userIdentifier = registerDto.getUserIdentifier();				
+		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
 		}
-		if(registerDto.getUserIdentifier().contains("\"")) {
-			throw new BadDataException("User identifier should not contain double quotes.");
-		}
-		if(registerDto.getUserIdentifier().contains("&")) {
-			throw new BadDataException("User identifier should not contain ampersand.");
-		}
-		if(registerDto.getUserIdentifier().contains("\'")) {
-			throw new BadDataException("User identifier should not contain back slash.");
-		}
-		if(registerDto.getUserIdentifier().contains("/")) {
-			throw new BadDataException("User identifier should not contain forward slash.");
-		}
-		if(registerDto.getUserIdentifier().contains(":")) {
-			throw new BadDataException("User identifier should not contain colon.");
-		}
-		if(registerDto.getUserIdentifier().contains("<")) {
-			throw new BadDataException("User identifier should not contain lesser-than.");
-		}
-		if(registerDto.getUserIdentifier().contains(">")) {
-			throw new BadDataException("User identifier should not contain greater-than.");
-		}
-		if(registerDto.getUserIdentifier().contains("@")) {
-			throw new BadDataException("User identifier should not contain  at sign.");
+		if(userIdentifier.contains("\"") || userIdentifier.contains("&") || userIdentifier.contains("\'") || userIdentifier.contains("/")
+				|| userIdentifier.contains(":") || userIdentifier.contains("<") || userIdentifier.contains(">") || userIdentifier.contains("@")) {
+			throw new BadDataException("User identifier should not contain (\",&,\',/,:,<,>,@).");
 		}		
 		inputDataValidation(registerDto);
 	}
