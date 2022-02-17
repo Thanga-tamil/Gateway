@@ -161,29 +161,9 @@ public class RegisterService {
 		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
 		}
-		if(userIdentifier.contains("\"")) {
-			throw new BadDataException("User identifier should not contain double quotes.");
-		}
-		if(userIdentifier.contains("&")) {
-			throw new BadDataException("User identifier should not contain ampersand.");
-		}
-		if(userIdentifier.contains("\'")) {
-			throw new BadDataException("User identifier should not contain back slash.");
-		}
-		if(userIdentifier.contains("/")) {
-			throw new BadDataException("User identifier should not contain forward slash.");
-		}
-		if(userIdentifier.contains(":")) {
-			throw new BadDataException("User identifier should not contain colon.");
-		}
-		if(userIdentifier.contains("<")) {
-			throw new BadDataException("User identifier should not contain lesser-than.");
-		}
-		if(userIdentifier.contains(">")) {
-			throw new BadDataException("User identifier should not contain greater-than.");
-		}
-		if(userIdentifier.contains("@")) {
-			throw new BadDataException("User identifier should not contain  at sign.");
+		if(userIdentifier.contains("\"") || userIdentifier.contains("&") || userIdentifier.contains("\'") || userIdentifier.contains("/")
+				|| userIdentifier.contains(":") || userIdentifier.contains("<") || userIdentifier.contains(">") || userIdentifier.contains("@")) {
+			throw new BadDataException("User identifier should not contain (\",&,\',/,:,<,>,@).");
 		}		
 		inputDataValidation(registerDto);
 	}
