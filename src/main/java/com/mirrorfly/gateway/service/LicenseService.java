@@ -56,7 +56,7 @@ public class LicenseService {
 	public Response<LicenseResDto> getLicense(LicenseReqDto licenseReq) {
 
 		Response<LicenseResDto> response = new Response<>();
-		String sdkType = licenseReq.getSDK();
+		String sdkType = licenseReq.getSdk();
 		ChatSettings settings = getConfigService();
 
 		License license = licenseRepo.findByActivationKeyAndSdk(licenseReq.getActivationKey(), sdkType);
