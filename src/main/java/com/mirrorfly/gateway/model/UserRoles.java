@@ -53,8 +53,4 @@ public class UserRoles {
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
 
-	/*
-	 * @OneToMany(mappedBy = "UserRoles") private Set<AdminUser> adminUser;
-	 */
-
 }

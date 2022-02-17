@@ -25,24 +25,6 @@ public class RedisConfig {
 		return new LettuceConnectionFactory(redisConf);
 	}
 
-	/*
-	 * @Bean public ReactiveRedisTemplate<String, RedisChatToken>
-	 * reactiveRedisTemplate(ReactiveRedisConnectionFactory factory) {
-	 * StringRedisSerializer keySerializer = new StringRedisSerializer();
-	 * Jackson2JsonRedisSerializer<RedisChatToken> valueSerializer = new
-	 * Jackson2JsonRedisSerializer<>( RedisChatToken.class);
-	 * RedisSerializationContext.RedisSerializationContextBuilder<String,
-	 * RedisChatToken> builder = RedisSerializationContext
-	 * .newSerializationContext(keySerializer); RedisSerializationContext<String,
-	 * RedisChatToken> context = builder.value(valueSerializer).build(); return new
-	 * ReactiveRedisTemplate<>(factory, context); }
-	 * 
-	 * @Bean public RedisTemplate<String, RedisChatToken> redisTemplate() {
-	 * RedisTemplate<String, RedisChatToken> redisTemplate = new RedisTemplate<>();
-	 * redisTemplate.setConnectionFactory(redisConnectionFactory()); return
-	 * redisTemplate; }
-	 */
-
 	@Bean
 	public StringRedisTemplate stringRedisTemplate() {
 		StringRedisTemplate stringRedisTemplate = new StringRedisTemplate(redisConnectionFactory());

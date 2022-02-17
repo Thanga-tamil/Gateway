@@ -28,7 +28,7 @@ public class Otp implements Serializable {
 	private Long id;
 
 	@Column(name = "otp")
-	private String otp;
+	private String otpNo;
 
 	@Column(name = "username")
 	private String username;

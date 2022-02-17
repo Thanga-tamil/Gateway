@@ -24,6 +24,6 @@ public class Vcard implements Serializable {
 	private String username;
 
 	@Column(name = "vcard")
-	private String vcard;
+	private String vcardName;
 
 }

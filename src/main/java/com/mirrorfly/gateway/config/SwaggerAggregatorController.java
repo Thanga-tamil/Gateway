@@ -28,7 +28,7 @@ public class SwaggerAggregatorController implements SwaggerResourcesProvider {
 	public List<SwaggerResource> get() {
 
 		List<SwaggerResource> resources = new ArrayList<>();
-		resources.add(swaggerResource("gatewayservice", "/v2/api-docs"));
+		resources.add(swaggerResource("gatewayservice", API_URI));
 		List<String> routes = new ArrayList<>();
 
 		routeLocator.getRoutes().subscribe(route -> routes.add(route.getId()));
