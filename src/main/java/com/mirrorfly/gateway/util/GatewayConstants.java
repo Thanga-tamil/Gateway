@@ -1,9 +1,6 @@
 
 package com.mirrorfly.gateway.util;
 
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * A container to store static constants Strings for proper code sequence. This
  * Constants are declared as final so it cannot be changed. These constants will
@@ -13,7 +10,6 @@ import java.util.List;
 
 public class GatewayConstants {
 
-	public static final List<String> ESC_PATH = Arrays.asList("swagger", "configuration", "webjars", "swagger-ui");
 
 	public static final String AVAILABLE = "Data Retrieved Successfully";
 

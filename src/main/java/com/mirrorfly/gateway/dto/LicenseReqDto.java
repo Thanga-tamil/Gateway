@@ -6,5 +6,5 @@ public class LicenseReqDto {
 
 	private String activationKey;
 	
-	private String SDK;
+	private String sdk;
 }

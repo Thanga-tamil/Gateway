@@ -1,6 +1,8 @@
 package com.mirrorfly.gateway.controller;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -65,8 +67,8 @@ public class RegisterController {
 		ObjectMapper mapper = new ObjectMapper();
 		RegisterDto registerDto;
 		try {
-			registerDto = mapper.readValue(URLDecoder.decode(decyptedString), RegisterDto.class);
-		} catch (JsonProcessingException e) {
+			registerDto = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()), RegisterDto.class);
+		} catch (JsonProcessingException | UnsupportedEncodingException e) {
 			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
 		}
 		return registerService.registerNewUser(registerDto);
