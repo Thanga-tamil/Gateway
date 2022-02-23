@@ -72,7 +72,7 @@ public class TokenService {
 	}
 
 	private String getTokenFromDB(String header) {
-		TokenDetail token = tokenRepo.findByToken(header);
+		TokenDetail token = tokenRepo.findTop1ByTokenOrderByIdDesc(header);
 		if (token == null)
 			return null;
 		if (LocalDateTime.now().isAfter(token.getTokenExpiryTime())) {
