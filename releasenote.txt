@@ -6,3 +6,5 @@ This build contains the following improvement
  
 Tasks:
    actuator added to see the service health logs
+   
+   blocked user restriction - Murugenthiran Natesan
