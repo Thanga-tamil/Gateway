@@ -52,7 +52,9 @@ public class GatewayConstants {
 	public static final String MOBILE_REQUIRED = "Mobile Number is Required";
 
 	public static final String USER_BLOCK = "User Blocked,Please contact Admin";
-
+	
+	public static final String BLOCK_USER = "This application is no longer available for you";
+	
 	public static final String TOKEN_EXPIRED = "Token Expired";
 
 	public static final String TOKEN_NOT_AVAILABLE = "Token Not Available";
