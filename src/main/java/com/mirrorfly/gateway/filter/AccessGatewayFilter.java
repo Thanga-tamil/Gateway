@@ -43,11 +43,10 @@ public class AccessGatewayFilter implements GlobalFilter {
 				|| exchange.getRequest().getPath().toString().contains("webjars")
 				|| exchange.getRequest().getPath().toString().contains("api-docs")
 				|| exchange.getRequest().getPath().toString().contains("swagger-resources")
-				|| exchange.getRequest().getPath().toString().contains("moderation/listUsers")
-				|| exchange.getRequest().getPath().toString().contains("moderation/listGroups")
-				|| exchange.getRequest().getPath().toString().contains("moderation/groupMembers")
-				|| exchange.getRequest().getPath().toString().contains("moderation/blockUser")
-				|| exchange.getRequest().getPath().toString().contains("moderation/blockGroup")) {
+				|| exchange.getRequest().getPath().toString().contains("moderation/userList")
+				|| exchange.getRequest().getPath().toString().contains("moderation/groupList")
+				|| exchange.getRequest().getPath().toString().contains("moderation/membersList")
+				|| exchange.getRequest().getPath().toString().contains("moderation/block")) {
 			ServerHttpRequest.Builder builder = request.mutate();
 			return chain.filter(exchange.mutate().request(builder.build()).build());
 		}
