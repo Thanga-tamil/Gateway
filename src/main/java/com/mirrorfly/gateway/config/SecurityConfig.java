@@ -28,6 +28,7 @@ public class SecurityConfig {
 		return http.build();
 	}
 
+	
 	private Mono<AuthorizationDecision> whiteListIp(Mono<Authentication> authentication, AuthorizationContext context) {
 		String ip = context.getExchange().getRequest().getRemoteAddress().getAddress().toString().replace("/", "");
 		return authentication.map((a) -> new AuthorizationDecision(a.isAuthenticated()))

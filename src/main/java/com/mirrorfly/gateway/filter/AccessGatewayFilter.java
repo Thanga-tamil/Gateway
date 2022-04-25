@@ -38,6 +38,7 @@ public class AccessGatewayFilter implements GlobalFilter {
 			exchange.getResponse().setStatusCode(HttpStatus.OK);
 			return Mono.empty();
 		}
+		
 		if (exchange.getRequest().getPath().toString().contains("swagger")
 				|| exchange.getRequest().getPath().toString().contains("webjars")
 				|| exchange.getRequest().getPath().toString().contains("api-docs")
