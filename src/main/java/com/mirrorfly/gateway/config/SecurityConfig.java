@@ -1,7 +1,6 @@
 package com.mirrorfly.gateway.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
@@ -11,11 +10,11 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authorization.AuthorizationContext;
 
 import inet.ipaddr.IPAddressString;
-import lombok.extern.slf4j.Slf4j;
+
 import reactor.core.publisher.Mono;
 
 @EnableWebFluxSecurity
-@Slf4j
+
 public class SecurityConfig {
 
 	@Autowired
@@ -28,10 +27,9 @@ public class SecurityConfig {
 		return http.build();
 	}
 
-	
 	private Mono<AuthorizationDecision> whiteListIp(Mono<Authentication> authentication, AuthorizationContext context) {
 		String ip = context.getExchange().getRequest().getRemoteAddress().getAddress().toString().replace("/", "");
-		return authentication.map((a) -> new AuthorizationDecision(a.isAuthenticated()))
+		return authentication.map(a -> new AuthorizationDecision(a.isAuthenticated()))
 				.defaultIfEmpty(new AuthorizationDecision(validateIp(ip)));
 	}
 
@@ -41,7 +39,7 @@ public class SecurityConfig {
 		for (String rangeIp : array) {
 			IPAddressString range = new IPAddressString(rangeIp);
 			if (range.contains(ipAddress)) {
-			return true;
+				return true;
 			}
 		}
 		return false;
