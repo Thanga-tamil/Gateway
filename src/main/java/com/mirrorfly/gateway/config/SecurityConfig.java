@@ -23,7 +23,7 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-		http.authorizeExchange().pathMatchers("/api/v1/register").access(this::whiteListIp).pathMatchers("/**")
+		http.authorizeExchange().pathMatchers("/api/v1/moderation").access(this::whiteListIp).pathMatchers("/**")
 				.permitAll().and().httpBasic().and().csrf().disable();
 		return http.build();
 	}
@@ -36,12 +36,10 @@ public class SecurityConfig {
 	}
 
 	private Boolean validateIp(String ip) {
-		log.info("Requesting Ip Address: " + ip);
 		IPAddressString ipAddress = new IPAddressString(ip);
 		String[] array = applicationProperties.getWhiteListIps().split(",");
 		for (String rangeIp : array) {
 			IPAddressString range = new IPAddressString(rangeIp);
-			log.info("whitelist Ip address: " + rangeIp);
 			if (range.contains(ipAddress)) {
 			return true;
 			}
