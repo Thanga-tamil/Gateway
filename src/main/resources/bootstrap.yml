@@ -7,3 +7,7 @@ spring:
       port: 8500
       config:
         format: YAML
+management:
+  endpoint:
+    health:
+      show-details: "ALWAYS"

@@ -73,5 +73,7 @@ public class ApplicationProperties {
 	public String getXmppDomain() {
 		return env.getProperty("xmpp_domain");
 	}
-	
+	public String getWhiteListIps() {
+		return env.getProperty("white-list-ips");
+	}
 }
