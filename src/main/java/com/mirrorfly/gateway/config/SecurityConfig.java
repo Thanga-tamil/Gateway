@@ -14,7 +14,6 @@ import inet.ipaddr.IPAddressString;
 import reactor.core.publisher.Mono;
 
 @EnableWebFluxSecurity
-
 public class SecurityConfig {
 
 	@Autowired
