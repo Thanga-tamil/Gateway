@@ -18,6 +18,7 @@ import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.Users;
@@ -26,6 +27,8 @@ import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardRepo;
+import com.mirrorfly.gateway.repo.VcardSearch;
+import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
@@ -57,6 +60,9 @@ public class RegisterService {
 	
 	@Autowired
 	private VcardRepo vcardRepo;
+	
+	@Autowired
+	private VcardSearchRepo vcardSearchRepo;
 
 	public Response<RegisterInfoDto> getRegisterInfo() {
 		ChatSettings settings = settingsRepo.findAll().get(0);
@@ -110,6 +116,11 @@ public class RegisterService {
 			chatUser.setMobileNumber(registerDto.getMobileNumber());
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
+		}else {
+			VcardSearch vcardSearch = vcardSearchRepo.findByUsername(chatUser.getUsername());
+			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) { 
+				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
+ 			}
 		}
 		if(!registerDto.getDeviceType().equalsIgnoreCase("web")) {
 			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().trim().equals("")) {
