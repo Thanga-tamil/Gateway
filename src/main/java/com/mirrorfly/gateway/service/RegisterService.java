@@ -110,6 +110,7 @@ public class RegisterService {
 			chatUser.setMobileNumber(registerDto.getMobileNumber());
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
+			chatUser.setLicenseKey(registerDto.getLicenseKey());
 		}
 		if(!registerDto.getDeviceType().equalsIgnoreCase("web")) {
 			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().trim().equals("")) {
