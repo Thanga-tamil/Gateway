@@ -72,7 +72,7 @@ public class SandboxUserService {
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser != null) {
 			if(chatUser.getIsDeleteInprogrees() == 1) {
-				throw new ForbiddenException(GatewayConstants.DELETE_INPROGRESS);
+				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
 			}	
 			VcardSearch vcardSearch = vcardSearchRepo.findByUsername(chatUser.getUsername());
 			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) { 
