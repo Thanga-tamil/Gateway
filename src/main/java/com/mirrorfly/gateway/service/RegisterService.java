@@ -117,6 +117,9 @@ public class RegisterService {
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 		}else {
+			if(chatUser.getIsDeleteInprogrees() == 1) {
+				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
+			}			
 			VcardSearch vcardSearch = vcardSearchRepo.findByUsername(chatUser.getUsername());
 			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) { 
 				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
