@@ -27,6 +27,9 @@ public class VcardSearch {
 
 	@Column(name = "status")
 	private String status;
+	
+	@Column(name = "is_block")
+	private int isBlock;
 
 	@Column(name = "mobilenumber")
 	private String mobileNumber;

@@ -14,6 +14,7 @@ import com.mirrorfly.gateway.dto.LoginDetailsDto;
 import com.mirrorfly.gateway.dto.LoginDto;
 import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.AdminUser;
 import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.EmailToken;
@@ -24,6 +25,8 @@ import com.mirrorfly.gateway.repo.AdminUserRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.EmailTokenRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
+import com.mirrorfly.gateway.repo.VcardSearch;
+import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.GatewayConstants;
 
@@ -57,10 +60,18 @@ public class LoginService {
 	@Autowired
 	private ApplicationProperties applicationProperties;
 
+	@Autowired
+	private VcardSearchRepo vcardSearchRepo;
+	
 	public Response<LoginDetailsDto> login(LoginDto login) {
 		Users users = userRepo.findByUsername(login.getUsername());
 		if (users == null) {
 			throw new BadDataException(GatewayConstants.USER_NAME_NOT_AVAIL);
+		}else {
+			VcardSearch vcardSearch = vcardSearchRepo.findByUsername(users.getUsername());
+			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) { 
+				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
+ 			}
 		}
 		if (login.getType() == null || !login.getType().equals("WEB")) {
 			if (!users.getPassword().equals(login.getPassword())) {
@@ -101,7 +112,6 @@ public class LoginService {
 
 	@SuppressWarnings("unused")
 	public Response<AdminLoginResponse> adminLogin(AdminLoginDto login) {
-
 		AdminUser adminUser = null;
 		if (login.getUsername() != null) {
 			adminUser = adminUserRepo.findByUsername(login.getUsername());

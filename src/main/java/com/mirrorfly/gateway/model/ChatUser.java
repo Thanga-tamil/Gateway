@@ -35,7 +35,7 @@ public class ChatUser implements Serializable {
 
 	@Column(name = "device_token")
 	private String deviceToken;
-	
+
 	@Column(name = "voip_device_token")
 	private String voipDeviceToken;
 
@@ -59,7 +59,7 @@ public class ChatUser implements Serializable {
 
 	@Column(name = "device_type")
 	private String devicetype;
-	
+
 	@Column(name = "device_os_version")
 	private String deviceOsVersion;
 
@@ -67,15 +67,18 @@ public class ChatUser implements Serializable {
 	private String status;
 
 	@Column(name = "is_block")
-	private Integer isBlock=0;
+	private Integer isBlock = 0;
 
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
-	
+
 	@Column(name = "license_key")
 	private String licenseKey;
-	
+
 	@Column(name = "user_identifier")
 	private String userIdentifier;
+
+	@Column(name = "is_delete_inprogrees")
+	private Integer isDeleteInprogrees;
 
 }
