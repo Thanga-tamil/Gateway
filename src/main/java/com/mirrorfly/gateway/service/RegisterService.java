@@ -116,6 +116,7 @@ public class RegisterService {
 			chatUser.setMobileNumber(registerDto.getMobileNumber());
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
+			chatUser.setLicenseKey(registerDto.getLicenseKey());
 		}else {
 			if(chatUser.getIsDeleteInprogrees() == 1) {
 				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
