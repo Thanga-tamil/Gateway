@@ -191,6 +191,7 @@ public class SandboxUserService {
 		chatUser.setDevicetype(registerDto.getDeviceType());
 		chatUser.setLicenseKey(registerDto.getLicenseKey());
 		chatUser.setUserIdentifier(registerDto.getUserIdentifier());
+		chatUser.setIsDeleteInprogrees(0);
 		chatUserRepo.save(chatUser);
 
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();

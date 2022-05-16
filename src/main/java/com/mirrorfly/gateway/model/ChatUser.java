@@ -78,7 +78,7 @@ public class ChatUser implements Serializable {
 	@Column(name = "user_identifier")
 	private String userIdentifier;
 
-	@Column(name = "is_delete_inprogrees", columnDefinition = "integer default 0")
+	@Column(name = "is_delete_inprogrees")
 	private Integer isDeleteInprogrees;
 
 }
