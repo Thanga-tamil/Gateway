@@ -147,6 +147,7 @@ public class RegisterService {
 			chatUser.setDevicetype(registerDto.getDeviceType());
 			chatUser.setMode(registerDto.getMode());
 		}
+		chatUser.setIsDeleteInprogrees(0);
 		chatUserRepo.save(chatUser);
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
 		if(registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
