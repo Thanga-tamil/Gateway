@@ -1,5 +1,8 @@
 package com.mirrorfly.gateway.service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -21,10 +24,12 @@ import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.ChatUser;
+import com.mirrorfly.gateway.model.Last;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
+import com.mirrorfly.gateway.repo.LastRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardRepo;
 import com.mirrorfly.gateway.repo.VcardSearch;
@@ -62,6 +67,9 @@ public class RegisterService {
 	private VcardRepo vcardRepo;
 	
 	@Autowired
+	private LastRepo lastRepo;
+	
+	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
 
 	public Response<RegisterInfoDto> getRegisterInfo() {
@@ -81,7 +89,7 @@ public class RegisterService {
 		Vcard vcards = vcardRepo.findByUsername(registerResponseDto.getUsername());
 		if(vcards != null) {
 			registerResponseDto.setIsProfileUpdated(true);   
-		}
+		}				
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonString;
 		try {
@@ -95,6 +103,18 @@ public class RegisterService {
 		response.setStatus(HttpStatus.OK.value());
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);		
 		return response;
+	}
+
+	private void registerLogintime(String username) {
+		Last last=new Last();
+		last.setUsername(username);
+		last.setStatus(0);
+		LocalDateTime date = LocalDateTime.now();
+        ZoneOffset zone = ZoneOffset.of("Z");
+  		last.setSeconds(Long.toString(date.toEpochSecond(zone)));
+		last.setPresence(0);	
+		last.setState("Stream reset by peer");
+		lastRepo.save(last);
 	}
 
 	private RegisterResponseDto registerUser(RegisterDto registerDto) {
@@ -116,6 +136,8 @@ public class RegisterService {
 			chatUser.setMobileNumber(registerDto.getMobileNumber());
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
+			//To insert the register login time 
+			registerLogintime(registerDto.getUserIdentifier());
 		}else {
 			if(chatUser.getIsDeleteInprogrees() == 1) {
 				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
