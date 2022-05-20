@@ -136,9 +136,10 @@ public class RegisterService {
 			chatUser.setMobileNumber(registerDto.getMobileNumber());
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
-			//To insert the register login time 
+ 			chatUser.setLicenseKey(registerDto.getLicenseKey());
+ 			//To insert the register login time 
 			registerLogintime(registerDto.getUserIdentifier());
-		}else {
+ 		}else {
 			if(chatUser.getIsDeleteInprogrees() == 1) {
 				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
 			}			
