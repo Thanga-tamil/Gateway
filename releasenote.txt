@@ -1,10 +1,8 @@
-Release Date: 21-Apr-2022
-Release Version: 3.1.1
+Release Date: 20-May-2022
+Release Version: 5.4.1
 Build Number: -
 
 This build contains the following improvement
  
 Tasks:
-   actuator added to see the service health logs
-   
-   blocked user restriction - Murugenthiran Natesan
+   https://apptha.atlassian.net/browse/CPV2-1704 - Murugenthiran Natesan
