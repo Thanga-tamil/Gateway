@@ -1,6 +1,10 @@
 
 package com.mirrorfly.gateway.controller;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,14 +16,21 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.AdminLoginDto;
 import com.mirrorfly.gateway.dto.AdminLoginResponse;
 import com.mirrorfly.gateway.dto.ForgetPasswordDto;
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
 import com.mirrorfly.gateway.dto.LoginDto;
+import com.mirrorfly.gateway.dto.LoginRequestDto;
 import com.mirrorfly.gateway.dto.PasswordDto;
+import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.LoginService;
+import com.mirrorfly.gateway.util.AESEncryption;
+import com.mirrorfly.gateway.util.GatewayConstants;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -28,6 +39,9 @@ public class LoginController {
 	@Autowired
 	private LoginService loginService;
 
+	@Autowired
+	private ApplicationProperties applicationProperties;
+
 	/**
 	 * Function to validate username and password by passing through loginService.
 	 * This function return a response stating that login success or error with
@@ -35,11 +49,21 @@ public class LoginController {
 	 * 
 	 * @param login this has username and password.
 	 * @return success full response login screen with token for authorization.
+	 * @throws JsonProcessingException
 	 */
 
 	@PostMapping("/login")
-	public @ResponseBody Response<LoginDetailsDto> login(@Validated @RequestBody LoginDto login) {
-		return loginService.login(login);
+	public @ResponseBody Response<LoginDetailsDto> login(@Validated @RequestBody LoginRequestDto loginRequestDto) {
+		String decyptedString = AESEncryption.decryptString(loginRequestDto.getLoginData(), applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
+						+ applicationProperties.getLicenseKey());
+		LoginDto loginDto;
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			loginDto = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),LoginDto.class);
+		} catch (JsonProcessingException | UnsupportedEncodingException e) {
+			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
+		}
+		return loginService.login(loginDto);
 	}
 
 	/**
@@ -88,7 +112,8 @@ public class LoginController {
 	/**
 	 * Function to Activate Account through loginService. This function return a
 	 * response stating that Activate account or error with error code and error
-	 * message. 
+	 * message.
+	 * 
 	 * @param token
 	 * @param passwordDto
 	 * @return

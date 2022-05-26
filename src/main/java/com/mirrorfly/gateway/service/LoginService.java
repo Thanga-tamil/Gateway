@@ -64,6 +64,12 @@ public class LoginService {
 	private VcardSearchRepo vcardSearchRepo;
 	
 	public Response<LoginDetailsDto> login(LoginDto login) {
+		if(login.getUsername() == null)
+			throw new BadDataException("UserName cannot be Empty");
+		
+		if(login.getPassword() == null)
+			throw new BadDataException("Password cannot be Empty");
+		
 		Users users = userRepo.findByUsername(login.getUsername());
 		if (users == null) {
 			throw new BadDataException(GatewayConstants.USER_NAME_NOT_AVAIL);
