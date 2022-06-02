@@ -1,8 +1,6 @@
 package com.mirrorfly.gateway.service;
 
 import java.net.URI;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,11 +18,9 @@ import com.mirrorfly.gateway.dto.SandboxRegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.ChatUser;
-import com.mirrorfly.gateway.model.Last;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
-import com.mirrorfly.gateway.repo.LastRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardRepo;
 import com.mirrorfly.gateway.repo.VcardSearch;
@@ -59,7 +55,7 @@ public class SandboxUserService {
 	private VcardRepo vcardRepo;
 	
 	@Autowired
-	private LastRepo lastRepo;
+	private RegisterService registerService;
 
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
@@ -109,7 +105,7 @@ public class SandboxUserService {
 					.toUri();
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
-			sandboxRegisterLogintime(registerDto.getUserIdentifier());
+			registerService.registerLogintime(registerDto.getUserIdentifier());
 			try {
 				restTemplate.postForObject(url, adduser, Response.class);
 			} catch (HttpStatusCodeException e) {
@@ -134,18 +130,6 @@ public class SandboxUserService {
 		return response;
 	}
 	
-	private void sandboxRegisterLogintime(String username) {
-		Last last=new Last();
-		last.setUsername(username);
-		last.setStatus(0);
-		LocalDateTime date = LocalDateTime.now();
-        ZoneOffset zone = ZoneOffset.of("Z");
-  		last.setSeconds(Long.toString(date.toEpochSecond(zone)));
-		last.setPresence(0);	
-		last.setState("Stream reset by peer");
-		lastRepo.save(last);
-	}
-
 	private void dataValidating(SanboxUserRegisterDto registerDto) {
 		if (registerDto.getUserIdentifier() == null || registerDto.getUserIdentifier().trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
