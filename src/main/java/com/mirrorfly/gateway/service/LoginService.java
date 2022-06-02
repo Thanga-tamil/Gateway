@@ -126,7 +126,7 @@ public class LoginService {
 			throw new BadDataException(GatewayConstants.USERNAME_EMPTY);
 
 		if (login.getPassword() == null)
-			throw new BadDataException(GatewayConstants.PASSWORD_EMPTY);
+			throw new BadDataException(GatewayConstants.PASS_WORD_EMPTY);
 
 	}
 
