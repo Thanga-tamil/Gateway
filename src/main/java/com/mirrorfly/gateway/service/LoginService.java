@@ -1,17 +1,25 @@
 package com.mirrorfly.gateway.service;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.AdminLoginDto;
 import com.mirrorfly.gateway.dto.AdminLoginResponse;
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
 import com.mirrorfly.gateway.dto.LoginDto;
+import com.mirrorfly.gateway.dto.LoginRequestDto;
 import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
@@ -28,8 +36,12 @@ import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardSearch;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
+import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class LoginService {
 
@@ -63,13 +75,21 @@ public class LoginService {
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
 	
-	public Response<LoginDetailsDto> login(LoginDto login) {
-		if(login.getUsername() == null)
-			throw new BadDataException("UserName cannot be Empty");
-		
-		if(login.getPassword() == null)
-			throw new BadDataException("Password cannot be Empty");
-		
+	public Response<LoginDetailsDto> login(LoginRequestDto loginRequestDto) {
+		String decyptedString = AESEncryption.decryptString(loginRequestDto.getLoginData(), applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
+						+ applicationProperties.getLicenseKey());
+		if (decyptedString.equals("")) {
+			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
+		}
+		LoginDto login;
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()), LoginDto.class);
+		} catch (JsonProcessingException | UnsupportedEncodingException e) {
+			log.error(e.getMessage());
+			throw new BadDataException(GatewayConstants.INVALID_ERROR);
+		}
+        validateLoginRequestParams(login);		
 		Users users = userRepo.findByUsername(login.getUsername());
 		if (users == null) {
 			throw new BadDataException(GatewayConstants.USER_NAME_NOT_AVAIL);
@@ -95,6 +115,19 @@ public class LoginService {
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
+	}
+
+	private void validateLoginRequestParams(LoginDto login) {
+		Instant instant = Instant.now();
+ 		if (login.getCurrentTimestamp() > instant.plus(2, ChronoUnit.MINUTES).getEpochSecond()*1000) {
+ 			throw new BadDataException(GatewayConstants.REQUEST_TIMEOUT);
+ 		}
+		if (login.getUsername() == null)
+			throw new BadDataException(GatewayConstants.USERNAME_EMPTY);
+
+		if (login.getPassword() == null)
+			throw new BadDataException(GatewayConstants.PWD_EMPTY);
+
 	}
 
 	public Response<String> logout(String authorization) {

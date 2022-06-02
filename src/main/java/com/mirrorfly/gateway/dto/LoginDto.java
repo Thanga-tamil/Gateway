@@ -18,5 +18,7 @@ public class LoginDto {
 	private String password = "";
 
 	private String type;
+	
+	private long currentTimestamp ;
 
 }
