@@ -221,7 +221,7 @@ public class GatewayConstants {
 
 	public static final String USERNAME_EMPTY = "UserName cannot be Empty";
 
-	public static final String PWD_EMPTY = "Password cannot be Empty";
+	public static final String PASSWORD_EMPTY = "Password cannot be Empty";
 
 	private GatewayConstants() {
 	}
