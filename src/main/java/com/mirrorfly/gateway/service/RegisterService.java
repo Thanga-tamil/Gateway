@@ -105,7 +105,7 @@ public class RegisterService {
 		return response;
 	}
 
-	private void registerLogintime(String username) {
+	public void registerLogintime(String username) {
 		Last last=new Last();
 		last.setUsername(username);
 		last.setStatus(0);
