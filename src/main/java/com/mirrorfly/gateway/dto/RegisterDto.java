@@ -20,5 +20,6 @@ public class RegisterDto {
 	private String licenseKey = "";
 	
  	private String userIdentifier = "";
-
+	
+ 	private long currentTimestamp;
 }

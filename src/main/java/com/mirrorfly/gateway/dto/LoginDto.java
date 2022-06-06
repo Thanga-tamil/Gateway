@@ -1,7 +1,5 @@
 package com.mirrorfly.gateway.dto;
 
-import javax.validation.constraints.NotNull;
-
 import lombok.Data;
 
 /**
@@ -15,12 +13,12 @@ import lombok.Data;
 @Data
 public class LoginDto {
 
-	@NotNull(message = "UserName cannot be Empty")
-	private String username;
+	private String username = "";
 
-	@NotNull(message = "Password cannot be Empty")
-	private String password;
+	private String password = "";
 
 	private String type;
+	
+	private long currentTimestamp ;
 
 }
