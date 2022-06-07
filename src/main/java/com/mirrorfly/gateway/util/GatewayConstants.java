@@ -216,10 +216,8 @@ public class GatewayConstants {
 	public static final String DELETE_INPROGRESS = "Old account deletion is still in progress. Please try after some time.";
 	
 	public static final String INVALID_ERROR = "Invalid request";
-
- 	public static final String USERNAME_EMPTY = "UserName cannot be Empty";
-
-	public static final String PASS_WORD_EMPTY = "Password cannot be Empty";
+ 
+	public static final String REQUEST_TIMEOUT = "Your request has been timeout";
 
 	private GatewayConstants() {
 	}

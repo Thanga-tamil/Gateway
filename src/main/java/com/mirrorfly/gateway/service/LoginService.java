@@ -80,15 +80,17 @@ public class LoginService {
 
 	public Response<LoginDetailsDto> login(LoginDto loginRequestDto) {
 		if (Boolean.TRUE.equals(applicationProperties.getEncrypted())) {
-			String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),applicationProperties.getLicenseKey() +
-					applicationProperties.getLicenseKey()+ applicationProperties.getLicenseKey());
+			String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),
+					applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
+							+ applicationProperties.getLicenseKey());
 			if (decyptedString.equals("")) {
 				throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
 			}
 			LoginRequestDto login;
 			ObjectMapper mapper = new ObjectMapper();
 			try {
-				login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),LoginRequestDto.class);
+				login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
+						LoginRequestDto.class);
 			} catch (JsonProcessingException | UnsupportedEncodingException e) {
 				log.error(e.getMessage());
 				throw new BadDataException(GatewayConstants.INVALID_ERROR);
@@ -117,7 +119,7 @@ public class LoginService {
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
 		loginDetails.setToken(tokenService.getToken(loginRequestDto.getUsername(), "", ""));
- 		response.setStatus(HttpStatus.OK.value());
+		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
@@ -129,8 +131,8 @@ public class LoginService {
 			throw new BadDataException(GatewayConstants.REQUEST_TIMEOUT);
 		}
 	}
-	private static String getMd5(String input)
-	{
+
+	private static String getMd5(String input) {
 		StringBuilder hashtext = new StringBuilder();
 		try {
 			MessageDigest md = MessageDigest.getInstance("MD5");
@@ -140,13 +142,12 @@ public class LoginService {
 			while (hashtext.length() < 32) {
 				hashtext.append("0" + hashtext);
 			}
- 		}
- 		catch (NoSuchAlgorithmException e) {
+		} catch (NoSuchAlgorithmException e) {
 			log.error(e.getMessage());
 		}
 		return hashtext.toString();
 	}
-  
+
 	public Response<String> logout(String authorization) {
 		String username = tokenService.getUserNameByToken(authorization);
 		tokenService.deleteToken(authorization);
@@ -286,8 +287,7 @@ public class LoginService {
 		/*** Password Hashing ***/
 
 		Optional<String> saltValue = PasswordEncryptionService.generateSalt(32);
-		Optional<String> passwordValue = PasswordEncryptionService.hashPassword(passwordDto.getNewPassword(),
-				saltValue.isPresent() ? saltValue.get() : "");
+		Optional<String> passwordValue = PasswordEncryptionService.hashPassword(passwordDto.getNewPassword(),saltValue.isPresent() ? saltValue.get() : "");
 
 		String hashPassword = null;
 		if (passwordValue.isPresent())
