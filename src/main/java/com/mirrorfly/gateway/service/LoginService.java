@@ -1,8 +1,11 @@
 package com.mirrorfly.gateway.service;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -65,7 +68,7 @@ public class LoginService {
 
 	@Autowired
 	private EmailTokenRepo emailTokenRepo;
-	
+
 	@Autowired
 	private PasswordService passwordService;
 
@@ -74,63 +77,76 @@ public class LoginService {
 
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
-	
-	public Response<LoginDetailsDto> login(LoginRequestDto loginRequestDto) {
-		String decyptedString = AESEncryption.decryptString(loginRequestDto.getLoginData(), applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
-						+ applicationProperties.getLicenseKey());
-		if (decyptedString.equals("")) {
-			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
+
+	public Response<LoginDetailsDto> login(LoginDto loginRequestDto) {
+		if (Boolean.TRUE.equals(applicationProperties.getEncrypted())) {
+			String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),applicationProperties.getLicenseKey() +
+					applicationProperties.getLicenseKey()+ applicationProperties.getLicenseKey());
+			if (decyptedString.equals("")) {
+				throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
+			}
+			LoginRequestDto login;
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),LoginRequestDto.class);
+			} catch (JsonProcessingException | UnsupportedEncodingException e) {
+				log.error(e.getMessage());
+				throw new BadDataException(GatewayConstants.INVALID_ERROR);
+			}
+			loginRequestDto.setPassword(login.getPassword());
+			validateLoginRequestParams(login);
 		}
-		LoginDto login;
-		ObjectMapper mapper = new ObjectMapper();
-		try {
-			login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()), LoginDto.class);
-		} catch (JsonProcessingException | UnsupportedEncodingException e) {
-			log.error(e.getMessage());
-			throw new BadDataException(GatewayConstants.INVALID_ERROR);
-		}
-        validateLoginRequestParams(login);		
-		Users users = userRepo.findByUsername(login.getUsername());
+		Users users = userRepo.findByUsername(loginRequestDto.getUsername());
 		if (users == null) {
 			throw new BadDataException(GatewayConstants.USER_NAME_NOT_AVAIL);
-		}else {
+		} else {
 			VcardSearch vcardSearch = vcardSearchRepo.findByUsername(users.getUsername());
-			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) { 
+			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) {
 				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
- 			}
+			}
 		}
-		if (login.getType() == null || !login.getType().equals("WEB")) {
-			if (!users.getPassword().equals(login.getPassword())) {
+		if (loginRequestDto.getType() == null || !loginRequestDto.getType().equals("WEB")) {
+			if (!users.getPassword().equals(getMd5(loginRequestDto.getPassword()))) {
 				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
 			}
 		} else {
-			if (!users.getWsPassword().equals(login.getPassword())) {
+			if (!users.getWsPassword().equals(getMd5(loginRequestDto.getPassword()))) {
 				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
 			}
 		}
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
-		loginDetails.setToken(tokenService.getToken(login.getUsername(), "", ""));
-		loginDetails.setLogIn(true);
-		response.setStatus(HttpStatus.OK.value());
+		loginDetails.setToken(tokenService.getToken(loginRequestDto.getUsername(), "", ""));
+ 		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
 	}
 
-	private void validateLoginRequestParams(LoginDto login) {
+	private void validateLoginRequestParams(LoginRequestDto login) {
 		Instant instant = Instant.now();
- 		if (login.getCurrentTimestamp() > instant.plus(2, ChronoUnit.MINUTES).getEpochSecond()*1000) {
- 			throw new BadDataException(GatewayConstants.REQUEST_TIMEOUT);
- 		}
-		if (login.getUsername() == null)
-			throw new BadDataException(GatewayConstants.USERNAME_EMPTY);
-
-		if (login.getPassword() == null)
-			throw new BadDataException(GatewayConstants.PASS_WORD_EMPTY);
-
+		if (login.getCurrentTimestamp() > instant.plus(2, ChronoUnit.MINUTES).getEpochSecond() * 1000) {
+			throw new BadDataException(GatewayConstants.REQUEST_TIMEOUT);
+		}
 	}
-
+	private static String getMd5(String input)
+	{
+		StringBuilder hashtext = new StringBuilder();
+		try {
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			byte[] messageDigest = md.digest(input.getBytes());
+			BigInteger no = new BigInteger(1, messageDigest);
+			hashtext.append(no.toString(16));
+			while (hashtext.length() < 32) {
+				hashtext.append("0" + hashtext);
+			}
+ 		}
+ 		catch (NoSuchAlgorithmException e) {
+			log.error(e.getMessage());
+		}
+		return hashtext.toString();
+	}
+  
 	public Response<String> logout(String authorization) {
 		String username = tokenService.getUserNameByToken(authorization);
 		tokenService.deleteToken(authorization);
@@ -159,7 +175,7 @@ public class LoginService {
 				adminUser = adminUserRepo.findByEmailId(login.getUsername());
 
 			if (adminUser != null && adminUser.getIsActive() == 0) {
- 					throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);				
+				throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
 			}
 			if (null == adminUser) {
 				throw new BadDataException(GatewayConstants.INVALID_CREDENTAILS);
@@ -185,7 +201,7 @@ public class LoginService {
 	public Response<String> sendForgotPasswordEmail(String emailId) {
 		AdminUser mail = adminUserRepo.findByEmailId(emailId);
 		if (mail != null && mail.getIsActive() == 0) {
- 				throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
+			throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
 		}
 		if (mail == null)
 			throw new BadDataException(GatewayConstants.EMAILID_NOT_REGISTERED);
@@ -209,11 +225,11 @@ public class LoginService {
 			throw new BadDataException("You can't be able to Reset Password");
 
 		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
-		if (adminUser != null && adminUser.getIsActive() == 0) {			 
-				throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
+		if (adminUser != null && adminUser.getIsActive() == 0) {
+			throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
 		}
-		validatePassword(token, passwordDto);		
-		
+		validatePassword(token, passwordDto);
+
 		/*** Password Hashing ***/
 
 		/*** End ***/
@@ -233,9 +249,9 @@ public class LoginService {
 			throw new BadDataException("You can't be able to Activate Your Account");
 
 		validatePassword(token, passwordDto);
-				
+
 		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
-		
+
 		savePassword(passwordDto, validToken, adminUser);
 
 		Response<String> response = new Response<>();
@@ -263,14 +279,15 @@ public class LoginService {
 
 		if (!validPasswordPattern)
 			throw new BadDataException(GatewayConstants.PASWORD_PATTERN_MISMATCH);
-		
+
 	}
-	
+
 	private void savePassword(PasswordDto passwordDto, EmailToken validToken, AdminUser adminUser) {
 		/*** Password Hashing ***/
 
 		Optional<String> saltValue = PasswordEncryptionService.generateSalt(32);
-		Optional<String> passwordValue = PasswordEncryptionService.hashPassword(passwordDto.getNewPassword(),saltValue.isPresent() ? saltValue.get() : "");
+		Optional<String> passwordValue = PasswordEncryptionService.hashPassword(passwordDto.getNewPassword(),
+				saltValue.isPresent() ? saltValue.get() : "");
 
 		String hashPassword = null;
 		if (passwordValue.isPresent())

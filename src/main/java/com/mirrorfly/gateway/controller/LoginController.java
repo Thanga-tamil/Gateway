@@ -17,7 +17,7 @@ import com.mirrorfly.gateway.dto.AdminLoginDto;
 import com.mirrorfly.gateway.dto.AdminLoginResponse;
 import com.mirrorfly.gateway.dto.ForgetPasswordDto;
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
-import com.mirrorfly.gateway.dto.LoginRequestDto;
+import com.mirrorfly.gateway.dto.LoginDto;
 import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.LoginService;
@@ -28,7 +28,7 @@ public class LoginController {
 
 	@Autowired
 	private LoginService loginService;
- 
+	
 	/**
 	 * Function to validate username and password by passing through loginService.
 	 * This function return a response stating that login success or error with
@@ -40,8 +40,8 @@ public class LoginController {
 	 */
 
 	@PostMapping("/login")
-	public @ResponseBody Response<LoginDetailsDto> login(@Validated @RequestBody LoginRequestDto loginRequestDto) {
-		return loginService.login(loginRequestDto);
+	public @ResponseBody Response<LoginDetailsDto> login(@Validated @RequestBody LoginDto loginDto) {	
+		return loginService.login(loginDto);
 	}
 
 	/**
