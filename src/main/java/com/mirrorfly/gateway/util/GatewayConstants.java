@@ -217,9 +217,7 @@ public class GatewayConstants {
 	
 	public static final String INVALID_ERROR = "Invalid request";
 
-	public static final String REQUEST_TIMEOUT = "Your request has been timeout";
-
-	public static final String USERNAME_EMPTY = "UserName cannot be Empty";
+ 	public static final String USERNAME_EMPTY = "UserName cannot be Empty";
 
 	public static final String PASS_WORD_EMPTY = "Password cannot be Empty";
 
