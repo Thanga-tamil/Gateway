@@ -13,6 +13,8 @@ import lombok.Data;
 @Data
 public class LoginRequestDto {
 
-	private String loginData;
+	private String password;
+	
+	private long currentTimestamp ;
 
 }
