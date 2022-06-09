@@ -204,9 +204,9 @@ public class RegisterService {
 				registerDto.getDeviceType()));
 		registerResponseDto.setUsername(registerDto.getUserIdentifier());
 		Users users = new Users();
-		users.setPassword(registerResponseDto.getPassword());
+		users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		users.setUsername(registerDto.getUserIdentifier());
-		users.setWsPassword(registerResponseDto.getPassword());
+		users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		userRepo.save(users);
 		return registerResponseDto;
 	}

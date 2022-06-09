@@ -1,11 +1,8 @@
 package com.mirrorfly.gateway.service;
 
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -41,6 +38,7 @@ import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
+import com.mirrorfly.gateway.util.GatewayUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -80,17 +78,15 @@ public class LoginService {
 
 	public Response<LoginDetailsDto> login(LoginDto loginRequestDto) {
 		if (Boolean.TRUE.equals(applicationProperties.getEncrypted())) {
-			String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),
-					applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
-							+ applicationProperties.getLicenseKey());
+			String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),applicationProperties.getLicenseKey() +
+					applicationProperties.getLicenseKey()+ applicationProperties.getLicenseKey());
 			if (decyptedString.equals("")) {
 				throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
 			}
 			LoginRequestDto login;
 			ObjectMapper mapper = new ObjectMapper();
 			try {
-				login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
-						LoginRequestDto.class);
+				login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),LoginRequestDto.class);
 			} catch (JsonProcessingException | UnsupportedEncodingException e) {
 				log.error(e.getMessage());
 				throw new BadDataException(GatewayConstants.INVALID_ERROR);
@@ -108,18 +104,18 @@ public class LoginService {
 			}
 		}
 		if (loginRequestDto.getType() == null || !loginRequestDto.getType().equals("WEB")) {
-			if (!users.getPassword().equals(getMd5(loginRequestDto.getPassword()))) {
+			if (!users.getPassword().equals(GatewayUtil.getMd5String(loginRequestDto.getPassword()))) {
 				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
 			}
 		} else {
-			if (!users.getWsPassword().equals(getMd5(loginRequestDto.getPassword()))) {
+			if (!users.getWsPassword().equals(GatewayUtil.getMd5String(loginRequestDto.getPassword()))) {
 				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
 			}
 		}
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
 		loginDetails.setToken(tokenService.getToken(loginRequestDto.getUsername(), "", ""));
-		response.setStatus(HttpStatus.OK.value());
+ 		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
@@ -131,23 +127,7 @@ public class LoginService {
 			throw new BadDataException(GatewayConstants.REQUEST_TIMEOUT);
 		}
 	}
-
-	private static String getMd5(String input) {
-		StringBuilder hashtext = new StringBuilder();
-		try {
-			MessageDigest md = MessageDigest.getInstance("MD5");
-			byte[] messageDigest = md.digest(input.getBytes());
-			BigInteger no = new BigInteger(1, messageDigest);
-			hashtext.append(no.toString(16));
-			while (hashtext.length() < 32) {
-				hashtext.append("0" + hashtext);
-			}
-		} catch (NoSuchAlgorithmException e) {
-			log.error(e.getMessage());
-		}
-		return hashtext.toString();
-	}
-
+	
 	public Response<String> logout(String authorization) {
 		String username = tokenService.getUserNameByToken(authorization);
 		tokenService.deleteToken(authorization);
@@ -287,7 +267,8 @@ public class LoginService {
 		/*** Password Hashing ***/
 
 		Optional<String> saltValue = PasswordEncryptionService.generateSalt(32);
-		Optional<String> passwordValue = PasswordEncryptionService.hashPassword(passwordDto.getNewPassword(),saltValue.isPresent() ? saltValue.get() : "");
+		Optional<String> passwordValue = PasswordEncryptionService.hashPassword(passwordDto.getNewPassword(),
+				saltValue.isPresent() ? saltValue.get() : "");
 
 		String hashPassword = null;
 		if (passwordValue.isPresent())
