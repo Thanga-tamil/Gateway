@@ -12,13 +12,12 @@ public class RegisterDto {
 	private Integer mode = 0;
 
 	private String deviceToken = "";
-	
-	private String voipDeviceToken = "";
-	
-	private String deviceOsVersion = "";
-	
-	private String licenseKey = "";
-	
- 	private String userIdentifier = "";
 
+	private String voipDeviceToken = "";
+
+	private String deviceOsVersion = "";
+
+	private String licenseKey = "";
+
+	private String userIdentifier = "";
 }

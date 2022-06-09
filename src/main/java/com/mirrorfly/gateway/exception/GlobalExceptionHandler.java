@@ -347,7 +347,12 @@ public class GlobalExceptionHandler {
 	 * @param message Exception description
 	 * @return JSON format response
 	 */
-
+	@ExceptionHandler(value = ForbiddenException.class)
+	public Response<String> forbiddenException(ForbiddenException ex) {
+		LOGGER.error(ex.getLocalizedMessage());
+		return setStatusAndMessage(HttpStatus.FORBIDDEN.value(), ex.getMessage());
+	}
+	
 	private Response<String> setStatusAndMessage(int status, String message) {
 		Response<String> reponseMap = new Response<>();
 		reponseMap.setStatus(status);

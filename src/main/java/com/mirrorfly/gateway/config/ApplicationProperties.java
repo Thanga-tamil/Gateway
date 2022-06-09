@@ -37,7 +37,7 @@ public class ApplicationProperties {
 	public String getRedisHost() {
 		return env.getProperty("spring.redis.host");
 	}
-	
+
 	public String getRedisPassword() {
 		return env.getProperty("spring.redis.password");
 	}
@@ -45,19 +45,19 @@ public class ApplicationProperties {
 	public String getRedisPort() {
 		return env.getProperty("spring.redis.port");
 	}
-	
+
 	public String getApiBaseUrl() {
 		return env.getProperty("api_base_url");
 	}
-	
+
 	public String getMailQueue() {
 		return env.getProperty("api.mail.exchange");
 	}
-	
+
 	public String getResetPasswordRedirectUrl() {
 		return env.getProperty("reset_password_redirect_url");
 	}
-	
+
 	public String getWebportalApiBaseUrl() {
 		return env.getProperty("webportal.api_base_url");
 	}
@@ -69,9 +69,17 @@ public class ApplicationProperties {
 	public String getLicenseDataQueue() {
 		return env.getProperty("queue.licensedata");
 	}
-	
+
 	public String getXmppDomain() {
 		return env.getProperty("xmpp_domain");
 	}
-	
+
+	public String getWhiteListIps() {
+		return env.getProperty("white-list-ips");
+	}
+
+	public Boolean getEncrypted() {
+		return Boolean.parseBoolean(env.getProperty("loginAPIEncrypted"));
+	}
+
 }

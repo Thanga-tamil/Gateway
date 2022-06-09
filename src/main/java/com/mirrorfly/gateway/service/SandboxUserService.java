@@ -16,12 +16,15 @@ import com.mirrorfly.gateway.dto.AddUserDto;
 import com.mirrorfly.gateway.dto.SanboxUserRegisterDto;
 import com.mirrorfly.gateway.dto.SandboxRegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardRepo;
+import com.mirrorfly.gateway.repo.VcardSearch;
+import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
@@ -50,7 +53,13 @@ public class SandboxUserService {
 	
 	@Autowired
 	private VcardRepo vcardRepo;
+	
+	@Autowired
+	private RegisterService registerService;
 
+	@Autowired
+	private VcardSearchRepo vcardSearchRepo;
+	 
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
@@ -65,6 +74,13 @@ public class SandboxUserService {
 		}
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser != null) {
+			if(chatUser.getIsDeleteInprogrees() == 1) {
+				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
+			}	
+			VcardSearch vcardSearch = vcardSearchRepo.findByUsername(chatUser.getUsername());
+			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) { 
+				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
+ 			}
 			if (!chatUser.getLicenseKey().equalsIgnoreCase(registerDto.getLicenseKey())) {
 				throw new BadDataException(GatewayConstants.USER_USERIDENTIFIER_ALREADY_REGISTERED);
 			}
@@ -87,9 +103,10 @@ public class SandboxUserService {
 			URI url = UriComponentsBuilder
 					.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/addUserCount").build()
 					.toUri();
+			registerService.registerLogintime(registerDto.getUserIdentifier());
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
-			try {
+ 			try {
 				restTemplate.postForObject(url, adduser, Response.class);
 			} catch (HttpStatusCodeException e) {
 				handlingExceptionOfApiCall(e);
@@ -112,7 +129,7 @@ public class SandboxUserService {
 		response.setMessage(GatewayConstants.USER_ADD_SUCCESS);
 		return response;
 	}
-
+	
 	private void dataValidating(SanboxUserRegisterDto registerDto) {
 		if (registerDto.getUserIdentifier() == null || registerDto.getUserIdentifier().trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
@@ -178,6 +195,7 @@ public class SandboxUserService {
 		chatUser.setDevicetype(registerDto.getDeviceType());
 		chatUser.setLicenseKey(registerDto.getLicenseKey());
 		chatUser.setUserIdentifier(registerDto.getUserIdentifier());
+		chatUser.setIsDeleteInprogrees(0);
 		chatUserRepo.save(chatUser);
 
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();

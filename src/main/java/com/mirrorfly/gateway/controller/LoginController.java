@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mirrorfly.gateway.dto.AdminLoginDto;
 import com.mirrorfly.gateway.dto.AdminLoginResponse;
 import com.mirrorfly.gateway.dto.ForgetPasswordDto;
@@ -27,7 +28,7 @@ public class LoginController {
 
 	@Autowired
 	private LoginService loginService;
-
+	
 	/**
 	 * Function to validate username and password by passing through loginService.
 	 * This function return a response stating that login success or error with
@@ -35,11 +36,12 @@ public class LoginController {
 	 * 
 	 * @param login this has username and password.
 	 * @return success full response login screen with token for authorization.
+	 * @throws JsonProcessingException
 	 */
 
 	@PostMapping("/login")
-	public @ResponseBody Response<LoginDetailsDto> login(@Validated @RequestBody LoginDto login) {
-		return loginService.login(login);
+	public @ResponseBody Response<LoginDetailsDto> login(@Validated @RequestBody LoginDto loginDto) {	
+		return loginService.login(loginDto);
 	}
 
 	/**
@@ -88,7 +90,8 @@ public class LoginController {
 	/**
 	 * Function to Activate Account through loginService. This function return a
 	 * response stating that Activate account or error with error code and error
-	 * message. 
+	 * message.
+	 * 
 	 * @param token
 	 * @param passwordDto
 	 * @return
