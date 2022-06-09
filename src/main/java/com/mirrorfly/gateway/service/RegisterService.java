@@ -1,5 +1,8 @@
 package com.mirrorfly.gateway.service;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
@@ -19,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
+import com.mirrorfly.gateway.dto.RegisterRequestDto;
 import com.mirrorfly.gateway.dto.RegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
@@ -84,7 +88,20 @@ public class RegisterService {
 		return response;
 	}
 
-	public Response<String> registerNewUser(RegisterDto registerDto) {
+	public Response<String> registerNewUser(RegisterRequestDto registerRequestDto) {
+		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(),
+				applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
+						+ applicationProperties.getLicenseKey());
+		if (decyptedString.equals("")) {
+			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
+		}
+		ObjectMapper decryptmapper = new ObjectMapper();
+		RegisterDto registerDto;
+		try {
+			registerDto = decryptmapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()), RegisterDto.class);
+		} catch (JsonProcessingException | UnsupportedEncodingException e) {
+			throw new BadDataException(GatewayConstants.INVALID_ERROR);
+		}
 		RegisterResponseDto registerResponseDto = registerUser(registerDto);
 		Vcard vcards = vcardRepo.findByUsername(registerResponseDto.getUsername());
 		if(vcards != null) {

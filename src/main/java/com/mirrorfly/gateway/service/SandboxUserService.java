@@ -53,13 +53,13 @@ public class SandboxUserService {
 	
 	@Autowired
 	private VcardRepo vcardRepo;
-
-	@Autowired
-	private VcardSearchRepo vcardSearchRepo;
 	
 	@Autowired
 	private RegisterService registerService;
-	
+
+	@Autowired
+	private VcardSearchRepo vcardSearchRepo;
+	 
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
@@ -106,6 +106,7 @@ public class SandboxUserService {
 			registerService.registerLogintime(registerDto.getUserIdentifier());
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
+			registerService.registerLogintime(registerDto.getUserIdentifier());
 			try {
 				restTemplate.postForObject(url, adduser, Response.class);
 			} catch (HttpStatusCodeException e) {
@@ -129,7 +130,7 @@ public class SandboxUserService {
 		response.setMessage(GatewayConstants.USER_ADD_SUCCESS);
 		return response;
 	}
-
+	
 	private void dataValidating(SanboxUserRegisterDto registerDto) {
 		if (registerDto.getUserIdentifier() == null || registerDto.getUserIdentifier().trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
