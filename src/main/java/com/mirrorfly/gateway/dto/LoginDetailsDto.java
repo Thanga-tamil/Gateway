@@ -4,5 +4,4 @@ package com.mirrorfly.gateway.dto;
 public class LoginDetailsDto {
 
 	private String token;
-
 }

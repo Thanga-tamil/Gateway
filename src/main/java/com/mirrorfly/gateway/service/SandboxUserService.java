@@ -53,10 +53,13 @@ public class SandboxUserService {
 	
 	@Autowired
 	private VcardRepo vcardRepo;
+	
+	@Autowired
+	private RegisterService registerService;
 
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
-	
+	 
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
@@ -71,6 +74,9 @@ public class SandboxUserService {
 		}
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser != null) {
+			if(chatUser.getIsDeleteInprogrees() == 1) {
+				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
+			}	
 			VcardSearch vcardSearch = vcardSearchRepo.findByUsername(chatUser.getUsername());
 			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) { 
 				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
@@ -97,9 +103,10 @@ public class SandboxUserService {
 			URI url = UriComponentsBuilder
 					.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/addUserCount").build()
 					.toUri();
+			registerService.registerLogintime(registerDto.getUserIdentifier());
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
-			try {
+ 			try {
 				restTemplate.postForObject(url, adduser, Response.class);
 			} catch (HttpStatusCodeException e) {
 				handlingExceptionOfApiCall(e);
@@ -122,7 +129,7 @@ public class SandboxUserService {
 		response.setMessage(GatewayConstants.USER_ADD_SUCCESS);
 		return response;
 	}
-
+	
 	private void dataValidating(SanboxUserRegisterDto registerDto) {
 		if (registerDto.getUserIdentifier() == null || registerDto.getUserIdentifier().trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
@@ -188,6 +195,7 @@ public class SandboxUserService {
 		chatUser.setDevicetype(registerDto.getDeviceType());
 		chatUser.setLicenseKey(registerDto.getLicenseKey());
 		chatUser.setUserIdentifier(registerDto.getUserIdentifier());
+		chatUser.setIsDeleteInprogrees(0);
 		chatUserRepo.save(chatUser);
 
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();

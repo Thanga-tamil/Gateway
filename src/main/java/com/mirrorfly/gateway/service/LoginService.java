@@ -30,6 +30,9 @@ import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.GatewayConstants;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class LoginService {
 
@@ -53,7 +56,7 @@ public class LoginService {
 
 	@Autowired
 	private EmailTokenRepo emailTokenRepo;
-	
+
 	@Autowired
 	private PasswordService passwordService;
 
@@ -62,29 +65,29 @@ public class LoginService {
 
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
-	
-	public Response<LoginDetailsDto> login(LoginDto login) {
-		Users users = userRepo.findByUsername(login.getUsername());
+
+	public Response<LoginDetailsDto> login(LoginDto loginRequestDto) {
+		Users users = userRepo.findByUsername(loginRequestDto.getUsername());
 		if (users == null) {
 			throw new BadDataException(GatewayConstants.USER_NAME_NOT_AVAIL);
-		}else {
+		} else {
 			VcardSearch vcardSearch = vcardSearchRepo.findByUsername(users.getUsername());
-			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) { 
+			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) {
 				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
- 			}
+			}
 		}
-		if (login.getType() == null || !login.getType().equals("WEB")) {
-			if (!users.getPassword().equals(login.getPassword())) {
+		if (loginRequestDto.getType() == null || !loginRequestDto.getType().equals("WEB")) {
+			if (!users.getPassword().equals(loginRequestDto.getPassword())) {
 				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
 			}
 		} else {
-			if (!users.getWsPassword().equals(login.getPassword())) {
+			if (!users.getWsPassword().equals(loginRequestDto.getPassword())) {
 				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
 			}
 		}
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
-		loginDetails.setToken(tokenService.getToken(login.getUsername(), "", ""));
+		loginDetails.setToken(tokenService.getToken(loginRequestDto.getUsername(), "", ""));
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
@@ -97,7 +100,6 @@ public class LoginService {
 		if (username != null) {
 			Optional<ChatUser> chatUser = chatUserRepo.findById(username);
 			if (chatUser.isPresent()) {
-
 				chatUser.get().setDeviceToken("");
 				chatUser.get().setDevicetype("");
 				chatUserRepo.save(chatUser.get());
@@ -119,7 +121,7 @@ public class LoginService {
 				adminUser = adminUserRepo.findByEmailId(login.getUsername());
 
 			if (adminUser != null && adminUser.getIsActive() == 0) {
- 					throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);				
+				throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
 			}
 			if (null == adminUser) {
 				throw new BadDataException(GatewayConstants.INVALID_CREDENTAILS);
@@ -145,7 +147,7 @@ public class LoginService {
 	public Response<String> sendForgotPasswordEmail(String emailId) {
 		AdminUser mail = adminUserRepo.findByEmailId(emailId);
 		if (mail != null && mail.getIsActive() == 0) {
- 				throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
+			throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
 		}
 		if (mail == null)
 			throw new BadDataException(GatewayConstants.EMAILID_NOT_REGISTERED);
@@ -169,11 +171,11 @@ public class LoginService {
 			throw new BadDataException("You can't be able to Reset Password");
 
 		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
-		if (adminUser != null && adminUser.getIsActive() == 0) {			 
-				throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
+		if (adminUser != null && adminUser.getIsActive() == 0) {
+			throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
 		}
-		validatePassword(token, passwordDto);		
-		
+		validatePassword(token, passwordDto);
+
 		/*** Password Hashing ***/
 
 		/*** End ***/
@@ -193,9 +195,9 @@ public class LoginService {
 			throw new BadDataException("You can't be able to Activate Your Account");
 
 		validatePassword(token, passwordDto);
-				
+
 		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
-		
+
 		savePassword(passwordDto, validToken, adminUser);
 
 		Response<String> response = new Response<>();
@@ -223,14 +225,15 @@ public class LoginService {
 
 		if (!validPasswordPattern)
 			throw new BadDataException(GatewayConstants.PASWORD_PATTERN_MISMATCH);
-		
+
 	}
-	
+
 	private void savePassword(PasswordDto passwordDto, EmailToken validToken, AdminUser adminUser) {
 		/*** Password Hashing ***/
 
 		Optional<String> saltValue = PasswordEncryptionService.generateSalt(32);
-		Optional<String> passwordValue = PasswordEncryptionService.hashPassword(passwordDto.getNewPassword(),saltValue.isPresent() ? saltValue.get() : "");
+		Optional<String> passwordValue = PasswordEncryptionService.hashPassword(passwordDto.getNewPassword(),
+				saltValue.isPresent() ? saltValue.get() : "");
 
 		String hashPassword = null;
 		if (passwordValue.isPresent())

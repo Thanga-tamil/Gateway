@@ -1,5 +1,11 @@
 package com.mirrorfly.gateway.service;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -16,15 +22,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
+import com.mirrorfly.gateway.dto.RegisterRequestDto;
 import com.mirrorfly.gateway.dto.RegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.ChatUser;
+import com.mirrorfly.gateway.model.Last;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
+import com.mirrorfly.gateway.repo.LastRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardRepo;
 import com.mirrorfly.gateway.repo.VcardSearch;
@@ -62,6 +71,9 @@ public class RegisterService {
 	private VcardRepo vcardRepo;
 	
 	@Autowired
+	private LastRepo lastRepo;
+	
+	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
 
 	public Response<RegisterInfoDto> getRegisterInfo() {
@@ -76,12 +88,25 @@ public class RegisterService {
 		return response;
 	}
 
-	public Response<String> registerNewUser(RegisterDto registerDto) {
+	public Response<String> registerNewUser(RegisterRequestDto registerRequestDto) {
+		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(),
+				applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
+						+ applicationProperties.getLicenseKey());
+		if (decyptedString.equals("")) {
+			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
+		}
+		ObjectMapper decryptmapper = new ObjectMapper();
+		RegisterDto registerDto;
+		try {
+			registerDto = decryptmapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()), RegisterDto.class);
+		} catch (JsonProcessingException | UnsupportedEncodingException e) {
+			throw new BadDataException(GatewayConstants.INVALID_ERROR);
+		}
 		RegisterResponseDto registerResponseDto = registerUser(registerDto);
 		Vcard vcards = vcardRepo.findByUsername(registerResponseDto.getUsername());
 		if(vcards != null) {
 			registerResponseDto.setIsProfileUpdated(true);   
-		}
+		}				
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonString;
 		try {
@@ -95,6 +120,18 @@ public class RegisterService {
 		response.setStatus(HttpStatus.OK.value());
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);		
 		return response;
+	}
+
+	public void registerLogintime(String username) {
+		Last last=new Last();
+		last.setUsername(username);
+		last.setStatus(0);
+		LocalDateTime date = LocalDateTime.now();
+        ZoneOffset zone = ZoneOffset.of("Z");
+  		last.setSeconds(Long.toString(date.toEpochSecond(zone)));
+		last.setPresence(0);	
+		last.setState("Stream reset by peer");
+		lastRepo.save(last);
 	}
 
 	private RegisterResponseDto registerUser(RegisterDto registerDto) {
@@ -116,7 +153,13 @@ public class RegisterService {
 			chatUser.setMobileNumber(registerDto.getMobileNumber());
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
-		}else {
+ 			chatUser.setLicenseKey(registerDto.getLicenseKey());
+ 			//To insert the register login time 
+			registerLogintime(registerDto.getUserIdentifier());
+ 		}else {
+			if(chatUser.getIsDeleteInprogrees() == 1) {
+				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
+			}			
 			VcardSearch vcardSearch = vcardSearchRepo.findByUsername(chatUser.getUsername());
 			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) { 
 				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
@@ -144,6 +187,7 @@ public class RegisterService {
 			chatUser.setDevicetype(registerDto.getDeviceType());
 			chatUser.setMode(registerDto.getMode());
 		}
+		chatUser.setIsDeleteInprogrees(0);
 		chatUserRepo.save(chatUser);
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
 		if(registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
