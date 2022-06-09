@@ -1,12 +1,21 @@
-Release Date: 02-Jun-2022
+Release Date: 09-Jun-2022
 Release Version: 5.5.0
 Build Number: -
 
 This build contains the following improvement
  
 Tasks:
+ 
+   https://apptha.atlassian.net/browse/CPV2-1704 - Murugenthiran Natesan
+   
+   New core moderation service and new user register changes added   
+ 
    Login details getting on encrypt String data 
    
    Register API changes 
  
    https://apptha.atlassian.net/browse/CONTUIMSER-29854
+   
+   
+   code conflict changes added
+ 
