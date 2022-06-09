@@ -106,8 +106,7 @@ public class SandboxUserService {
 			registerService.registerLogintime(registerDto.getUserIdentifier());
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
-			registerService.registerLogintime(registerDto.getUserIdentifier());
-			try {
+ 			try {
 				restTemplate.postForObject(url, adduser, Response.class);
 			} catch (HttpStatusCodeException e) {
 				handlingExceptionOfApiCall(e);
