@@ -6,3 +6,6 @@ This build contains the following improvement
  
 Tasks:
    https://apptha.atlassian.net/browse/CPV2-1704 - Murugenthiran Natesan
+   
+   New core moderation service and new user resgier changes added
+   

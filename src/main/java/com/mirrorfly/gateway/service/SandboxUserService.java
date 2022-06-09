@@ -57,6 +57,9 @@ public class SandboxUserService {
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
 	
+	@Autowired
+	private RegisterService registerService;
+	
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
@@ -100,6 +103,7 @@ public class SandboxUserService {
 			URI url = UriComponentsBuilder
 					.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/addUserCount").build()
 					.toUri();
+			registerService.registerLogintime(registerDto.getUserIdentifier());
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
 			try {
