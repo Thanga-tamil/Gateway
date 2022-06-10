@@ -78,21 +78,21 @@ public class LoginService {
 
 	public Response<LoginDetailsDto> login(LoginDto loginRequestDto) {
 		if (Boolean.TRUE.equals(applicationProperties.getEncrypted())) {
-			String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),applicationProperties.getLicenseKey() +
-					applicationProperties.getLicenseKey()+ applicationProperties.getLicenseKey());
+			String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
+							+ applicationProperties.getLicenseKey());
 			if (decyptedString.equals("")) {
 				throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
 			}
 			LoginRequestDto login;
 			ObjectMapper mapper = new ObjectMapper();
 			try {
-				login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),LoginRequestDto.class);
+				login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()), LoginRequestDto.class);
 			} catch (JsonProcessingException | UnsupportedEncodingException e) {
 				log.error(e.getMessage());
 				throw new BadDataException(GatewayConstants.INVALID_ERROR);
 			}
 			loginRequestDto.setPassword(login.getPassword());
-			validateLoginRequestParams(login);
+			validateLoginRequestParams(login.getCurrentTimestamp());
 		}
 		Users users = userRepo.findByUsername(loginRequestDto.getUsername());
 		if (users == null) {
@@ -102,8 +102,8 @@ public class LoginService {
 			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) {
 				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
 			}
-		}
-		if (loginRequestDto.getType() == null || !loginRequestDto.getType().equals("WEB")) {
+		}		
+		if (loginRequestDto.getType() == null || !loginRequestDto.getType().equalsIgnoreCase("WEB")) {
 			if (!users.getPassword().equals(GatewayUtil.getMd5String(loginRequestDto.getPassword()))) {
 				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
 			}
@@ -115,26 +115,25 @@ public class LoginService {
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
 		loginDetails.setToken(tokenService.getToken(loginRequestDto.getUsername(), "", ""));
- 		response.setStatus(HttpStatus.OK.value());
+		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
 	}
 
-	private void validateLoginRequestParams(LoginRequestDto login) {
+ 	private void validateLoginRequestParams(long latestTime) {
 		Instant instant = Instant.now();
-		if (login.getCurrentTimestamp() > instant.plus(2, ChronoUnit.MINUTES).getEpochSecond() * 1000) {
+		if (latestTime > instant.plus(2, ChronoUnit.MINUTES).getEpochSecond() * 1000) {
 			throw new BadDataException(GatewayConstants.REQUEST_TIMEOUT);
 		}
-	}
-	
+	}	
+ 
 	public Response<String> logout(String authorization) {
 		String username = tokenService.getUserNameByToken(authorization);
 		tokenService.deleteToken(authorization);
 		if (username != null) {
 			Optional<ChatUser> chatUser = chatUserRepo.findById(username);
 			if (chatUser.isPresent()) {
-
 				chatUser.get().setDeviceToken("");
 				chatUser.get().setDevicetype("");
 				chatUserRepo.save(chatUser.get());

@@ -1,12 +1,9 @@
-Release Date: 02-Jun-2022
-Release Version: 5.5.0
+Release Date: 10-Jun-2022
+Release Version: 5.5.1
 Build Number: -
 
 This build contains the following improvement
  
 Tasks:
-   Login details getting on encrypt String data 
-   
-   Register API changes 
+    Register user password encrypted changes done on register and login API
  
-   https://apptha.atlassian.net/browse/CONTUIMSER-29854
