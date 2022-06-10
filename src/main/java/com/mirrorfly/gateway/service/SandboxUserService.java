@@ -64,8 +64,7 @@ public class SandboxUserService {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
 		dataValidating(registerDto);// validate Empty value
-		URI targetUrl = UriComponentsBuilder
-				.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/validate")
+		URI targetUrl = UriComponentsBuilder.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/validate")
 				.queryParam("licenseKey", registerDto.getLicenseKey()).build().toUri();
 		try {
 			restTemplate.getForObject(targetUrl, Response.class);
@@ -91,19 +90,17 @@ public class SandboxUserService {
 				updateUserMobileDetails(registerDto, chatUser);
 			}
 			Users users = userRepo.findByUsername(chatUser.getUsername());
-			registerResponseDto.setPassword(users.getPassword());
-			registerResponseDto.setUsername(users.getUsername());
-			registerResponseDto.setToken(tokenService.getToken(users.getUsername(), registerDto.getDeviceType(),
-					registerDto.getDeviceType()));
+ 			registerResponseDto.setUsername(users.getUsername());
 			registerResponseDto.setIsExisting(true);
 		} else {
 			String username = GatewayUtil.getAlphaNumericString(10).toLowerCase();
-			registerResponseDto = registerUser(registerDto, username);
+			registerUser(registerDto, username);//Create new user
+			registerResponseDto.setUsername(username);
 			registerResponseDto.setIsExisting(false);
 			URI url = UriComponentsBuilder
 					.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/addUserCount").build()
 					.toUri();
-			registerService.registerLogintime(registerDto.getUserIdentifier());
+			registerService.registerLogintime(registerDto.getUserIdentifier());//New entry in last login time
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
  			try {
@@ -112,6 +109,16 @@ public class SandboxUserService {
 				handlingExceptionOfApiCall(e);
 			}
 		}
+ 		registerResponseDto.setPassword(passwordService.generateRandomPassword());
+ 		registerResponseDto.setToken(tokenService.getToken(registerResponseDto.getUsername(), registerDto.getDeviceType(),registerDto.getDeviceType()));
+		Users users = new Users();
+		if(registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
+			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		}else {
+			users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		}		
+		users.setUsername(registerResponseDto.getUsername());		
+		userRepo.save(users);		
 		Vcard vcards = vcardRepo.findByUsername(registerResponseDto.getUsername());
 		if(vcards != null) {
 			registerResponseDto.setIsProfileUpdated(true);   
@@ -123,8 +130,7 @@ public class SandboxUserService {
 			throw new BadDataException("Json Parsing Error");
 		}
 		Response<String> response = new Response<>();
-		response.setData(AESEncryption.encryptString(jsonString,
-				registerDto.getLicenseKey() + registerDto.getLicenseKey() + registerDto.getLicenseKey()));
+		response.setData(AESEncryption.encryptString(jsonString,registerDto.getLicenseKey() + registerDto.getLicenseKey() + registerDto.getLicenseKey()));
 		response.setStatus(HttpStatus.OK.value());
 		response.setMessage(GatewayConstants.USER_ADD_SUCCESS);
 		return response;
@@ -167,7 +173,7 @@ public class SandboxUserService {
 		chatUserRepo.save(chatUser);
 	}
 
-	private SandboxRegisterResponseDto registerUser(SanboxUserRegisterDto registerDto, String username) {
+	private void registerUser(SanboxUserRegisterDto registerDto, String username) {
 		ChatUser chatUser = new ChatUser();
 		chatUser.setUsername(username);
 		chatUser.setMobileNumber(registerDto.getMobileNumber());
@@ -197,19 +203,6 @@ public class SandboxUserService {
 		chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 		chatUser.setIsDeleteInprogrees(0);
 		chatUserRepo.save(chatUser);
-
-		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
-		registerResponseDto.setPassword(passwordService.generateRandomPassword());
-		registerResponseDto
-				.setToken(tokenService.getToken(username, registerDto.getDeviceType(), registerDto.getDeviceType()));
-		registerResponseDto.setUsername(username);
-
-		Users users = new Users();
-		users.setPassword(registerResponseDto.getPassword());
-		users.setUsername(username);
-		userRepo.save(users);
-
-		return registerResponseDto;
 	}
 
 	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {

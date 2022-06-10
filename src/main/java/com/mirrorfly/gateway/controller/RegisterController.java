@@ -20,7 +20,7 @@ public class RegisterController {
 
 	@Autowired
 	private RegisterService registerService;
- 
+
 	/**
 	 * Function to validate username and password by passing through loginService.
 	 * This function return a response stating that login success or error with

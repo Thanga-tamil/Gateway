@@ -89,9 +89,8 @@ public class RegisterService {
 	}
 
 	public Response<String> registerNewUser(RegisterRequestDto registerRequestDto) {
-		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(),
-				applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
-						+ applicationProperties.getLicenseKey());
+		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(),applicationProperties.getLicenseKey() + 
+				applicationProperties.getLicenseKey()+ applicationProperties.getLicenseKey());
 		if (decyptedString.equals("")) {
 			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
 		}
@@ -190,23 +189,17 @@ public class RegisterService {
 		chatUser.setIsDeleteInprogrees(0);
 		chatUserRepo.save(chatUser);
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
-		if(registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
-			Users users = userRepo.findByUsername(registerDto.getUserIdentifier());
-			if(users != null && users.getPassword() != null) {
-				registerResponseDto.setPassword(users.getPassword());
-			}else {
-				registerResponseDto.setPassword(passwordService.generateRandomPassword());
-			}			
-		}else {
-			registerResponseDto.setPassword(passwordService.generateRandomPassword());
-		}		
+		registerResponseDto.setPassword(passwordService.generateRandomPassword());
 		registerResponseDto.setToken(tokenService.getToken(registerDto.getUserIdentifier(), registerDto.getDeviceType(),
 				registerDto.getDeviceType()));
 		registerResponseDto.setUsername(registerDto.getUserIdentifier());
 		Users users = new Users();
-		users.setPassword(registerResponseDto.getPassword());
-		users.setUsername(registerDto.getUserIdentifier());
-		users.setWsPassword(registerResponseDto.getPassword());
+		if(registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
+			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		}else {
+			users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		}		
+		users.setUsername(registerDto.getUserIdentifier());		
 		userRepo.save(users);
 		return registerResponseDto;
 	}
