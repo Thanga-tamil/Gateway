@@ -194,9 +194,12 @@ public class RegisterService {
 				registerDto.getDeviceType()));
 		registerResponseDto.setUsername(registerDto.getUserIdentifier());
 		Users users = new Users();
-		users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
-		users.setUsername(registerDto.getUserIdentifier());
-		users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		if(registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
+			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		}else {
+			users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		}		
+		users.setUsername(registerDto.getUserIdentifier());		
 		userRepo.save(users);
 		return registerResponseDto;
 	}

@@ -112,9 +112,12 @@ public class SandboxUserService {
  		registerResponseDto.setPassword(passwordService.generateRandomPassword());
  		registerResponseDto.setToken(tokenService.getToken(registerResponseDto.getUsername(), registerDto.getDeviceType(),registerDto.getDeviceType()));
 		Users users = new Users();
-		users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
-		users.setUsername(registerResponseDto.getUsername());
-		users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		if(registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
+			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		}else {
+			users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		}		
+		users.setUsername(registerResponseDto.getUsername());		
 		userRepo.save(users);		
 		Vcard vcards = vcardRepo.findByUsername(registerResponseDto.getUsername());
 		if(vcards != null) {
