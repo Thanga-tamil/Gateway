@@ -121,7 +121,13 @@ public class LoginService {
 	}
 
 	private boolean checkValidatePass(String password, String userpassword) {
-		return !password.equals(GatewayUtil.getMd5String(userpassword)) ? true : false;
+		boolean status =false;
+		if(password.equals(GatewayUtil.getMd5String(userpassword))) {
+			return status;
+		} else {
+			status =true;
+			return status;
+		} 	
 	}
 
 	private void validateLoginRequestParams(long latestTime) {
