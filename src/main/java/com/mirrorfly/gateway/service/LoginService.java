@@ -102,11 +102,15 @@ public class LoginService {
 			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) {
 				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
 			}
-		}		 
-		if ((users.getPassword() != null && !users.getPassword().equals(GatewayUtil.getMd5String(loginRequestDto.getPassword())))
-				|| (users.getWsPassword() != null && !users.getWsPassword().equals(GatewayUtil.getMd5String(loginRequestDto.getPassword())))) {
+		}
+		if (users.getPassword() != null || users.getWsPassword() != null) {
+			if(users.getPassword() != null ? checkValidatePass(users.getPassword(), loginRequestDto.getPassword())
+					: checkValidatePass(users.getWsPassword(), loginRequestDto.getPassword())) {
+				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
+			}
+		}else {
 			throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
-		}		
+		}
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
 		loginDetails.setToken(tokenService.getToken(loginRequestDto.getUsername(), "", ""));
@@ -116,7 +120,11 @@ public class LoginService {
 		return response;
 	}
 
- 	private void validateLoginRequestParams(long latestTime) {
+	private boolean checkValidatePass(String password, String userpassword) {
+		return !password.equals(GatewayUtil.getMd5String(userpassword)) ? true : false;
+	}
+
+	private void validateLoginRequestParams(long latestTime) {
 		Instant instant = Instant.now();
 		if (latestTime > instant.plus(2, ChronoUnit.MINUTES).getEpochSecond() * 1000) {
 			throw new BadDataException(GatewayConstants.REQUEST_TIMEOUT);
