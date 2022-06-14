@@ -83,7 +83,7 @@ public class LoginService {
 			String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
 							+ applicationProperties.getLicenseKey());
 			if (decyptedString.equals("")) {
-				log.error("Unable to decrypt the password field " + e.getMessage());
+				log.error("Unable to decrypt the password field ");
 				throw new BadDataException(GatewayConstants.INVALID_ERROR);
 			}
 			LoginRequestDto login;
@@ -115,12 +115,12 @@ public class LoginService {
 		// Validating the password against the data in DB
 		Boolean isPasswordValid = false;
 		if (users.getPassword() != null){
-			isPasswordValid = validatePasswordAgainstMd5(users.getPassword(), password)
+			isPasswordValid = validatePasswordAgainstMd5(users.getPassword(), password);
 		}
-		if (!isPasswordValid && users.getWsPassword() != null){
-			isPasswordValid = validatePasswordAgainstMd5(users.getWsPassword(), password)
+		if (Boolean.FALSE.equals(isPasswordValid) && users.getWsPassword() != null){
+			isPasswordValid = validatePasswordAgainstMd5(users.getWsPassword(), password);
 		}
-		if (!isPasswordValid) {
+		if (Boolean.FALSE.equals(isPasswordValid)) {
 			throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
 		}
 
@@ -136,8 +136,9 @@ public class LoginService {
 	private Boolean validatePasswordAgainstMd5(String password, String userpassword) {
 		// In DB we are having the Md5 string, so we are converting the password to Md5 String 
 		// and validating it against the DB
+		Boolean status = true;
 		if(password.equals(GatewayUtil.getMd5String(userpassword))) {
-			return true;
+			return status;
 		}
 		return false;
 	}
