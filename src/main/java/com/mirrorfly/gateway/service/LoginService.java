@@ -102,13 +102,11 @@ public class LoginService {
 			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) {
 				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
 			}
-		}		
-		users.setPassword(users.getPassword() == null ? "" : users.getPassword() );
-		users.setWsPassword(users.getWsPassword() == null ? "" : users.getWsPassword() );
-		if (!users.getPassword().equals(GatewayUtil.getMd5String(loginRequestDto.getPassword())) && 
-				!users.getWsPassword().equals(GatewayUtil.getMd5String(loginRequestDto.getPassword()))) {
+		}		 
+		if ((users.getPassword() != null && !users.getPassword().equals(GatewayUtil.getMd5String(loginRequestDto.getPassword())))
+				|| (users.getWsPassword() != null && !users.getWsPassword().equals(GatewayUtil.getMd5String(loginRequestDto.getPassword())))) {
 			throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
-		} 		
+		}		
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
 		loginDetails.setToken(tokenService.getToken(loginRequestDto.getUsername(), "", ""));
