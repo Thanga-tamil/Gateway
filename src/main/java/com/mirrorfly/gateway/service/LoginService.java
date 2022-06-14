@@ -135,12 +135,8 @@ public class LoginService {
 
 	private Boolean validatePasswordAgainstMd5(String password, String userpassword) {
 		// In DB we are having the Md5 string, so we are converting the password to Md5 String 
-		// and validating it against the DB
-		Boolean status = true;
-		if(password.equals(GatewayUtil.getMd5String(userpassword))) {
-			return status;
-		}
-		return false;
+		// and validating it against the DB 	 
+		return password.equals(GatewayUtil.getMd5String(userpassword));
 	}
 
 	private void validateLoginRequestParams(long latestTime) {
