@@ -77,23 +77,31 @@ public class LoginService {
 	private VcardSearchRepo vcardSearchRepo;
 
 	public Response<LoginDetailsDto> login(LoginDto loginRequestDto) {
+		String password = "";
 		if (Boolean.TRUE.equals(applicationProperties.getEncrypted())) {
+			// If incoming requested in encrypted means, we need to decrypt the password field to find the original password
 			String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
 							+ applicationProperties.getLicenseKey());
 			if (decyptedString.equals("")) {
-				throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
+				log.error("Unable to decrypt the password field " + e.getMessage());
+				throw new BadDataException(GatewayConstants.INVALID_ERROR);
 			}
 			LoginRequestDto login;
 			ObjectMapper mapper = new ObjectMapper();
 			try {
 				login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()), LoginRequestDto.class);
 			} catch (JsonProcessingException | UnsupportedEncodingException e) {
-				log.error(e.getMessage());
+				log.error("Unable to unserialize the password field " + e.getMessage());
 				throw new BadDataException(GatewayConstants.INVALID_ERROR);
 			}
-			loginRequestDto.setPassword(login.getPassword());
+			password = login.getPassword();
 			validateLoginRequestParams(login.getCurrentTimestamp());
+		} else {
+			// If incoming requested in plain text means, we can use the password from request itself
+			password = loginRequestDto.getPassword();
 		}
+
+		// Validating the user is blocked by admin or not
 		Users users = userRepo.findByUsername(loginRequestDto.getUsername());
 		if (users == null) {
 			throw new BadDataException(GatewayConstants.USER_NAME_NOT_AVAIL);
@@ -103,14 +111,19 @@ public class LoginService {
 				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
 			}
 		}
-		if (users.getPassword() != null || users.getWsPassword() != null) {
-			if(users.getPassword() != null ? checkValidatePass(users.getPassword(), loginRequestDto.getPassword())
-					: checkValidatePass(users.getWsPassword(), loginRequestDto.getPassword())) {
-				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
-			}
-		}else {
+
+		// Validating the password against the data in DB
+		Boolean isPasswordValid = false;
+		if (users.getPassword() != null){
+			isPasswordValid = validatePasswordAgainstMd5(users.getPassword(), password)
+		}
+		if (!isPasswordValid && users.getWsPassword() != null){
+			isPasswordValid = validatePasswordAgainstMd5(users.getWsPassword(), password)
+		}
+		if (!isPasswordValid) {
 			throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
 		}
+
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
 		loginDetails.setToken(tokenService.getToken(loginRequestDto.getUsername(), "", ""));
@@ -120,14 +133,13 @@ public class LoginService {
 		return response;
 	}
 
-	private boolean checkValidatePass(String password, String userpassword) {
-		boolean status =false;
+	private Boolean validatePasswordAgainstMd5(String password, String userpassword) {
+		// In DB we are having the Md5 string, so we are converting the password to Md5 String 
+		// and validating it against the DB
 		if(password.equals(GatewayUtil.getMd5String(userpassword))) {
-			return status;
-		} else {
-			status =true;
-			return status;
-		} 	
+			return true;
+		}
+		return false;
 	}
 
 	private void validateLoginRequestParams(long latestTime) {
