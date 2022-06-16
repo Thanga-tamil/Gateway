@@ -5,7 +5,6 @@ Build Number: -
 This build contains the following improvement
  
 Tasks:
-    Login API New version added for getting encrypted data
-    
-    current API changed as v1 API 
- 
+    Login API New changes for getting encrypted data, if your given the password field as encrypted, we try decrypt and cross check with password ,
+    if decryption failed , password field take password
+     
