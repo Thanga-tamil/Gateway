@@ -1,25 +1,17 @@
 package com.mirrorfly.gateway.service;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.AdminLoginDto;
 import com.mirrorfly.gateway.dto.AdminLoginResponse;
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
 import com.mirrorfly.gateway.dto.LoginDto;
-import com.mirrorfly.gateway.dto.LoginRequestDto;
 import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
@@ -36,13 +28,9 @@ import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardSearch;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
-import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 @Service
 public class LoginService {
 
@@ -77,41 +65,35 @@ public class LoginService {
 	private VcardSearchRepo vcardSearchRepo;
 
 	public Response<LoginDetailsDto> login(LoginDto loginRequestDto) {
-		if (Boolean.TRUE.equals(applicationProperties.getEncrypted())) {
-			String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
-							+ applicationProperties.getLicenseKey());
-			if (decyptedString.equals("")) {
-				throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
-			}
-			LoginRequestDto login;
-			ObjectMapper mapper = new ObjectMapper();
-			try {
-				login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()), LoginRequestDto.class);
-			} catch (JsonProcessingException | UnsupportedEncodingException e) {
-				log.error(e.getMessage());
-				throw new BadDataException(GatewayConstants.INVALID_ERROR);
-			}
-			loginRequestDto.setPassword(login.getPassword());
-			validateLoginRequestParams(login.getCurrentTimestamp());
-		}
 		Users users = userRepo.findByUsername(loginRequestDto.getUsername());
 		if (users == null) {
 			throw new BadDataException(GatewayConstants.USER_NAME_NOT_AVAIL);
 		} else {
+			// Validating the user is blocked by admin or not
 			VcardSearch vcardSearch = vcardSearchRepo.findByUsername(users.getUsername());
 			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) {
 				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
 			}
-		}		
-		if (loginRequestDto.getType() == null || !loginRequestDto.getType().equalsIgnoreCase("WEB")) {
-			if (!users.getPassword().equals(GatewayUtil.getMd5String(loginRequestDto.getPassword()))) {
-				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
-			}
-		} else {
-			if (!users.getWsPassword().equals(GatewayUtil.getMd5String(loginRequestDto.getPassword()))) {
-				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
-			}
 		}
+		
+		//Validate password
+		if(loginRequestDto.getType() == null || !loginRequestDto.getType().equalsIgnoreCase("WEB")) {
+			if(users.getPassword() ==null) {
+				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
+			}else {
+				if (!users.getPassword().equals(GatewayUtil.getMd5String(loginRequestDto.getPassword()))) {
+					throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
+				}
+			}
+		}else {
+			if(users.getWsPassword() ==null) {
+				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
+			}else {
+				if (users.getWsPassword() == null || !users.getWsPassword().equals(GatewayUtil.getMd5String(loginRequestDto.getPassword()))) {
+					throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
+				}
+			} 
+		} 
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
 		loginDetails.setToken(tokenService.getToken(loginRequestDto.getUsername(), "", ""));
@@ -120,13 +102,6 @@ public class LoginService {
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
 	}
-
- 	private void validateLoginRequestParams(long latestTime) {
-		Instant instant = Instant.now();
-		if (latestTime > instant.plus(2, ChronoUnit.MINUTES).getEpochSecond() * 1000) {
-			throw new BadDataException(GatewayConstants.REQUEST_TIMEOUT);
-		}
-	}	
  
 	public Response<String> logout(String authorization) {
 		String username = tokenService.getUserNameByToken(authorization);

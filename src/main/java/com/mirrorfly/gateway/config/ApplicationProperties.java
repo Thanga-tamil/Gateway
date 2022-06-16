@@ -77,9 +77,4 @@ public class ApplicationProperties {
 	public String getWhiteListIps() {
 		return env.getProperty("white-list-ips");
 	}
-
-	public Boolean getEncrypted() {
-		return Boolean.parseBoolean(env.getProperty("loginAPIEncrypted"));
-	}
-
 }

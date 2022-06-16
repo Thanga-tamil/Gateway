@@ -1,9 +1,11 @@
-Release Date: 10-Jun-2022
+Release Date: 16-Jun-2022
 Release Version: 5.5.1
 Build Number: -
 
 This build contains the following improvement
  
 Tasks:
-    Register user password encrypted changes done on register and login API
+    Login API New version added for getting encrypted data
+    
+    current API changed as v1 API 
  
