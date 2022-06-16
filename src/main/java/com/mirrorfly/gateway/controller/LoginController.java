@@ -21,18 +21,14 @@ import com.mirrorfly.gateway.dto.LoginDto;
 import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.LoginService;
-import com.mirrorfly.gateway.service.LoginV2Service;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 public class LoginController {
 
 	@Autowired
 	private LoginService loginService;
-	
-	@Autowired
-	private LoginV2Service loginV2Service;	
-	
+
 	/**
 	 * Function to validate username and password by passing through loginService.
 	 * This function return a response stating that login success or error with
@@ -43,16 +39,11 @@ public class LoginController {
 	 * @throws JsonProcessingException
 	 */
 
-	@PostMapping("/v1/login")
-	public @ResponseBody Response<LoginDetailsDto> loginv1(@Validated @RequestBody LoginDto loginDto) {	
+	@PostMapping("/login")
+	public @ResponseBody Response<LoginDetailsDto> loginv1(@Validated @RequestBody LoginDto loginDto) {
 		return loginService.login(loginDto);
 	}
-	
-	//Login version 2 updated API
-	@PostMapping("/v2/login")
-	public @ResponseBody Response<LoginDetailsDto> loginv2(@Validated @RequestBody LoginDto loginDto) {	
-		return loginV2Service.login(loginDto);
-	}
+
 	/**
 	 * Function to validate username and password by passing through loginService.
 	 * This function return a response stating that login success or error with
@@ -62,7 +53,7 @@ public class LoginController {
 	 * @return success full response login screen with token for authorization.
 	 */
 
-	@PostMapping("/v1/admin/login")
+	@PostMapping("/admin/login")
 	public @ResponseBody Response<AdminLoginResponse> admin(@Validated @RequestBody AdminLoginDto login) {
 		return loginService.adminLogin(login);
 	}
@@ -76,7 +67,7 @@ public class LoginController {
 	 * @return success full response login screen with token for authorization.
 	 */
 
-	@PostMapping("/v1/admin/forgotpassword")
+	@PostMapping("/admin/forgotpassword")
 	public @ResponseBody Response<String> login(@Validated @RequestBody ForgetPasswordDto forgetPasswordDto) {
 		return loginService.sendForgotPasswordEmail(forgetPasswordDto.getEmailId());
 	}
@@ -91,7 +82,7 @@ public class LoginController {
 	 * @return success full response login screen with token for authorization.
 	 */
 
-	@GetMapping("/v1/admin/resetpassword")
+	@GetMapping("/admin/resetpassword")
 	public @ResponseBody Response<String> resetpassword(@RequestParam String userName, PasswordDto passwordDto) {
 		return loginService.resetPassword(userName, passwordDto);
 	}
@@ -105,12 +96,12 @@ public class LoginController {
 	 * @param passwordDto
 	 * @return
 	 */
-	@GetMapping("/v1/admin/activateaccount")
+	@GetMapping("/admin/activateaccount")
 	public @ResponseBody Response<String> activateAccount(@RequestParam String token, PasswordDto passwordDto) {
 		return loginService.activateAccount(token, passwordDto);
 	}
 
-	@GetMapping("/v1/logout")
+	@GetMapping("/logout")
 	public @ResponseBody Response<String> logout(@RequestHeader("Authorization") String authorization) {
 		return loginService.logout(authorization);
 	}
