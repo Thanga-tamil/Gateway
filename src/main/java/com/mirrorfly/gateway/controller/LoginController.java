@@ -40,7 +40,7 @@ public class LoginController {
 	 */
 
 	@PostMapping("/login")
-	public @ResponseBody Response<LoginDetailsDto> loginv1(@Validated @RequestBody LoginDto loginDto) {
+	public @ResponseBody Response<LoginDetailsDto> login(@Validated @RequestBody LoginDto loginDto) {
 		return loginService.login(loginDto);
 	}
 
