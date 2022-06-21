@@ -74,6 +74,7 @@ public class SandboxUserService {
 		} catch (HttpStatusCodeException e) {
 			handlingExceptionOfApiCall(e);
 		}
+		Users users = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser != null) {
 			if(chatUser.getIsDeleteInprogrees() == 1) {
@@ -92,7 +93,7 @@ public class SandboxUserService {
 				}
 				updateUserMobileDetails(registerDto, chatUser);
 			}
-			Users users = userRepo.findByUsername(chatUser.getUsername());
+		    users = userRepo.findByUsername(chatUser.getUsername());
  			registerResponseDto.setUsername(users.getUsername());
 			registerResponseDto.setIsExisting(true);
 		} else {
@@ -111,16 +112,15 @@ public class SandboxUserService {
 			} catch (HttpStatusCodeException e) {
 				handlingExceptionOfApiCall(e);
 			}
+ 			users.setUsername(username);		
 		}
  		registerResponseDto.setPassword(passwordService.generateRandomPassword());
- 		registerResponseDto.setToken(tokenService.getToken(registerResponseDto.getUsername(), registerDto.getDeviceType(),registerDto.getDeviceType()));
-		Users users = new Users();
+ 		registerResponseDto.setToken(tokenService.getToken(registerResponseDto.getUsername(), registerDto.getDeviceType(),registerDto.getDeviceType()));	
 		if(registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
 			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		}else {
 			users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		}		
-		users.setUsername(registerResponseDto.getUsername());		
 		userRepo.save(users);		
 		Vcard vcards = vcardRepo.findByUsername(registerResponseDto.getUsername());
 		if(vcards != null) {

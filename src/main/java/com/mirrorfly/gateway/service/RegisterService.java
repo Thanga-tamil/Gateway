@@ -142,6 +142,7 @@ public class RegisterService {
 
 	private RegisterResponseDto registerUser(RegisterDto registerDto) {
 		inputDataValidating(registerDto);
+		Users user = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
 			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
@@ -163,7 +164,9 @@ public class RegisterService {
 			chatUser.setLicenseKey(registerDto.getLicenseKey());
 			// To insert the register login time
 			registerLogintime(registerDto.getUserIdentifier());
+			user.setUsername(registerDto.getUserIdentifier());
 		} else {
+			user = userRepo.findByUsername(chatUser.getUsername());
 			if (chatUser.getIsDeleteInprogrees() == 1) {
 				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
 			}
@@ -201,14 +204,12 @@ public class RegisterService {
 		registerResponseDto.setToken(tokenService.getToken(registerDto.getUserIdentifier(), registerDto.getDeviceType(),
 				registerDto.getDeviceType()));
 		registerResponseDto.setUsername(registerDto.getUserIdentifier());
-		Users users = new Users();
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
-			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+			user.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		} else {
-			users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
-		}
-		users.setUsername(registerDto.getUserIdentifier());
-		userRepo.save(users);
+			user.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		}		
+		userRepo.save(user);
 		return registerResponseDto;
 	}
 
