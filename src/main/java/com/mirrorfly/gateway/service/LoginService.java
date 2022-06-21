@@ -132,7 +132,7 @@ public class LoginService {
 
 	private void validateLoginRequestParams(long latestTime) {
 		Instant instant = Instant.now();
-		if (latestTime > instant.plus(2, ChronoUnit.MINUTES).getEpochSecond() * 1000) {
+		if (latestTime < instant.minus(2, ChronoUnit.MINUTES).getEpochSecond() * 1000) {
 			throw new BadDataException(GatewayConstants.REQUEST_TIMEOUT);
 		}
 	}	
