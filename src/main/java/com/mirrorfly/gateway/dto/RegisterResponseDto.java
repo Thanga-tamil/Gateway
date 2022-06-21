@@ -13,5 +13,5 @@ public class RegisterResponseDto {
 
 	private Boolean isProfileUpdated = false;
 
-	private ConfigDto confiq;
+	private ConfigDto config;
 }

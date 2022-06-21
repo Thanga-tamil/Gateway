@@ -112,7 +112,7 @@ public class RegisterService {
 			registerResponseDto.setIsProfileUpdated(true);
 		}
 		// get confiq details and return in the response
-		registerResponseDto.setConfiq(configService.getCongigData());
+		registerResponseDto.setConfig(configService.getCongigData());
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonString;
 		try {

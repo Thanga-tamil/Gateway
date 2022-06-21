@@ -127,7 +127,7 @@ public class SandboxUserService {
 			registerResponseDto.setIsProfileUpdated(true);   
 		}
 		// get confiq details and return in the response
-		registerResponseDto.setConfiq(configService.getCongigData());
+		registerResponseDto.setConfig(configService.getCongigData());
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			jsonString = mapper.writeValueAsString(registerResponseDto);
