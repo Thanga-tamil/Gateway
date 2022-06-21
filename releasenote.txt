@@ -7,3 +7,5 @@ This build contains the following improvement
 Tasks:
      confiq details are return in the register API
      
+     
+     https://apptha.atlassian.net/browse/CONTUIMSER-30179
