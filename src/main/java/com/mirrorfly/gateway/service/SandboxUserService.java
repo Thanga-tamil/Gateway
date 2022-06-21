@@ -60,6 +60,9 @@ public class SandboxUserService {
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
 	 
+	@Autowired
+	private ConfigService configService;
+	
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
@@ -123,6 +126,8 @@ public class SandboxUserService {
 		if(vcards != null) {
 			registerResponseDto.setIsProfileUpdated(true);   
 		}
+		// get confiq details and return in the response
+		registerResponseDto.setConfig(configService.getCongigData());
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			jsonString = mapper.writeValueAsString(registerResponseDto);
