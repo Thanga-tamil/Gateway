@@ -3,9 +3,7 @@ package com.mirrorfly.gateway.service;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,7 +84,6 @@ public class LoginService {
 		try {
 			login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),LoginRequestDto.class);
 			password = login.getPassword();
-			validateLoginRequestParams(login.getCurrentTimestamp());
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
 			log.error("Unable to unserialize the password field " + e.getMessage());
 			password = loginRequestDto.getPassword();
@@ -130,13 +127,6 @@ public class LoginService {
 		return password.equals(GatewayUtil.getMd5String(userpassword));
 	}
 
-	private void validateLoginRequestParams(long latestTime) {
-		Instant instant = Instant.now();
-		if (latestTime < instant.minus(2, ChronoUnit.MINUTES).getEpochSecond() * 1000) {
-			throw new BadDataException(GatewayConstants.REQUEST_TIMEOUT);
-		}
-	}	
-	
 	public Response<String> logout(String authorization) {
 		String username = tokenService.getUserNameByToken(authorization);
 		tokenService.deleteToken(authorization);
