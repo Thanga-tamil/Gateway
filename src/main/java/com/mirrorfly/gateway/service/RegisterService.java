@@ -63,18 +63,21 @@ public class RegisterService {
 
 	@Autowired
 	private ApplicationProperties applicationProperties;
-	
+
 	@Autowired
 	private RestTemplate restTemplate;
-	
+
 	@Autowired
 	private VcardRepo vcardRepo;
-	
+
 	@Autowired
 	private LastRepo lastRepo;
-	
+
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
+
+	@Autowired
+	private ConfigService configService;
 
 	public Response<RegisterInfoDto> getRegisterInfo() {
 		ChatSettings settings = settingsRepo.findAll().get(0);
@@ -89,23 +92,27 @@ public class RegisterService {
 	}
 
 	public Response<String> registerNewUser(RegisterRequestDto registerRequestDto) {
-		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(),applicationProperties.getLicenseKey() + 
-				applicationProperties.getLicenseKey()+ applicationProperties.getLicenseKey());
+		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(),
+				applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
+						+ applicationProperties.getLicenseKey());
 		if (decyptedString.equals("")) {
 			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
 		}
 		ObjectMapper decryptmapper = new ObjectMapper();
 		RegisterDto registerDto;
 		try {
-			registerDto = decryptmapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()), RegisterDto.class);
+			registerDto = decryptmapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
+					RegisterDto.class);
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
 			throw new BadDataException(GatewayConstants.INVALID_ERROR);
 		}
 		RegisterResponseDto registerResponseDto = registerUser(registerDto);
 		Vcard vcards = vcardRepo.findByUsername(registerResponseDto.getUsername());
-		if(vcards != null) {
-			registerResponseDto.setIsProfileUpdated(true);   
-		}				
+		if (vcards != null) {
+			registerResponseDto.setIsProfileUpdated(true);
+		}
+		// get confiq details and return in the response
+		registerResponseDto.setConfig(configService.getCongigData());
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonString;
 		try {
@@ -113,37 +120,39 @@ public class RegisterService {
 		} catch (JsonProcessingException e) {
 			throw new BadDataException("Json Parsing Error");
 		}
-		String licenseKey =applicationProperties.getLicenseKey();
+		String licenseKey = applicationProperties.getLicenseKey();
 		Response<String> response = new Response<>();
-		response.setData(AESEncryption.encryptString(jsonString,licenseKey + licenseKey + licenseKey));
+		response.setData(AESEncryption.encryptString(jsonString, licenseKey + licenseKey + licenseKey));
 		response.setStatus(HttpStatus.OK.value());
-		response.setMessage(GatewayConstants.DATA_RETRIEVED);		
+		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
 	}
 
 	public void registerLogintime(String username) {
-		Last last=new Last();
+		Last last = new Last();
 		last.setUsername(username);
 		last.setStatus(0);
 		LocalDateTime date = LocalDateTime.now();
-        ZoneOffset zone = ZoneOffset.of("Z");
-  		last.setSeconds(Long.toString(date.toEpochSecond(zone)));
-		last.setPresence(0);	
+		ZoneOffset zone = ZoneOffset.of("Z");
+		last.setSeconds(Long.toString(date.toEpochSecond(zone)));
+		last.setPresence(0);
 		last.setState("Stream reset by peer");
 		lastRepo.save(last);
 	}
 
 	private RegisterResponseDto registerUser(RegisterDto registerDto) {
 		inputDataValidating(registerDto);
+		Users user = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
 			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
 			try {
 				HttpHeaders headers = new HttpHeaders();
 				headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-				UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url).queryParam("licenseKey", registerDto.getLicenseKey());
+				UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url).queryParam("licenseKey",
+						registerDto.getLicenseKey());
 				HttpEntity<?> entity = new HttpEntity<>(headers);
-				restTemplate.exchange(builder.toUriString(),HttpMethod.GET, entity,String.class);
+				restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
 			} catch (HttpStatusCodeException e) {
 				handlingExceptionOfApiCall(e);
 			}
@@ -152,19 +161,21 @@ public class RegisterService {
 			chatUser.setMobileNumber(registerDto.getMobileNumber());
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
- 			chatUser.setLicenseKey(registerDto.getLicenseKey());
- 			//To insert the register login time 
+			chatUser.setLicenseKey(registerDto.getLicenseKey());
+			// To insert the register login time
 			registerLogintime(registerDto.getUserIdentifier());
- 		}else {
-			if(chatUser.getIsDeleteInprogrees() == 1) {
+			user.setUsername(registerDto.getUserIdentifier());
+		} else {
+			user = userRepo.findByUsername(chatUser.getUsername());
+			if (chatUser.getIsDeleteInprogrees() == 1) {
 				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
-			}			
+			}
 			VcardSearch vcardSearch = vcardSearchRepo.findByUsername(chatUser.getUsername());
-			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) { 
+			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) {
 				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
- 			}
+			}
 		}
-		if(!registerDto.getDeviceType().equalsIgnoreCase("web")) {
+		if (!registerDto.getDeviceType().equalsIgnoreCase("web")) {
 			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().trim().equals("")) {
 				chatUserRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
 			}
@@ -176,7 +187,7 @@ public class RegisterService {
 			if (registerDto.getDeviceOsVersion() != null && !registerDto.getDeviceOsVersion().equals("")) {
 				chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
 			} else {
-				if(registerDto.getDeviceType().equalsIgnoreCase("ios")) {
+				if (registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 					chatUser.setDeviceOsVersion("12.0");
 				} else {
 					chatUser.setDeviceOsVersion("");
@@ -193,26 +204,25 @@ public class RegisterService {
 		registerResponseDto.setToken(tokenService.getToken(registerDto.getUserIdentifier(), registerDto.getDeviceType(),
 				registerDto.getDeviceType()));
 		registerResponseDto.setUsername(registerDto.getUserIdentifier());
-		Users users = new Users();
-		if(registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
-			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
-		}else {
-			users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
+			user.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		} else {
+			user.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		}		
-		users.setUsername(registerDto.getUserIdentifier());		
-		userRepo.save(users);
+		userRepo.save(user);
 		return registerResponseDto;
 	}
-	
-	private void inputDataValidating(RegisterDto registerDto) {		
-		String userIdentifier = registerDto.getUserIdentifier();				
+
+	private void inputDataValidating(RegisterDto registerDto) {
+		String userIdentifier = registerDto.getUserIdentifier();
 		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
 		}
-		if(userIdentifier.contains("\"") || userIdentifier.contains("&") || userIdentifier.contains("\'") || userIdentifier.contains("/")
-				|| userIdentifier.contains(":") || userIdentifier.contains("<") || userIdentifier.contains(">") || userIdentifier.contains("@")) {
+		if (userIdentifier.contains("\"") || userIdentifier.contains("&") || userIdentifier.contains("\'")
+				|| userIdentifier.contains("/") || userIdentifier.contains(":") || userIdentifier.contains("<")
+				|| userIdentifier.contains(">") || userIdentifier.contains("@")) {
 			throw new BadDataException("User identifier should not contain (\",&,\',/,:,<,>,@).");
-		}		
+		}
 		inputDataValidation(registerDto);
 	}
 
@@ -223,9 +233,11 @@ public class RegisterService {
 		if (registerDto.getDeviceType() == null || registerDto.getDeviceType().trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_EMPTY);
 		}
-		if (!registerDto.getDeviceType().equalsIgnoreCase("android") && !registerDto.getDeviceType().equalsIgnoreCase("web") && !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
+		if (!registerDto.getDeviceType().equalsIgnoreCase("android")
+				&& !registerDto.getDeviceType().equalsIgnoreCase("web")
+				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
-		}		
+		}
 	}
 
 	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {

@@ -60,6 +60,9 @@ public class SandboxUserService {
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
 	 
+	@Autowired
+	private ConfigService configService;
+	
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
@@ -71,6 +74,7 @@ public class SandboxUserService {
 		} catch (HttpStatusCodeException e) {
 			handlingExceptionOfApiCall(e);
 		}
+		Users users = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser != null) {
 			if(chatUser.getIsDeleteInprogrees() == 1) {
@@ -89,7 +93,7 @@ public class SandboxUserService {
 				}
 				updateUserMobileDetails(registerDto, chatUser);
 			}
-			Users users = userRepo.findByUsername(chatUser.getUsername());
+		    users = userRepo.findByUsername(chatUser.getUsername());
  			registerResponseDto.setUsername(users.getUsername());
 			registerResponseDto.setIsExisting(true);
 		} else {
@@ -108,21 +112,22 @@ public class SandboxUserService {
 			} catch (HttpStatusCodeException e) {
 				handlingExceptionOfApiCall(e);
 			}
+ 			users.setUsername(username);		
 		}
  		registerResponseDto.setPassword(passwordService.generateRandomPassword());
- 		registerResponseDto.setToken(tokenService.getToken(registerResponseDto.getUsername(), registerDto.getDeviceType(),registerDto.getDeviceType()));
-		Users users = new Users();
+ 		registerResponseDto.setToken(tokenService.getToken(registerResponseDto.getUsername(), registerDto.getDeviceType(),registerDto.getDeviceType()));	
 		if(registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
 			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		}else {
 			users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		}		
-		users.setUsername(registerResponseDto.getUsername());		
 		userRepo.save(users);		
 		Vcard vcards = vcardRepo.findByUsername(registerResponseDto.getUsername());
 		if(vcards != null) {
 			registerResponseDto.setIsProfileUpdated(true);   
 		}
+		// get confiq details and return in the response
+		registerResponseDto.setConfig(configService.getCongigData());
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			jsonString = mapper.writeValueAsString(registerResponseDto);

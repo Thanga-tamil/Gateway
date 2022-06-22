@@ -81,4 +81,46 @@ public class ChatSettings implements Serializable {
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
 
+	@Column(name = "sipcall_enabled")
+	private Boolean sipcallEnabled;
+
+	@Column(name = "sip_server")
+	private String sipServer;
+
+	@Column(name = "call_routing_server")
+	private String callRoutingServer;
+
+	@Column(name = "chat_backup_type")
+	private String chatBackupType;
+
+	@Column(name = "chat_backup_frequency")
+	private String chatBackupFrequency;
+
+	@Column(name = "file_size_limit")
+	private Integer fileSizeLimit;
+
+	@Column(name = "sdk_url")
+	private String sdkUrl;
+
+	@Column(name = "pin_expire_days")
+	private Integer pinExpireDays;
+
+	@Column(name = "pin_timeout")
+	private Integer pinTimeOut;
+
+	@Column(name = "livestreaming_signalserver")
+	private String liveStreamingSignalServer;
+
+	@Column(name = "livestreaming_enabled")
+	private Integer isLiveStreamingEnabled;
+
+	@Column(name = "xmpp_port_web")
+	private String xmppPortWeb;
+
+	@Column(name = "iv")
+	private String iv;
+
+	@Column(name = "iv_profile")
+	private String ivProfile;
+
 }

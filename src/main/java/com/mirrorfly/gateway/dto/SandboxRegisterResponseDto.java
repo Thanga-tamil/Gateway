@@ -15,4 +15,6 @@ public class SandboxRegisterResponseDto {
 
 	private Boolean isProfileUpdated = false;
 
+	private ConfigDto config;
+
 }
