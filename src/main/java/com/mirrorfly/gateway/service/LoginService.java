@@ -1,5 +1,8 @@
 package com.mirrorfly.gateway.service;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -7,11 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.AdminLoginDto;
 import com.mirrorfly.gateway.dto.AdminLoginResponse;
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
 import com.mirrorfly.gateway.dto.LoginDto;
+import com.mirrorfly.gateway.dto.LoginRequestDto;
 import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
@@ -28,7 +34,9 @@ import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardSearch;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
+import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
+import com.mirrorfly.gateway.util.GatewayUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -67,6 +75,21 @@ public class LoginService {
 	private VcardSearchRepo vcardSearchRepo;
 
 	public Response<LoginDetailsDto> login(LoginDto loginRequestDto) {
+		// If incoming requested in encrypted means, we need to decrypt the password field to find the original password
+		String password = "";
+		String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),
+				applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()+ applicationProperties.getLicenseKey());		 
+		LoginRequestDto login;
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),LoginRequestDto.class);
+			password = login.getPassword();
+		} catch (JsonProcessingException | UnsupportedEncodingException e) {
+			log.error("Unable to unserialize the password field " + e.getMessage());
+			password = loginRequestDto.getPassword();
+		} 
+
+		// Validating the user is blocked by admin or not
 		Users users = userRepo.findByUsername(loginRequestDto.getUsername());
 		if (users == null) {
 			throw new BadDataException(GatewayConstants.USER_NAME_NOT_AVAIL);
@@ -76,15 +99,19 @@ public class LoginService {
 				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
 			}
 		}
-		if (loginRequestDto.getType() == null || !loginRequestDto.getType().equals("WEB")) {
-			if (!users.getPassword().equals(loginRequestDto.getPassword())) {
-				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
-			}
-		} else {
-			if (!users.getWsPassword().equals(loginRequestDto.getPassword())) {
-				throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
-			}
+
+		// Validating the password against the data in DB
+		Boolean isPasswordValid = false;
+		if (users.getPassword() != null) {
+			isPasswordValid = validatePasswordAgainstMd5(users.getPassword(), password);
 		}
+		if (Boolean.FALSE.equals(isPasswordValid) && users.getWsPassword() != null) {
+			isPasswordValid = validatePasswordAgainstMd5(users.getWsPassword(), password);
+		}
+		if (Boolean.FALSE.equals(isPasswordValid)) {
+			throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
+		}
+
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
 		loginDetails.setToken(tokenService.getToken(loginRequestDto.getUsername(), "", ""));
@@ -92,6 +119,12 @@ public class LoginService {
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
+	}
+ 
+	private Boolean validatePasswordAgainstMd5(String password, String userpassword) {
+		// In DB we are having the Md5 string, so we are converting the password to Md5 String 
+		// and validating it against the DB 	 
+		return password.equals(GatewayUtil.getMd5String(userpassword));
 	}
 
 	public Response<String> logout(String authorization) {

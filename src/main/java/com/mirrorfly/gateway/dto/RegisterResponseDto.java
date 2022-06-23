@@ -10,7 +10,8 @@ public class RegisterResponseDto {
 	private String username;
 
 	private String password;
-	
+
 	private Boolean isProfileUpdated = false;
 
+	private ConfigDto config;
 }

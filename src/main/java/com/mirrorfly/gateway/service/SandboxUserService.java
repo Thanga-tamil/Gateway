@@ -60,18 +60,21 @@ public class SandboxUserService {
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
 	 
+	@Autowired
+	private ConfigService configService;
+	
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
 		dataValidating(registerDto);// validate Empty value
-		URI targetUrl = UriComponentsBuilder
-				.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/validate")
+		URI targetUrl = UriComponentsBuilder.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/validate")
 				.queryParam("licenseKey", registerDto.getLicenseKey()).build().toUri();
 		try {
 			restTemplate.getForObject(targetUrl, Response.class);
 		} catch (HttpStatusCodeException e) {
 			handlingExceptionOfApiCall(e);
 		}
+		Users users = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser != null) {
 			if(chatUser.getIsDeleteInprogrees() == 1) {
@@ -90,20 +93,18 @@ public class SandboxUserService {
 				}
 				updateUserMobileDetails(registerDto, chatUser);
 			}
-			Users users = userRepo.findByUsername(chatUser.getUsername());
-			registerResponseDto.setPassword(users.getPassword());
-			registerResponseDto.setUsername(users.getUsername());
-			registerResponseDto.setToken(tokenService.getToken(users.getUsername(), registerDto.getDeviceType(),
-					registerDto.getDeviceType()));
+		    users = userRepo.findByUsername(chatUser.getUsername());
+ 			registerResponseDto.setUsername(users.getUsername());
 			registerResponseDto.setIsExisting(true);
 		} else {
 			String username = GatewayUtil.getAlphaNumericString(10).toLowerCase();
-			registerResponseDto = registerUser(registerDto, username);
+			registerUser(registerDto, username);//Create new user
+			registerResponseDto.setUsername(username);
 			registerResponseDto.setIsExisting(false);
 			URI url = UriComponentsBuilder
 					.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/addUserCount").build()
 					.toUri();
-			registerService.registerLogintime(registerDto.getUserIdentifier());
+			registerService.registerLogintime(registerDto.getUserIdentifier());//New entry in last login time
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
  			try {
@@ -111,11 +112,22 @@ public class SandboxUserService {
 			} catch (HttpStatusCodeException e) {
 				handlingExceptionOfApiCall(e);
 			}
+ 			users.setUsername(username);		
 		}
+ 		registerResponseDto.setPassword(passwordService.generateRandomPassword());
+ 		registerResponseDto.setToken(tokenService.getToken(registerResponseDto.getUsername(), registerDto.getDeviceType(),registerDto.getDeviceType()));	
+		if(registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
+			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		}else {
+			users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		}		
+		userRepo.save(users);		
 		Vcard vcards = vcardRepo.findByUsername(registerResponseDto.getUsername());
 		if(vcards != null) {
 			registerResponseDto.setIsProfileUpdated(true);   
 		}
+		// get confiq details and return in the response
+		registerResponseDto.setConfig(configService.getCongigData());
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			jsonString = mapper.writeValueAsString(registerResponseDto);
@@ -123,8 +135,7 @@ public class SandboxUserService {
 			throw new BadDataException("Json Parsing Error");
 		}
 		Response<String> response = new Response<>();
-		response.setData(AESEncryption.encryptString(jsonString,
-				registerDto.getLicenseKey() + registerDto.getLicenseKey() + registerDto.getLicenseKey()));
+		response.setData(AESEncryption.encryptString(jsonString,registerDto.getLicenseKey() + registerDto.getLicenseKey() + registerDto.getLicenseKey()));
 		response.setStatus(HttpStatus.OK.value());
 		response.setMessage(GatewayConstants.USER_ADD_SUCCESS);
 		return response;
@@ -167,7 +178,7 @@ public class SandboxUserService {
 		chatUserRepo.save(chatUser);
 	}
 
-	private SandboxRegisterResponseDto registerUser(SanboxUserRegisterDto registerDto, String username) {
+	private void registerUser(SanboxUserRegisterDto registerDto, String username) {
 		ChatUser chatUser = new ChatUser();
 		chatUser.setUsername(username);
 		chatUser.setMobileNumber(registerDto.getMobileNumber());
@@ -197,19 +208,6 @@ public class SandboxUserService {
 		chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 		chatUser.setIsDeleteInprogrees(0);
 		chatUserRepo.save(chatUser);
-
-		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
-		registerResponseDto.setPassword(passwordService.generateRandomPassword());
-		registerResponseDto
-				.setToken(tokenService.getToken(username, registerDto.getDeviceType(), registerDto.getDeviceType()));
-		registerResponseDto.setUsername(username);
-
-		Users users = new Users();
-		users.setPassword(registerResponseDto.getPassword());
-		users.setUsername(username);
-		userRepo.save(users);
-
-		return registerResponseDto;
 	}
 
 	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
