@@ -1,10 +1,16 @@
 package com.mirrorfly.gateway.util;
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 
 import org.springframework.data.domain.PageRequest;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class GatewayUtil {
 
 	private GatewayUtil() {
@@ -35,6 +41,25 @@ public class GatewayUtil {
 			sb.append(alphaNumericString.charAt(rnd.nextInt(alphaNumericString.length())));
 		}
 		return sb.toString();
+	}
+	
+	public static String getMd5String(String input)
+	{
+		StringBuilder hashtext = new StringBuilder();
+		try {
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			byte[] messageDigest = md.digest(input.getBytes());
+			BigInteger no = new BigInteger(1, messageDigest);
+			hashtext.append(no.toString(16));
+			while (hashtext.length() < 32) {
+				hashtext.append("0" + hashtext);
+			}
+ 		}
+ 		catch (NoSuchAlgorithmException e) {
+ 			log.error("Error while create string to MD5");
+			log.error(e.getMessage());
+		}
+		return hashtext.toString();
 	}
 
 }

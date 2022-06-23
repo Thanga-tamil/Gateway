@@ -28,7 +28,7 @@ public class LoginController {
 
 	@Autowired
 	private LoginService loginService;
-	
+
 	/**
 	 * Function to validate username and password by passing through loginService.
 	 * This function return a response stating that login success or error with
@@ -40,7 +40,7 @@ public class LoginController {
 	 */
 
 	@PostMapping("/login")
-	public @ResponseBody Response<LoginDetailsDto> login(@Validated @RequestBody LoginDto loginDto) {	
+	public @ResponseBody Response<LoginDetailsDto> login(@Validated @RequestBody LoginDto loginDto) {
 		return loginService.login(loginDto);
 	}
 
