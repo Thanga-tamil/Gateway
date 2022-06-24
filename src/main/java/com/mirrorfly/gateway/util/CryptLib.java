@@ -311,30 +311,5 @@ public class CryptLib {
 	private enum EncryptMode {
 		ENCRYPT, DECRYPT
 	}
-
-	public static String sha256(String text, int length) throws NoSuchAlgorithmException {
-
-		String resultStr;
-		MessageDigest md = MessageDigest.getInstance("SHA-256");
-
-		md.update(text.getBytes(StandardCharsets.UTF_8));
-		byte[] digest = md.digest();
-
-		StringBuilder result = new StringBuilder();
-		for (byte b : digest) {
-			/**
-			 * Convert to hex
-			 */
-			result.append(String.format("%02x", b));
-		}
-
-		if (length > result.toString().length()) {
-			resultStr = result.toString();
-		} else {
-			resultStr = result.toString().substring(0, length);
-		}
-
-		return resultStr;
-
-	}
+ 
 }

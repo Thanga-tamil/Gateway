@@ -36,7 +36,7 @@ public class AESEncryption {
 	public static String decryptConfigStringForLlicenseKey(String encryptedText, String encryptKey) {
 		try {
 			CryptLib cryptLicenseLib = new CryptLib();
-			String key = CryptLib.sha256(encryptKey, 32);
+			String key = CryptLib.hasCodeInput(encryptKey, 32);
 			String iv = GatewayConstants.IV_1;
 			return cryptLicenseLib.decrypt(encryptedText, key, iv);
 		} catch (Exception ex) {
