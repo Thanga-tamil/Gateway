@@ -1,11 +1,8 @@
-Release Date: 20-Jun-2022
-Release Version: 5.5.2
+Release Date: 11-Jul-2022
+Release Version: 5.5.3
 Build Number: -
 
 This build contains the following improvement
  
 Tasks:
-     confiq details are return in the register API
-     
-     
-     https://apptha.atlassian.net/browse/CONTUIMSER-30179
+      Verify User changes-> https://apptha.atlassian.net/browse/CONTUIMSER-30550

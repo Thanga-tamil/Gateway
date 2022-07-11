@@ -4,9 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class AESEncryption {
-	
+
 	private AESEncryption() {
-		
+
 	}
 
 	public static String encryptString(String msg, String msgId) {
@@ -15,7 +15,7 @@ public class AESEncryption {
 			String key = CryptLib.hasCodeInput(msgId, 32);
 			String iv = GatewayConstants.IV;
 			return crypt.encrypt(msg, key, iv); // output
- 		} catch (Exception ex) {
+		} catch (Exception ex) {
 			log.error(ex.getMessage());
 			return msg;
 		}
@@ -26,7 +26,19 @@ public class AESEncryption {
 			CryptLib crypt = new CryptLib();
 			String key = CryptLib.hasCodeInput(msgID, 32);
 			String iv = GatewayConstants.IV;
-			return crypt.decrypt(encryptedText, key, iv); //output
+			return crypt.decrypt(encryptedText, key, iv); // output
+		} catch (Exception ex) {
+			log.error(ex.getMessage());
+			return "";
+		}
+	}
+
+	public static String decryptConfigStringForLlicenseKey(String encryptedText, String encryptKey) {
+		try {
+			CryptLib cryptLicenseLib = new CryptLib();
+			String key = CryptLib.hasCodeInput(encryptKey, 32);
+			String iv = GatewayConstants.IV_1;
+			return cryptLicenseLib.decrypt(encryptedText, key, iv);
 		} catch (Exception ex) {
 			log.error(ex.getMessage());
 			return "";
