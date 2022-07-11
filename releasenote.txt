@@ -1,10 +1,8 @@
-Release Date: 24-Jun-2022
-Release Version: 5.5.2
+Release Date: 11-Jul-2022
+Release Version: 5.5.3
 Build Number: -
 
 This build contains the following improvement
  
 Tasks:
-     config details are stored in database, data from control panel  
-     
-     Regarding this improment -> https://apptha.atlassian.net/browse/CONTUIMSER-30179
+      Verify User changes-> https://apptha.atlassian.net/browse/CONTUIMSER-30550

@@ -5,12 +5,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.mirrorfly.gateway.dto.ChatUserDto;
 import com.mirrorfly.gateway.dto.OtpResponseDto;
 import com.mirrorfly.gateway.dto.VerifyUserDto;
 import com.mirrorfly.gateway.dto.VerifyUserResponse;
 import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.Otp;
+import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.OtpRepo;
 import com.mirrorfly.gateway.response.Response;
@@ -28,6 +31,9 @@ public class OtpService {
 
 	@Autowired
 	private ChatUserRepo chatUserRepo;
+
+	@Autowired
+	private ChatSettingsRepo chatSettingsRepo;
 
 	public Response<OtpResponseDto> requestOtp(String mobileNumber) {
 
@@ -61,10 +67,11 @@ public class OtpService {
 	public Response<VerifyUserResponse> verifyUser(VerifyUserDto userDto) {
 		Response<VerifyUserResponse> response = new Response<>();
 		VerifyUserResponse dto = new VerifyUserResponse();
-		  ChatUser chatUser = chatUserRepo.findByMobileNumber(userDto.getMobileNumber()); 
-		 if (chatUser != null) { 
-			 dto.setDeviceToken(chatUser.getDeviceToken());
-		}		
+		ChatSettings settings = chatSettingsRepo.findAll().get(0);
+		ChatUserDto chatUser = chatUserRepo.findByMobileNumber(userDto.getMobileNumber(),settings.getIvProfile());
+		if (chatUser != null) {
+			dto.setDeviceToken(chatUser.getDeviceToken());
+		}
 		response.setMessage(GatewayConstants.AVAILABLE);
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(dto);
