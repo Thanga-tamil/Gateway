@@ -35,4 +35,7 @@ public interface ChatUserRepo extends JpaRepository<ChatUser, String> {
 			+ " c.username ,c.device_token as deviceToken FROM chat_users c)as tablename WHERE mobilenumber =:mobileNumber", nativeQuery = true)
 	public ChatUserDto findByMobileNumber(@Param("mobileNumber") String mobileNumber, @Param("iv") String iv);
 
+	@Query("Select count(cu) from ChatUser cu where cu.licenseKey=:licenseKey")
+	public Long getCountByLicenseKey(@Param(value = "licenseKey") String licenseKey);
+
 }
