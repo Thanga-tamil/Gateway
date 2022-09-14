@@ -90,10 +90,6 @@ public class SandboxUserService {
 			registerResponseDto.setUsername(users.getUsername());
 			registerResponseDto.setIsExisting(true);
 		} else {
-			String username = GatewayUtil.getAlphaNumericString(10).toLowerCase();
-			registerUser(registerDto, username);// Create new user
-			registerResponseDto.setUsername(username);
-			registerResponseDto.setIsExisting(false);
 			URI targetUrl = UriComponentsBuilder
 					.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/validate")
 					.queryParam("licenseKey", registerDto.getLicenseKey()).build().toUri();
@@ -105,11 +101,20 @@ public class SandboxUserService {
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
 			try {
-				restTemplate.getForObject(targetUrl, Response.class);
+ 				Response<String> dataResponse = restTemplate.getForObject(targetUrl, Response.class);
+				if(dataResponse.getStatus() == 200) {
+					 validateUserCount(dataResponse.getData(), registerDto.getLicenseKey());
+				}else {
+					throw new ForbiddenException(dataResponse.getMessage());
+				}
 				restTemplate.postForObject(url, adduser, Response.class);
 			} catch (HttpStatusCodeException e) {
 				handlingExceptionOfApiCall(e);
 			}
+			String username = GatewayUtil.getAlphaNumericString(10).toLowerCase();
+			registerUser(registerDto, username);// Create new user
+			registerResponseDto.setUsername(username);
+			registerResponseDto.setIsExisting(false);			
 			users.setUsername(username);
 		}
 		registerResponseDto.setPassword(passwordService.generateRandomPassword());
@@ -139,6 +144,13 @@ public class SandboxUserService {
 		response.setStatus(HttpStatus.OK.value());
 		response.setMessage(GatewayConstants.USER_ADD_SUCCESS);
 		return response;
+	}
+
+	private void validateUserCount(String data, String licenseKey) {
+ 		Long count = chatUserRepo.getCountByLicenseKey(licenseKey);
+ 		if (count > Long.parseLong(data)) {
+			throw new BadDataException(GatewayConstants.USER_COUNT_EXCEEDED);
+		}
 	}
 
 	private void dataValidating(SanboxUserRegisterDto registerDto) {
