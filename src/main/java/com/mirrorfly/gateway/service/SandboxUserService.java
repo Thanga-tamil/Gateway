@@ -148,7 +148,7 @@ public class SandboxUserService {
 
 	private void validateUserCount(String data, String licenseKey) {
  		Long count = chatUserRepo.getCountByLicenseKey(licenseKey);
- 		if (count > Long.parseLong(data)) {
+ 		if (count >= Long.parseLong(data)) {
 			throw new BadDataException(GatewayConstants.USER_COUNT_EXCEEDED);
 		}
 	}
