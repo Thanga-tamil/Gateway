@@ -101,12 +101,7 @@ public class SandboxUserService {
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
 			try {
- 				Response<String> dataResponse = restTemplate.getForObject(targetUrl, Response.class);
-				if(dataResponse.getStatus() == 200) {
-					 validateUserCount(dataResponse.getData(), registerDto.getLicenseKey());
-				}else {
-					throw new ForbiddenException(dataResponse.getMessage());
-				}
+				restTemplate.getForObject(targetUrl, Response.class);
 				restTemplate.postForObject(url, adduser, Response.class);
 			} catch (HttpStatusCodeException e) {
 				handlingExceptionOfApiCall(e);
@@ -146,6 +141,7 @@ public class SandboxUserService {
 		return response;
 	}
 
+	@SuppressWarnings("")
 	private void validateUserCount(String data, String licenseKey) {
  		Long count = chatUserRepo.getCountByLicenseKey(licenseKey);
  		if (count >= Long.parseLong(data)) {
