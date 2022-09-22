@@ -111,7 +111,7 @@ public class SandboxUserService {
 			} catch (HttpStatusCodeException e) {
 				handlingExceptionOfApiCall(e);
 			}
-			String username = GatewayUtil.getAlphaNumericString(10).toLowerCase();
+			String username = registerDto.getUserIdentifier();
 			registerUser(registerDto, username);// Create new user
 			registerResponseDto.setUsername(username);
 			registerResponseDto.setIsExisting(false);			
