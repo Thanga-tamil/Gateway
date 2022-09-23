@@ -115,9 +115,9 @@ public class CryptLib {
 	 *
 	 * @throws NoSuchAlgorithmException
 	 * @throws UnsupportedEncodingException
-	 
-	 SHA256 name changes 
-	*/
+	 * 
+	 *                                      SHA256 name changes
+	 */
 	public static String hasCodeInput(String text, int length) throws NoSuchAlgorithmException {
 
 		String resultStr;
@@ -183,8 +183,8 @@ public class CryptLib {
 	 * @throws BadPaddingException
 	 */
 	private String encryptDecrypt(String inputText, String encryptionKey, EncryptMode mode, String initVector)
-			throws InvalidKeyException, InvalidAlgorithmParameterException,
-			IllegalBlockSizeException, BadPaddingException {
+			throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException,
+			BadPaddingException {
 		/**
 		 * Output string
 		 */
@@ -279,9 +279,8 @@ public class CryptLib {
 	 * @throws BadPaddingException
 	 */
 
-	public String encrypt(String plainText, String key, String iv)
-			throws InvalidKeyException, InvalidAlgorithmParameterException,
-			IllegalBlockSizeException, BadPaddingException {
+	public String encrypt(String plainText, String key, String iv) throws InvalidKeyException,
+			InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
 		return encryptDecrypt(plainText, key, EncryptMode.ENCRYPT, iv);
 	}
 
@@ -301,9 +300,8 @@ public class CryptLib {
 	 * @throws IllegalBlockSizeException
 	 * @throws BadPaddingException
 	 */
-	public String decrypt(String encryptedText, String key, String iv)
-			throws InvalidKeyException, InvalidAlgorithmParameterException,
-			IllegalBlockSizeException, BadPaddingException {
+	public String decrypt(String encryptedText, String key, String iv) throws InvalidKeyException,
+			InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
 		return encryptDecrypt(encryptedText, key, EncryptMode.DECRYPT, iv);
 	}
 
@@ -313,4 +311,5 @@ public class CryptLib {
 	private enum EncryptMode {
 		ENCRYPT, DECRYPT
 	}
+ 
 }

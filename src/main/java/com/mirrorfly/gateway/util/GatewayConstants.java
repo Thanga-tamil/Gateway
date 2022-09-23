@@ -10,7 +10,6 @@ package com.mirrorfly.gateway.util;
 
 public class GatewayConstants {
 
-
 	public static final String AVAILABLE = "Data Retrieved Successfully";
 
 	public static final String GIF_NOT_SUPPORTED = "Gif not supported";
@@ -52,9 +51,9 @@ public class GatewayConstants {
 	public static final String MOBILE_REQUIRED = "Mobile Number is Required";
 
 	public static final String USER_BLOCK = "User Blocked,Please contact Admin";
-	
+
 	public static final String BLOCK_USER = "This application is no longer available for you";
-	
+
 	public static final String TOKEN_EXPIRED = "Token Expired";
 
 	public static final String TOKEN_NOT_AVAILABLE = "Token Not Available";
@@ -169,6 +168,8 @@ public class GatewayConstants {
 
 	public static final String IV = "ddc0f15cc2c90fca";
 
+	public static final String IV_1 = "k%$/@B[jqAx}>8H@";
+
 	public static final String EMAILID_NOT_VALID = "Enter the Valid Email Address";
 
 	public static final String PASS_NOT_VALID = "Enter the Valid Password";
@@ -194,9 +195,9 @@ public class GatewayConstants {
 	public static final String INACTIVE_ACCOUNT = "Your Account has been Disabled by Admin";
 
 	public static final String LICENSEKEY_EMPTY = "License key should not be empty";
-	
+
 	public static final String LICENSEKEY_INVALID = "License key is invalid";
-	
+
 	public static final String LICENSEIV = "ddc0f15cc2c90fca";
 
 	public static final String USER_IDENTIFIER_EMPTY = "User identifier should not be empty";
@@ -206,18 +207,20 @@ public class GatewayConstants {
 	public static final String DEVICE_TYPE_EMPTY = "Device type should not be empty";
 
 	public static final String DEVICE_TYPE_NOT_VALID = "Invalid device type";
-	
+
 	public static final String USER_NAME_EMPTY = "User name should not be empty";
-	
+
 	public static final String CONTACT_ADD_SUCCESS = "Contact Added successfully";
-	
+
 	public static final String USER_USERIDENTIFIER_ALREADY_REGISTERED = "This user already registered with different license key";
 
 	public static final String DELETE_INPROGRESS = "Old account deletion is still in progress. Please try after some time.";
-	
+
 	public static final String INVALID_ERROR = "Invalid request";
- 
+
 	public static final String REQUEST_TIMEOUT = "Your request has been timeout";
+
+	public static final String USER_COUNT_EXCEEDED = "Trail user count for registration has been exceeded";
 
 	private GatewayConstants() {
 	}
