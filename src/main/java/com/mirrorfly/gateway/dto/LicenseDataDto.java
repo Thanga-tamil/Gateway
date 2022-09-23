@@ -14,4 +14,21 @@ public class LicenseDataDto {
 
 	private List<String> domains;
 
+	private Integer isActive;
+
+	private String xmppDomain;
+
+	private String xmppHost;
+
+	private String signalUrl;
+
+	private String janusUrl;
+
+	private String port;
+
+	private String portWeb;
+
+	private String iv;
+
+	private String ivProfile;
 }
