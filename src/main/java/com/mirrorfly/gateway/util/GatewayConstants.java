@@ -221,6 +221,8 @@ public class GatewayConstants {
 	public static final String REQUEST_TIMEOUT = "Your request has been timeout";
 
 	public static final String USER_COUNT_EXCEEDED = "Trail user count for registration has been exceeded";
+	
+	public static final String ERROR_IN_REGISTRATION = "Error in registration. Please try again later.";
 
 	private GatewayConstants() {
 	}
