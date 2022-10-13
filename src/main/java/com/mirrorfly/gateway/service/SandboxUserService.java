@@ -10,9 +10,11 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.AddUserDto;
+import com.mirrorfly.gateway.dto.LicenseValidateResponseDto;
 import com.mirrorfly.gateway.dto.SanboxUserRegisterDto;
 import com.mirrorfly.gateway.dto.SandboxRegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
@@ -30,7 +32,10 @@ import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class SandboxUserService {
 
 	@Autowired
@@ -63,7 +68,7 @@ public class SandboxUserService {
 	@Autowired
 	private ConfigService configService;
 
-	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) {
+	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) throws JsonProcessingException {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
 		dataValidating(registerDto);// validate Empty value
@@ -101,7 +106,20 @@ public class SandboxUserService {
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
 			try {
-				restTemplate.getForObject(targetUrl, Response.class);
+				String apiResponse = restTemplate.getForObject(targetUrl, String.class);
+				ObjectMapper objectMapper = new ObjectMapper();
+				Response<LicenseValidateResponseDto> result = objectMapper.readValue(apiResponse,
+						new TypeReference<Response<LicenseValidateResponseDto>>() {
+						});
+				if (result != null && result.getStatus() != null && result.getData() != null
+						&& result.getStatus() == 200) {
+					if (Boolean.TRUE.equals(result.getData().getIsFreemiumUser())) {
+						validateUserCount(result.getData().getMaxUsersCount(), registerDto.getLicenseKey());
+					}
+				} else {
+					log.error("Error in validating the license key => " + result);
+					throw new BadDataException(GatewayConstants.ERROR_IN_REGISTRATION);
+				}
 				restTemplate.postForObject(url, adduser, Response.class);
 			} catch (HttpStatusCodeException e) {
 				handlingExceptionOfApiCall(e);
@@ -109,7 +127,7 @@ public class SandboxUserService {
 			String username = registerDto.getUserIdentifier();
 			registerUser(registerDto, username);// Create new user
 			registerResponseDto.setUsername(username);
-			registerResponseDto.setIsExisting(false);			
+			registerResponseDto.setIsExisting(false);
 			users.setUsername(username);
 		}
 		registerResponseDto.setPassword(passwordService.generateRandomPassword());
@@ -141,10 +159,9 @@ public class SandboxUserService {
 		return response;
 	}
 
-	@SuppressWarnings("")
-	private void validateUserCount(String data, String licenseKey) {
- 		Long count = chatUserRepo.getCountByLicenseKey(licenseKey);
- 		if (count >= Long.parseLong(data)) {
+	private void validateUserCount(Long maxUserCount, String licenseKey) {
+		Long count = chatUserRepo.getCountByLicenseKey(licenseKey);
+		if (count >= maxUserCount) {
 			throw new BadDataException(GatewayConstants.USER_COUNT_EXCEEDED);
 		}
 	}
@@ -225,7 +242,7 @@ public class SandboxUserService {
 			Response<?> r = mapper.readValue(responseBody, Response.class);
 			throw new BadDataException(r.getMessage());
 		} catch (JsonProcessingException ex) {
-			throw new BadDataException("Error in registration. Please try again later");
+			throw new BadDataException(GatewayConstants.ERROR_IN_REGISTRATION);
 		}
 	}
 
