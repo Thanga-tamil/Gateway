@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.mirrorfly.gateway.dto.SanboxUserRegisterDto;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.SandboxUserService;
