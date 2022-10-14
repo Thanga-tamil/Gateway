@@ -203,7 +203,7 @@ public class RegisterService {
 		registerResponseDto.setPassword(passwordService.generateRandomPassword());
 		registerResponseDto.setToken(tokenService.getToken(registerDto.getUserIdentifier(), registerDto.getDeviceType(),
 				registerDto.getDeviceType()));
-		registerResponseDto.setUsername(registerDto.getUserIdentifier());
+		registerResponseDto.setUsername(user.getUsername());
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
 			user.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		} else {

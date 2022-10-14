@@ -38,7 +38,7 @@ public class AccessGatewayFilter implements GlobalFilter {
 			exchange.getResponse().setStatusCode(HttpStatus.OK);
 			return Mono.empty();
 		}
-		
+
 		if (exchange.getRequest().getPath().toString().contains("swagger")
 				|| exchange.getRequest().getPath().toString().contains("webjars")
 				|| exchange.getRequest().getPath().toString().contains("api-docs")
@@ -46,8 +46,7 @@ public class AccessGatewayFilter implements GlobalFilter {
 				|| exchange.getRequest().getPath().toString().contains("moderation/userList")
 				|| exchange.getRequest().getPath().toString().contains("moderation/groupList")
 				|| exchange.getRequest().getPath().toString().contains("moderation/membersList")
-				|| exchange.getRequest().getPath().toString().contains("moderation/reportList")
-				|| exchange.getRequest().getPath().toString().contains("moderation/block")) {
+				|| exchange.getRequest().getPath().toString().contains("moderation/reportList")) {
 			ServerHttpRequest.Builder builder = request.mutate();
 			return chain.filter(exchange.mutate().request(builder.build()).build());
 		}
@@ -81,7 +80,7 @@ public class AccessGatewayFilter implements GlobalFilter {
 	/**
 	 *
 	 * @param
-	 * @throws IOException	
+	 * @throws IOException
 	 */
 	private Mono<Void> unauthorized(ServerWebExchange serverWebExchange) {
 		try {
