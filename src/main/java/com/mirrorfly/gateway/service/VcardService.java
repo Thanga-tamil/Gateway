@@ -77,7 +77,7 @@ public class VcardService {
 		vcardSearch.setUsername(username);
 		vcardSearch.setLusername(username);
 		vcardSearchRepo.save(vcardSearch);
-		return null;
+		return vcardSearch;
 	}
 
 }
