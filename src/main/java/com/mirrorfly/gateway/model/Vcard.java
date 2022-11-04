@@ -22,8 +22,8 @@ public class Vcard implements Serializable {
 	@Id
 	@Column(name = "username")
 	private String username;
-
+	
 	@Column(name = "vcard")
-	private String vcardName;
+	private String vcardXml;
 
 }
