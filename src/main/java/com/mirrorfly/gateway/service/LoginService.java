@@ -25,13 +25,13 @@ import com.mirrorfly.gateway.model.AdminUser;
 import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.EmailToken;
 import com.mirrorfly.gateway.model.Users;
+import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.queue.MailPayload;
 import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.AdminUserRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.EmailTokenRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
-import com.mirrorfly.gateway.repo.VcardSearch;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
@@ -75,19 +75,22 @@ public class LoginService {
 	private VcardSearchRepo vcardSearchRepo;
 
 	public Response<LoginDetailsDto> login(LoginDto loginRequestDto) {
-		// If incoming requested in encrypted means, we need to decrypt the password field to find the original password
+		// If incoming requested in encrypted means, we need to decrypt the password
+		// field to find the original password
 		String password = "";
 		String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),
-				applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()+ applicationProperties.getLicenseKey());		 
+				applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
+						+ applicationProperties.getLicenseKey());
 		LoginRequestDto login;
 		ObjectMapper mapper = new ObjectMapper();
 		try {
-			login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),LoginRequestDto.class);
+			login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
+					LoginRequestDto.class);
 			password = login.getPassword();
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
 			log.error("Unable to unserialize the password field " + e.getMessage());
 			password = loginRequestDto.getPassword();
-		} 
+		}
 
 		// Validating the user is blocked by admin or not
 		Users users = userRepo.findByUsername(loginRequestDto.getUsername());
@@ -120,10 +123,11 @@ public class LoginService {
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
 	}
- 
+
 	private Boolean validatePasswordAgainstMd5(String password, String userpassword) {
-		// In DB we are having the Md5 string, so we are converting the password to Md5 String 
-		// and validating it against the DB 	 
+		// In DB we are having the Md5 string, so we are converting the password to Md5
+		// String
+		// and validating it against the DB
 		return password.equals(GatewayUtil.getMd5String(userpassword));
 	}
 
