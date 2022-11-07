@@ -31,13 +31,12 @@ import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.Last;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.model.Vcard;
+import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.LastRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardRepo;
-import com.mirrorfly.gateway.repo.VcardSearch;
-import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
@@ -74,10 +73,10 @@ public class RegisterService {
 	private LastRepo lastRepo;
 
 	@Autowired
-	private VcardSearchRepo vcardSearchRepo;
+	private ConfigService configService;
 
 	@Autowired
-	private ConfigService configService;
+	private VcardService vcardService;
 
 	public Response<RegisterInfoDto> getRegisterInfo() {
 		ChatSettings settings = settingsRepo.findAll().get(0);
@@ -107,11 +106,7 @@ public class RegisterService {
 			throw new BadDataException(GatewayConstants.INVALID_ERROR);
 		}
 		RegisterResponseDto registerResponseDto = registerUser(registerDto);
-		Vcard vcards = vcardRepo.findByUsername(registerResponseDto.getUsername());
-		if (vcards != null) {
-			registerResponseDto.setIsProfileUpdated(true);
-		}
-		// get confiq details and return in the response
+		// get config details and return in the response
 		registerResponseDto.setConfig(configService.getCongigData());
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonString;
@@ -141,6 +136,7 @@ public class RegisterService {
 	}
 
 	private RegisterResponseDto registerUser(RegisterDto registerDto) {
+		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
 		inputDataValidating(registerDto);
 		Users user = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
@@ -165,14 +161,25 @@ public class RegisterService {
 			// To insert the register login time
 			registerLogintime(registerDto.getUserIdentifier());
 			user.setUsername(registerDto.getUserIdentifier());
+			// Insert the vcard details
+			VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(registerDto.getUserIdentifier());
+			vcardService.updateVcard(vcardSearch, new Vcard());
+			registerResponseDto.setIsProfileUpdated(false);
 		} else {
 			user = userRepo.findByUsername(chatUser.getUsername());
 			if (chatUser.getIsDeleteInprogrees() == 1) {
 				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
 			}
-			VcardSearch vcardSearch = vcardSearchRepo.findByUsername(chatUser.getUsername());
-			if (vcardSearch != null && vcardSearch.getIsBlock() == 1) {
-				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
+			VcardSearch vcardSearch = vcardService.findVcardSearchByUserName(chatUser.getUsername());
+			if (vcardSearch == null) {
+				vcardSearch = vcardService.updateVcardSearchDetails(registerDto.getUserIdentifier());
+				vcardService.updateVcard(vcardSearch, new Vcard());
+				registerResponseDto.setIsProfileUpdated(false);
+			} else {
+				if (vcardSearch.getIsBlock() == 1) {
+					throw new ForbiddenException(GatewayConstants.BLOCK_USER);
+				}
+				registerResponseDto.setIsProfileUpdated(true);
 			}
 		}
 		if (!registerDto.getDeviceType().equalsIgnoreCase("web")) {
@@ -199,7 +206,6 @@ public class RegisterService {
 		}
 		chatUser.setIsDeleteInprogrees(0);
 		chatUserRepo.save(chatUser);
-		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
 		registerResponseDto.setPassword(passwordService.generateRandomPassword());
 		registerResponseDto.setToken(tokenService.getToken(registerDto.getUserIdentifier(), registerDto.getDeviceType(),
 				registerDto.getDeviceType()));
@@ -208,7 +214,7 @@ public class RegisterService {
 			user.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		} else {
 			user.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
-		}		
+		}
 		userRepo.save(user);
 		return registerResponseDto;
 	}

@@ -22,10 +22,10 @@ import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.model.Vcard;
+import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardRepo;
-import com.mirrorfly.gateway.repo.VcardSearch;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
@@ -68,6 +68,9 @@ public class SandboxUserService {
 	@Autowired
 	private ConfigService configService;
 
+	@Autowired
+	private VcardService vcardService;
+
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) throws JsonProcessingException {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
@@ -94,6 +97,13 @@ public class SandboxUserService {
 			users = userRepo.findByUsername(chatUser.getUsername());
 			registerResponseDto.setUsername(users.getUsername());
 			registerResponseDto.setIsExisting(true);
+			if (vcardSearch == null) {
+				vcardSearch = vcardService.updateVcardSearchDetails(registerDto.getUserIdentifier());
+				vcardService.updateVcard(vcardSearch, new Vcard());
+				registerResponseDto.setIsProfileUpdated(false);
+			} else {
+				registerResponseDto.setIsProfileUpdated(true);
+			}
 		} else {
 			URI targetUrl = UriComponentsBuilder
 					.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/validate")
@@ -125,10 +135,15 @@ public class SandboxUserService {
 				handlingExceptionOfApiCall(e);
 			}
 			String username = registerDto.getUserIdentifier();
-			registerUser(registerDto, username);// Create new user
+			// Create new user
+			registerUser(registerDto, username);
 			registerResponseDto.setUsername(username);
 			registerResponseDto.setIsExisting(false);
 			users.setUsername(username);
+			// Insert the vcard details
+			VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(username);
+			vcardService.updateVcard(vcardSearch, new Vcard());
+			registerResponseDto.setIsProfileUpdated(false);			
 		}
 		registerResponseDto.setPassword(passwordService.generateRandomPassword());
 		registerResponseDto.setToken(tokenService.getToken(registerResponseDto.getUsername(),
@@ -139,11 +154,7 @@ public class SandboxUserService {
 			users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		}
 		userRepo.save(users);
-		Vcard vcards = vcardRepo.findByUsername(registerResponseDto.getUsername());
-		if (vcards != null) {
-			registerResponseDto.setIsProfileUpdated(true);
-		}
-		// get confiq details and return in the response
+		// get config details and return in the response
 		registerResponseDto.setConfig(configService.getCongigData());
 		ObjectMapper mapper = new ObjectMapper();
 		try {
