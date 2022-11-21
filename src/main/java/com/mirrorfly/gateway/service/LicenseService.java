@@ -28,12 +28,14 @@ import com.mirrorfly.gateway.model.ChatServerConfig;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.License;
 import com.mirrorfly.gateway.model.LicenseLookup;
+import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.queue.LicenseDataPayload;
 import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.ChatServerConfigRepo;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.LicenseLookupRepo;
 import com.mirrorfly.gateway.repo.LicenseRepo;
+import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.EnumSDKType;
@@ -62,6 +64,9 @@ public class LicenseService {
 
 	@Autowired
 	private QueueService queueService;
+	
+	@Autowired
+	private UserRepo userRepo;
  
 	public Response<LicenseResDto> getLicense(LicenseReqDto licenseReq) {
 
@@ -151,6 +156,23 @@ public class LicenseService {
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			licenseData = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),LicenseDataDto.class);
+			log.error("licenseData.................... " + licenseData);
+			Users userData = userRepo.findByUsername(licenseData.getApiUsername());
+			if(licenseData.getIsApiPasswordRevoked()==1){
+				if (userData != null) {
+					log.error("revoked Api Password.................... " + userData);
+					userRepo.updatePasswordByUsername(licenseData.getApiPassword(),licenseData.getApiUsername());
+				}
+			}
+			else{
+				if (userData == null) {
+					log.error("First Time Insert Api Username and Password.................... " + userData);
+					Users resData = new Users();				
+					resData.setUsername(licenseData.getApiUsername());
+					resData.setPassword(licenseData.getApiPassword());
+					userRepo.save(resData);
+				}
+			}
 			updateChatSettings(licenseData);
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
 			log.error("Unable to unserialize the license details " + e.getMessage());
