@@ -12,7 +12,6 @@ import com.mirrorfly.gateway.model.Users;
 @Repository
 public interface UserRepo extends JpaRepository<Users, String> {
 
-	@Query("Select u from  Users u where u.username = :username")
 	public Users findByUsername(@Param("username") String username);
 
 	@Transactional

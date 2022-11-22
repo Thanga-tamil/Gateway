@@ -64,10 +64,10 @@ public class LicenseService {
 
 	@Autowired
 	private QueueService queueService;
-	
+
 	@Autowired
 	private UserRepo userRepo;
- 
+
 	public Response<LicenseResDto> getLicense(LicenseReqDto licenseReq) {
 
 		Response<LicenseResDto> response = new Response<>();
@@ -150,27 +150,27 @@ public class LicenseService {
 	}
 
 	private void decryptChatSettings(String licenseKey) {
-		String decyptedString = AESEncryption.decryptConfigStringForLlicenseKey(licenseKey, applicationProperties.getLicenseKey()
-				+ applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey());
+		String decyptedString = AESEncryption.decryptConfigStringForLlicenseKey(licenseKey,
+				applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
+						+ applicationProperties.getLicenseKey());
 		LicenseDataDto licenseData;
 		ObjectMapper mapper = new ObjectMapper();
 		try {
-			licenseData = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),LicenseDataDto.class);
-			log.error("licenseData.................... " + licenseData);
-			Users userData = userRepo.findByUsername(licenseData.getApiUsername());
-			if(licenseData.getIsApiPasswordRevoked()==1){
-				if (userData != null) {
-					log.error("revoked Api Password.................... " + userData);
-					userRepo.updatePasswordByUsername(licenseData.getApiPassword(),licenseData.getApiUsername());
-				}
-			}
-			else{
-				if (userData == null) {
-					log.error("First Time Insert Api Username and Password.................... " + userData);
-					Users resData = new Users();				
-					resData.setUsername(licenseData.getApiUsername());
-					resData.setPassword(licenseData.getApiPassword());
-					userRepo.save(resData);
+			licenseData = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
+					LicenseDataDto.class);
+			Users user = userRepo.findByUsername(licenseData.getApiUsername());
+			if (user == null) {
+				log.info("First Time Insert Api Username and Password.................... "
+						+ licenseData.getApiUsername() + "," + licenseData.getApiPassword());
+				user = new Users();
+				user.setUsername(licenseData.getApiUsername());
+				user.setPassword(licenseData.getApiPassword());
+				userRepo.save(user);
+			} else {
+				if (licenseData.getIsApiPasswordRevoked() == 1) {
+					log.info("API password updated.................... " + licenseData.getApiPassword());
+					user.setPassword(licenseData.getApiPassword());
+					userRepo.save(user);
 				}
 			}
 			updateChatSettings(licenseData);
@@ -181,16 +181,16 @@ public class LicenseService {
 
 	private void updateChatSettings(LicenseDataDto licenseData) {
 		ChatSettings settings = getConfigService();
- 		if (settings == null ) {
- 			settings = new ChatSettings();
- 		}
- 		settings.setXmppDomain(licenseData.getXmppDomain());
- 		settings.setXmppHost(licenseData.getXmppDomain());
- 		settings.setSignalServerDomain(licenseData.getSignalUrl());
- 		settings.setCallRoutingServer(licenseData.getJanusUrl());
- 		settings.setXmppPort(Integer.parseInt(licenseData.getPort()));
- 		settings.setXmppPortWeb(licenseData.getPortWeb());
- 		settings.setIv(licenseData.getIv());
+		if (settings == null) {
+			settings = new ChatSettings();
+		}
+		settings.setXmppDomain(licenseData.getXmppDomain());
+		settings.setXmppHost(licenseData.getXmppDomain());
+		settings.setSignalServerDomain(licenseData.getSignalUrl());
+		settings.setCallRoutingServer(licenseData.getJanusUrl());
+		settings.setXmppPort(Integer.parseInt(licenseData.getPort()));
+		settings.setXmppPortWeb(licenseData.getPortWeb());
+		settings.setIv(licenseData.getIv());
 		settings.setIvProfile(licenseData.getIvProfile());
 		chatSettingsRepo.save(settings);
 	}
