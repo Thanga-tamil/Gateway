@@ -53,6 +53,17 @@ public class ConfigService {
 		config.setXmppPortWeb(settings.getXmppPortWeb());
 		config.setIv(settings.getIv());
 		config.setIvProfile(settings.getIvProfile());
+		config.setGroupChat(settings.getGroupChat() == 1);
+		config.setAttachment(settings.getAttachment() == 1);
+		config.setImageAttachment(settings.getImageAttachment() == 1);
+		config.setVideoAttachment(settings.getVideoAttachment() == 1);
+		config.setAudioAttachment(settings.getAudioAttachment() == 1);
+		config.setDocumentAttachment(settings.getDocumentAttachment() == 1);
+		config.setContactAttachment(settings.getContactAttachment() == 1);
+		config.setLocationAttachment(settings.getLocationAttachment() == 1);
+		config.setOne2oneCall(settings.getOne2oneCall() == 1);
+		config.setGroupCall(settings.getGroupCall() == 1);
+		config.setRecentchatSearch(settings.getRecentchatSearch() == 1);
 		return config;
 	}
 
