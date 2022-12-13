@@ -28,12 +28,14 @@ import com.mirrorfly.gateway.model.ChatServerConfig;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.License;
 import com.mirrorfly.gateway.model.LicenseLookup;
+import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.queue.LicenseDataPayload;
 import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.ChatServerConfigRepo;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.LicenseLookupRepo;
 import com.mirrorfly.gateway.repo.LicenseRepo;
+import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.EnumSDKType;
@@ -62,7 +64,10 @@ public class LicenseService {
 
 	@Autowired
 	private QueueService queueService;
- 
+
+	@Autowired
+	private UserRepo userRepo;
+
 	public Response<LicenseResDto> getLicense(LicenseReqDto licenseReq) {
 
 		Response<LicenseResDto> response = new Response<>();
@@ -145,12 +150,29 @@ public class LicenseService {
 	}
 
 	private void decryptChatSettings(String licenseKey) {
-		String decyptedString = AESEncryption.decryptConfigStringForLlicenseKey(licenseKey, applicationProperties.getLicenseKey()
-				+ applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey());
+		String decyptedString = AESEncryption.decryptConfigStringForLlicenseKey(licenseKey,
+				applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
+						+ applicationProperties.getLicenseKey());
 		LicenseDataDto licenseData;
 		ObjectMapper mapper = new ObjectMapper();
 		try {
-			licenseData = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),LicenseDataDto.class);
+			licenseData = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
+					LicenseDataDto.class);
+			Users user = userRepo.findByUsername(licenseData.getApiUsername());
+			if (user == null) {
+				log.info("First Time Insert Api Username and Password.................... "
+						+ licenseData.getApiUsername() + "," + licenseData.getApiPassword());
+				user = new Users();
+				user.setUsername(licenseData.getApiUsername());
+				user.setPassword(licenseData.getApiPassword());
+				userRepo.save(user);
+			} else {
+				if (licenseData.getIsApiPasswordRevoked() == 1) {
+					log.info("API password updated.................... " + licenseData.getApiPassword());
+					user.setPassword(licenseData.getApiPassword());
+					userRepo.save(user);
+				}
+			}
 			updateChatSettings(licenseData);
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
 			log.error("Unable to unserialize the license details " + e.getMessage());
@@ -159,16 +181,16 @@ public class LicenseService {
 
 	private void updateChatSettings(LicenseDataDto licenseData) {
 		ChatSettings settings = getConfigService();
- 		if (settings == null ) {
- 			settings = new ChatSettings();
- 		}
- 		settings.setXmppDomain(licenseData.getXmppDomain());
- 		settings.setXmppHost(licenseData.getXmppDomain());
- 		settings.setSignalServerDomain(licenseData.getSignalUrl());
- 		settings.setCallRoutingServer(licenseData.getJanusUrl());
- 		settings.setXmppPort(Integer.parseInt(licenseData.getPort()));
- 		settings.setXmppPortWeb(licenseData.getPortWeb());
- 		settings.setIv(licenseData.getIv());
+		if (settings == null) {
+			settings = new ChatSettings();
+		}
+		settings.setXmppDomain(licenseData.getXmppDomain());
+		settings.setXmppHost(licenseData.getXmppDomain());
+		settings.setSignalServerDomain(licenseData.getSignalUrl());
+		settings.setCallRoutingServer(licenseData.getJanusUrl());
+		settings.setXmppPort(Integer.parseInt(licenseData.getPort()));
+		settings.setXmppPortWeb(licenseData.getPortWeb());
+		settings.setIv(licenseData.getIv());
 		settings.setIvProfile(licenseData.getIvProfile());
 		chatSettingsRepo.save(settings);
 	}
