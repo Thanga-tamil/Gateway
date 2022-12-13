@@ -31,4 +31,10 @@ public class LicenseDataDto {
 	private String iv;
 
 	private String ivProfile;
+	
+	private String apiUsername;
+	
+	private String apiPassword;
+	
+	private Integer isApiPasswordRevoked;
 }
