@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.dto.AdminLoginDto;
 import com.mirrorfly.gateway.dto.AdminLoginResponse;
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
@@ -74,6 +75,7 @@ public class LoginService {
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
 
+    @SwitchDataSource(value="[0].username")
 	public Response<LoginDetailsDto> login(LoginDto loginRequestDto) {
 		// If incoming requested in encrypted means, we need to decrypt the password
 		// field to find the original password

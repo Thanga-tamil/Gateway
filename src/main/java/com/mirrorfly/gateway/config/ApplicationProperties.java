@@ -77,4 +77,16 @@ public class ApplicationProperties {
 	public String getWhiteListIps() {
 		return env.getProperty("white-list-ips");
 	}
+	
+	public String getConnectionString() {
+		return env.getProperty("spring.datasource.url");
+	}
+	
+	public String getDbUsername() {
+		return env.getProperty("spring.datasource.username");
+	}
+	
+	public String getDbPassword() {
+		return env.getProperty("spring.datasource.password");
+	}
 }
