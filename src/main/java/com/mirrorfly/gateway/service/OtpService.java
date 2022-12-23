@@ -53,8 +53,8 @@ public class OtpService {
 		otpRepo.save(otp);
 		OtpResponseDto otpResponseDto = new OtpResponseDto();
 		otpResponseDto.setOtp(otp.getOtpNo());
-		if (chatUser != null && chatUser.getDeviceToken() != null) {
-			otpResponseDto.setDeviceToken(chatUser.getDeviceToken());
+		if (chatUser != null) {
+			//otpResponseDto.setDeviceToken(chatUser.getDeviceToken());
 			otpResponseDto.setIsUpdated(1);
 		}
 		Response<OtpResponseDto> response = new Response<>();

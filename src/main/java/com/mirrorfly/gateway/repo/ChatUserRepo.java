@@ -25,11 +25,6 @@ public interface ChatUserRepo extends JpaRepository<ChatUser, String> {
 	@Query("Select r from RosterUser r where r.rosterUserKey.username=:username")
 	public List<RosterUser> getlistBylicenseKey(@Param(value = "username") String username);
 
-	@Transactional
-	@Modifying
-	@Query("Update ChatUser c set c.devicetype='',c.deviceToken='',c.voipDeviceToken='' where c.deviceToken = :deviceToken")
-	public void updateDeviceTokenAsEmpty(String deviceToken);
-
 	@Query(value = "SELECT username, mobilenumber, deviceToken from (SELECT CASE WHEN (CONVERT(AES_DECRYPT(from_base64(c.mobile_number), LEFT(SHA2(c.username, 256), 32), :iv) USING utf8)) IS NOT NULL "
 			+ "THEN URL_DECODE(CONVERT(AES_DECRYPT(from_base64(c.mobile_number), LEFT(SHA2(c.username, 256), 32), :iv) USING utf8)) ELSE c.mobile_number END AS mobilenumber,"
 			+ " c.username ,c.device_token as deviceToken FROM chat_users c)as tablename WHERE mobilenumber =:mobileNumber", nativeQuery = true)

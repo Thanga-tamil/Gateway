@@ -20,4 +20,7 @@ public class RegisterDto {
 	private String licenseKey = "";
 
 	private String userIdentifier = "";
+	
+	private String deviceId = "";
+	
 }

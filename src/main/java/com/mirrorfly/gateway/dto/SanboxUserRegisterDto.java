@@ -8,6 +8,8 @@ public class SanboxUserRegisterDto {
 	private String mobileNumber;
 
 	private String deviceType;
+	
+	private String deviceId = "";
 
 	private int mode = 0;
 

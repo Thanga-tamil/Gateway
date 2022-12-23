@@ -5,6 +5,9 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -24,16 +27,19 @@ import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterRequestDto;
 import com.mirrorfly.gateway.dto.RegisterResponseDto;
+import com.mirrorfly.gateway.dto.SanboxUserRegisterDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.ChatUser;
+import com.mirrorfly.gateway.model.ChatUserDetails;
 import com.mirrorfly.gateway.model.Last;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
+import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 import com.mirrorfly.gateway.repo.LastRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.response.Response;
@@ -73,6 +79,9 @@ public class RegisterService {
 
 	@Autowired
 	private VcardService vcardService;
+
+	@Autowired
+	private ChatUsersDetailsRepo chatUsersDetailsRepo;
 
 	public Response<RegisterInfoDto> getRegisterInfo() {
 		ChatSettings settings = settingsRepo.findAll().get(0);
@@ -133,8 +142,11 @@ public class RegisterService {
 
 	private RegisterResponseDto registerUser(RegisterDto registerDto) {
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
+
 		inputDataValidating(registerDto);
+
 		Users user = new Users();
+
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
 			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
@@ -154,6 +166,7 @@ public class RegisterService {
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 			chatUser.setLicenseKey(registerDto.getLicenseKey());
+			chatUser.setIsDeleteInprogrees(0);
 			// To insert the register login time
 			registerLogintime(registerDto.getUserIdentifier());
 			user.setUsername(registerDto.getUserIdentifier());
@@ -163,7 +176,6 @@ public class RegisterService {
 			registerResponseDto.setIsProfileUpdated(false);
 			registerResponseDto.setIsExisting(false);
 		} else {
-			user = userRepo.findByUsername(chatUser.getUsername());
 			if (chatUser.getIsDeleteInprogrees() == 1) {
 				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
 			}
@@ -180,31 +192,10 @@ public class RegisterService {
 			}
 			registerResponseDto.setIsExisting(true);
 		}
-		if (!registerDto.getDeviceType().equalsIgnoreCase("web")) {
-			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().trim().equals("")) {
-				chatUserRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
-			}
-			if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().equals("")) {
-				chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-			} else {
-				chatUser.setVoipDeviceToken(registerDto.getDeviceToken());
-			}
-			if (registerDto.getDeviceOsVersion() != null && !registerDto.getDeviceOsVersion().equals("")) {
-				chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-			} else {
-				if (registerDto.getDeviceType().equalsIgnoreCase("ios")) {
-					chatUser.setDeviceOsVersion("12.0");
-				} else {
-					chatUser.setDeviceOsVersion("");
-				}
-			}
-			chatUser.setDeviceToken(registerDto.getDeviceToken());
-			chatUser.setDevicetype(registerDto.getDeviceType());
-			chatUser.setMode(registerDto.getMode());
-		}
-		chatUser.setIsDeleteInprogrees(0);
+
 		chatUserRepo.save(chatUser);
-		registerResponseDto.setPassword(passwordService.generateRandomPassword());
+		String password = updateChatUserDetails(registerDto, chatUser);
+		registerResponseDto.setPassword(password);
 		registerResponseDto.setToken(tokenService.getToken(registerDto.getUserIdentifier(), registerDto.getDeviceType(),
 				registerDto.getDeviceType()));
 		registerResponseDto.setUsername(user.getUsername());
@@ -215,6 +206,73 @@ public class RegisterService {
 		}
 		userRepo.save(user);
 		return registerResponseDto;
+	}
+	
+	public String updateChatUserDetails(SanboxUserRegisterDto registerDto, ChatUser chatUser) {
+		RegisterDto data = new RegisterDto();
+		data.setDeviceId(registerDto.getDeviceId());
+		data.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+		data.setDeviceToken(registerDto.getDeviceToken());
+		data.setDeviceType(registerDto.getDeviceType());
+		data.setLicenseKey(registerDto.getLicenseKey());
+		data.setMobileNumber(registerDto.getMobileNumber());
+		data.setMode(registerDto.getMode());
+		data.setUserIdentifier(registerDto.getUserIdentifier());
+		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+		return updateChatUserDetails(data, chatUser);
+	}
+
+	public String updateChatUserDetails(RegisterDto registerDto, ChatUser chatUser) {
+		String deviceIdprefix = "";
+		List<ChatUserDetails> users = null;
+		if (registerDto.getDeviceType().equalsIgnoreCase("web")) {
+			deviceIdprefix = "web";
+			users = chatUsersDetailsRepo.findByUsernameAndDeviceTypeWeb(chatUser.getUsername());
+			if (registerDto.getDeviceType().equalsIgnoreCase("ios")
+					&& (registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))) {
+				registerDto.setDeviceOsVersion("12.0");
+			}
+		} else {
+			deviceIdprefix = "mobile";
+			users = chatUsersDetailsRepo.findByUsernameAndDeviceTypeAndroidIos(chatUser.getUsername());
+			chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
+		}
+		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
+				? registerDto.getDeviceId()
+				: "MF-01" + deviceIdprefix;
+		ChatUserDetails user = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
+		String password = passwordService.generateRandomPassword();
+		if (user == null) {
+			if (users.size() >= 5) {
+				// need to delete first logged in record
+				Collections.sort(users, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
+				ChatUserDetails deletableRecord = users.get(0);
+				chatUsersDetailsRepo.delete(deletableRecord);
+			}
+			user = new ChatUserDetails();
+			user.setCreatedAt(LocalDateTime.now());
+			user.setDeviceId(deviceId);
+			user.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+			user.setDeviceToken(registerDto.getDeviceToken());
+			user.setDeviceType(registerDto.getDeviceType());
+			user.setLastLoggedInAt(LocalDateTime.now());
+			user.setMode(registerDto.getMode());
+			user.setPassword(GatewayUtil.getMd5String(password));
+			user.setUsername(chatUser.getUsername());
+			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+			chatUsersDetailsRepo.save(user);
+			return password;
+		} else {
+			user.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+			user.setDeviceToken(registerDto.getDeviceToken());
+			user.setDeviceType(registerDto.getDeviceType());
+			user.setLastLoggedInAt(LocalDateTime.now());
+			user.setMode(registerDto.getMode());
+			user.setPassword(GatewayUtil.getMd5String(password));
+			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+			chatUsersDetailsRepo.save(user);
+			return password;
+		}
 	}
 
 	private void inputDataValidating(RegisterDto registerDto) {
