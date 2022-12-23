@@ -15,7 +15,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.AddUserDto;
 import com.mirrorfly.gateway.dto.LicenseValidateResponseDto;
-import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.SanboxUserRegisterDto;
 import com.mirrorfly.gateway.dto.SandboxRegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
@@ -26,7 +25,6 @@ import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
-import com.mirrorfly.gateway.repo.VcardRepo;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
@@ -52,13 +50,7 @@ public class SandboxUserService {
 	private TokenService tokenService;
 
 	@Autowired
-	private PasswordService passwordService;
-
-	@Autowired
 	private UserRepo userRepo;
-
-	@Autowired
-	private VcardRepo vcardRepo;
 
 	@Autowired
 	private RegisterService registerService;
@@ -71,7 +63,7 @@ public class SandboxUserService {
 
 	@Autowired
 	private VcardService vcardService;
-	
+
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) throws JsonProcessingException {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
@@ -138,7 +130,7 @@ public class SandboxUserService {
 			// Insert the vcard details
 			VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(username);
 			vcardService.updateVcard(vcardSearch, new Vcard());
-			registerResponseDto.setIsProfileUpdated(false);			
+			registerResponseDto.setIsProfileUpdated(false);
 		}
 		String password = registerService.updateChatUserDetails(registerDto, chatUser);
 		registerResponseDto.setPassword(password);
