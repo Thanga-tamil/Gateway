@@ -121,7 +121,6 @@ public class LoginService {
 			ChatUserDetails chatUserDetail = chatUsersDetailsRepo.findByUsernameAndDeviceId(tokenDetail.getUsername(),
 					deviceId);
 			if (chatUserDetail != null) {
-				chatUserDetail.setDeviceType("");
 				chatUserDetail.setDeviceToken("");
 				chatUserDetail.setVoipDeviceToken("");
 				chatUserDetail.setDeviceId("");
