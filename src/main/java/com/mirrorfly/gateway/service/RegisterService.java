@@ -226,16 +226,16 @@ public class RegisterService {
 		String deviceIdprefix = "";
 		List<ChatUserDetails> users = null;
 		if (registerDto.getDeviceType().equalsIgnoreCase("web")) {
-			deviceIdprefix = "web";
-			users = chatUsersDetailsRepo.findByUsernameAndDeviceTypeWeb(chatUser.getUsername());
+			deviceIdprefix = "-web";
+			users = chatUsersDetailsRepo.findByUsernameAndDeviceTypeWeb(chatUser.getUsername());			
+		} else {
+			deviceIdprefix = "-mobile";
+			users = chatUsersDetailsRepo.findByUsernameAndDeviceTypeAndroidIos(chatUser.getUsername());
+			chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
 			if (registerDto.getDeviceType().equalsIgnoreCase("ios")
 					&& (registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))) {
 				registerDto.setDeviceOsVersion("12.0");
 			}
-		} else {
-			deviceIdprefix = "mobile";
-			users = chatUsersDetailsRepo.findByUsernameAndDeviceTypeAndroidIos(chatUser.getUsername());
-			chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
 		}
 		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
 				? registerDto.getDeviceId()

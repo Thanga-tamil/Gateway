@@ -123,7 +123,7 @@ public class SandboxUserService {
 			}
 			String username = registerDto.getUserIdentifier();
 			// Create new user
-			registerUser(registerDto, username);
+			chatUser = registerUser(registerDto, username);
 			registerResponseDto.setUsername(username);
 			registerResponseDto.setIsExisting(false);
 			users.setUsername(username);
@@ -182,7 +182,7 @@ public class SandboxUserService {
 		}
 	}
 
-	private void registerUser(SanboxUserRegisterDto registerDto, String username) {
+	private ChatUser registerUser(SanboxUserRegisterDto registerDto, String username) {
 		ChatUser chatUser = new ChatUser();
 		chatUser.setUsername(username);
 		chatUser.setMobileNumber(registerDto.getMobileNumber());
@@ -191,6 +191,7 @@ public class SandboxUserService {
 		chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 		chatUser.setIsDeleteInprogrees(0);
 		chatUserRepo.save(chatUser);
+		return chatUser;
 	}
 
 	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
