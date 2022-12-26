@@ -124,6 +124,8 @@ public class LoginService {
 				chatUserDetail.setDeviceToken("");
 				chatUserDetail.setVoipDeviceToken("");
 				chatUserDetail.setDeviceId("");
+				chatUserDetail.setDeviceOsVersion("");
+				chatUserDetail.setMode(0);
 				chatUserDetail.setPassword(GatewayUtil.getMd5String(passwordService.generateRandomPassword()));
 				chatUsersDetailsRepo.save(chatUserDetail);
 			}
