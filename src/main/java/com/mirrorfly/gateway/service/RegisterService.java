@@ -176,6 +176,7 @@ public class RegisterService {
 			registerResponseDto.setIsProfileUpdated(false);
 			registerResponseDto.setIsExisting(false);
 		} else {
+			user = userRepo.findByUsername(chatUser.getUsername());
 			if (chatUser.getIsDeleteInprogrees() == 1) {
 				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
 			}
