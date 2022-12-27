@@ -243,7 +243,7 @@ public class RegisterService {
 		ChatUserDetails user = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
 		String password = passwordService.generateRandomPassword();
 		if (user == null) {
-			if (users.size() >= 5) {
+			if (users.size() >= applicationProperties.getMaximumSessions()) {
 				// need to delete first logged in record
 				Collections.sort(users, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
 				ChatUserDetails deletableRecord = users.get(0);
