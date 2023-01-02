@@ -36,7 +36,6 @@ import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.LastRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
-import com.mirrorfly.gateway.repo.VcardRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
@@ -65,9 +64,6 @@ public class RegisterService {
 
 	@Autowired
 	private RestTemplate restTemplate;
-
-	@Autowired
-	private VcardRepo vcardRepo;
 
 	@Autowired
 	private LastRepo lastRepo;
@@ -165,6 +161,7 @@ public class RegisterService {
 			VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(registerDto.getUserIdentifier());
 			vcardService.updateVcard(vcardSearch, new Vcard());
 			registerResponseDto.setIsProfileUpdated(false);
+			registerResponseDto.setIsExisting(false);
 		} else {
 			user = userRepo.findByUsername(chatUser.getUsername());
 			if (chatUser.getIsDeleteInprogrees() == 1) {
@@ -181,6 +178,7 @@ public class RegisterService {
 				}
 				registerResponseDto.setIsProfileUpdated(true);
 			}
+			registerResponseDto.setIsExisting(true);
 		}
 		if (!registerDto.getDeviceType().equalsIgnoreCase("web")) {
 			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().trim().equals("")) {

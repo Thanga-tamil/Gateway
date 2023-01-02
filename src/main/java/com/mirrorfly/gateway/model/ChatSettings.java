@@ -123,4 +123,37 @@ public class ChatSettings implements Serializable {
 	@Column(name = "iv_profile")
 	private String ivProfile;
 
+	@Column(name = "group_chat")
+	private Integer groupChat = 1;
+
+	@Column(name = "attachment")
+	private Integer attachment = 1;
+
+	@Column(name = "image_attachment")
+	private Integer imageAttachment = 1;
+
+	@Column(name = "video_attachment")
+	private Integer videoAttachment = 1;
+
+	@Column(name = "audio_attachment")
+	private Integer audioAttachment = 1;
+
+	@Column(name = "document_attachment")
+	private Integer documentAttachment = 1;
+
+	@Column(name = "contact_attachment")
+	private Integer contactAttachment = 1;
+
+	@Column(name = "location_attachment")
+	private Integer locationAttachment = 1;
+
+	@Column(name = "one2one_call")
+	private Integer one2oneCall = 1;
+
+	@Column(name = "group_call")
+	private Integer groupCall = 1;
+	
+	@Column(name = "recentchat_search")
+	private Integer recentchatSearch = 1;
+
 }
