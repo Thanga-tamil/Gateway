@@ -63,4 +63,26 @@ public class ConfigDto {
 
 	private String ivProfile;
 
+	private Boolean groupChat;
+
+	private Boolean attachment;
+
+	private Boolean imageAttachment;
+
+	private Boolean videoAttachment;
+
+	private Boolean audioAttachment;
+
+	private Boolean documentAttachment;
+
+	private Boolean contactAttachment;
+
+	private Boolean locationAttachment;
+
+	private Boolean one2oneCall;
+
+	private Boolean groupCall;
+
+	private Boolean recentchatSearch;
+
 }
