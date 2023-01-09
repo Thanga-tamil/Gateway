@@ -23,4 +23,6 @@ public class RegisterDto {
 	
 	private String deviceId = "";
 	
+	private Boolean forceRegister = true;
+	
 }

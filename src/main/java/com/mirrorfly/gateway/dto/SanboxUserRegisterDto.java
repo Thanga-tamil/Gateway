@@ -22,5 +22,7 @@ public class SanboxUserRegisterDto {
 	private String licenseKey = "";
 
 	private String userIdentifier = "";
+	
+	private Boolean forceRegister = true;
 
 }
