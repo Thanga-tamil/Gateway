@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.dto.AddUserDto;
 import com.mirrorfly.gateway.dto.LicenseValidateResponseDto;
 import com.mirrorfly.gateway.dto.SanboxUserRegisterDto;
@@ -25,7 +26,6 @@ import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
-import com.mirrorfly.gateway.repo.VcardRepo;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
@@ -57,9 +57,6 @@ public class SandboxUserService {
 	private UserRepo userRepo;
 
 	@Autowired
-	private VcardRepo vcardRepo;
-
-	@Autowired
 	private RegisterService registerService;
 
 	@Autowired
@@ -70,8 +67,9 @@ public class SandboxUserService {
 
 	@Autowired
 	private VcardService vcardService;
-
-	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) throws JsonProcessingException {
+	
+	@SwitchDataSource(value="[0]")
+	public Response<String> registerNewUser(String userdomain, SanboxUserRegisterDto registerDto) throws JsonProcessingException {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
 		dataValidating(registerDto);// validate Empty value

@@ -1,9 +1,15 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:myDb;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:myDb;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
     driverClassName: org.h2.Driver
     username: sa
     password: 
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari: 
+        minimum-idle: 10 
+        maximum-pool-size: 30
+        idleTimeout: 600000
+        maxLifetime: 900000
   jpa.database-platform: org.hibernate.dialect.H2Dialect
 
 #enabling the H2 console

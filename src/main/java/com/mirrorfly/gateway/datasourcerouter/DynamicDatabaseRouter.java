@@ -19,14 +19,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.model.ConnectionConfig;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Configuration
 @EnableJpaRepositories(basePackages = "com.mirrorfly.gateway", transactionManagerRef = "transcationManager", entityManagerFactoryRef = "entityManager")
 @EnableTransactionManagement
@@ -37,20 +41,20 @@ public class DynamicDatabaseRouter {
     
     @Bean
     @Primary
-    @Scope("prototype")
+    @Scope("singleton")
     public AbstractRoutingDataSourceImpl dataSource() {
         Map<Object, Object> targetDataSources = getTargetDataSources();
         return new AbstractRoutingDataSourceImpl((DataSource)targetDataSources.get("default"), targetDataSources);
     }
 
     @Bean(name = "entityManager")
-    @Scope("prototype")
+    @Scope("singleton")
     public LocalContainerEntityManagerFactoryBean entityManagerFactoryBean(EntityManagerFactoryBuilder builder) {
         return builder.dataSource(dataSource()).packages("com.mirrorfly.gateway").build();
     }
 
     @Bean(name = "transcationManager")
-    @Scope("prototype")
+    @Scope("singleton")
     public JpaTransactionManager transactionManager(
             @Autowired @Qualifier("entityManager") LocalContainerEntityManagerFactoryBean entityManagerFactoryBean) {
         return new JpaTransactionManager(entityManagerFactoryBean.getObject());
@@ -59,30 +63,47 @@ public class DynamicDatabaseRouter {
     private Map<Object,Object> getTargetDataSources() {
     	Map<Object,Object> targetDataSourceMap = new HashMap<>();
     	
-    	DriverManagerDataSource defaultDS = createDefaultDataSource();
+    	HikariDataSource defaultDS = createDataSource(null);
+    	log.info("Default DataSource is -----> "+defaultDS.getJdbcUrl());
     	targetDataSourceMap.put("default", defaultDS);
-    	/*
         List<ConnectionConfig> connectionConfigs = getConnectionConfigs(defaultDS);
         for (ConnectionConfig connectionConfig : connectionConfigs) {
-        	DriverManagerDataSource dataSource = new DriverManagerDataSource();
-            dataSource.setUrl(connectionConfig.getConnectionString());
-            dataSource.setUsername(connectionConfig.getDbUsername());
-            dataSource.setPassword(connectionConfig.getDbPassword());
-            targetDataSourceMap.put(connectionConfig.getCustomerId(),dataSource);
+            HikariDataSource domainSpecificDS = createDataSource(connectionConfig);
+            targetDataSourceMap.put(connectionConfig.getCustomerDomain(), domainSpecificDS);
+            log.info("[{}] DataSource is [{}] -----> ",connectionConfig.getCustomerDomain(), domainSpecificDS.getJdbcUrl());
 		}
-        */
         return targetDataSourceMap;
     }
     
-    private DriverManagerDataSource createDefaultDataSource() {
-    	DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setUrl(applicationProperties.getConnectionString());
-        dataSource.setUsername(applicationProperties.getDbUsername());
-        dataSource.setPassword(applicationProperties.getDbPassword());
-        return dataSource;
+	private HikariDataSource createDataSource(ConnectionConfig connectionConfig) {
+		final HikariConfig config = new HikariConfig();
+		if(connectionConfig == null) {
+			// default datasource
+			config.setPoolName("CP_Default");
+			config.setJdbcUrl(applicationProperties.getConnectionString());
+			config.setUsername(applicationProperties.getDbUsername());
+			config.setPassword(applicationProperties.getDbPassword());
+			config.setMinimumIdle(applicationProperties.getMinimumConnections());
+	        config.setMaximumPoolSize(applicationProperties.getMaximumConnections());
+		}else {
+			config.setPoolName("CP_"+connectionConfig.getCustomerDomain());
+			config.setJdbcUrl(connectionConfig.getConnectionString());
+			config.setUsername(connectionConfig.getDbUsername());
+			config.setPassword(connectionConfig.getDbPassword());
+	        config.setMinimumIdle(connectionConfig.getMinimumConnections());
+	        config.setMaximumPoolSize(connectionConfig.getMaximumConnections());
+		}
+		config.setIdleTimeout(applicationProperties.getConnectionIdleTimeout());
+		config.setMaxLifetime(applicationProperties.getConnectionMaxLifeTime());
+		// Performance Tips for MySql
+		config.addDataSourceProperty("cachePrepStmts", "true");
+		config.addDataSourceProperty("prepStmtCacheSize", "250");
+		config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+		config.addDataSourceProperty("useServerPrepStmts", "true");
+		return new HikariDataSource(config);
 	}
     
-	public List<ConnectionConfig> getConnectionConfigs(DriverManagerDataSource defaultDS) {
+	private List<ConnectionConfig> getConnectionConfigs(HikariDataSource defaultDS) {
 		Connection connection = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -97,7 +118,6 @@ public class DynamicDatabaseRouter {
 				ConnectionConfig config = new ConnectionConfig();
 				config.setId(rs.getInt("id"));
 				config.setCustomerDomain(rs.getString("customer_domain"));
-				config.setCustomerId(rs.getString("customer_id"));
 				config.setConnectionString(rs.getString("connection_string"));
 				config.setDbUsername(rs.getString("db_username"));
 				config.setDbPassword(rs.getString("db_password"));
@@ -106,11 +126,7 @@ public class DynamicDatabaseRouter {
 				list.add(config);
 			}
 		} catch (SQLException e) {
-			System.err.println("SQLException occured while fetching group members list ::: " + e);
-		} catch (Exception e) {
-			System.err.println("Exception occured while fetching group members list ::: " + e);
-		} catch (Throwable e) {
-			System.err.println("Throwable occured while fetching group members list ::: " + e);
+			log.error("SQLException occured while fetching configured connection details from connection_config ::: " + e);
 		} finally {
 			releaseResources(connection, ps, rs);
 		}
@@ -122,21 +138,24 @@ public class DynamicDatabaseRouter {
 			if (rs != null) {
 				rs.close();
 			}
-		} catch (Exception e) {
+		} catch (SQLException e) {
+			log.error("SQLException occured while closing ResultSet ::: Supressing this exception ::: " + e);
 		}
 
 		try {
 			if (ps != null) {
 				ps.close();
 			}
-		} catch (Exception e) {
+		} catch (SQLException e) {
+			log.error("SQLException occured while closing PreparedStatement ::: Supressing this exception ::: " + e);
 		}
 
 		try {
 			if (con != null && !con.isClosed()) {
 				con.close();
 			}
-		} catch (Exception e) {
+		} catch (SQLException e) {
+			log.error("SQLException occured while closing Connection ::: Supressing this exception ::: " + e);
 		}
 	}
 

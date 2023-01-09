@@ -20,6 +20,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterRequestDto;
@@ -73,8 +74,12 @@ public class RegisterService {
 
 	@Autowired
 	private VcardService vcardService;
-
-	public Response<RegisterInfoDto> getRegisterInfo() {
+	
+	@Autowired
+	private DataStore dataStore;
+	
+	@SwitchDataSource(value="[0]")
+	public Response<RegisterInfoDto> getRegisterInfo(String userdomain) {
 		ChatSettings settings = settingsRepo.findAll().get(0);
 		RegisterInfoDto info = new RegisterInfoDto();
 		info.setDomain(settings.getDomain());
@@ -86,10 +91,17 @@ public class RegisterService {
 		return response;
 	}
 
-	public Response<String> registerNewUser(RegisterRequestDto registerRequestDto) {
+	@SwitchDataSource(value="[0]")
+	public Response<String> registerNewUser(String userdomain, RegisterRequestDto registerRequestDto) {
+		
+		Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
+    	String licenseKey = config!=null ? (String) config : null;
+    	if (licenseKey == null) {
+			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
+		}
+		
 		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(),
-				applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
-						+ applicationProperties.getLicenseKey());
+				licenseKey + licenseKey	+ licenseKey);
 		if (decyptedString.equals("")) {
 			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
 		}
@@ -111,7 +123,6 @@ public class RegisterService {
 		} catch (JsonProcessingException e) {
 			throw new BadDataException("Json Parsing Error");
 		}
-		String licenseKey = applicationProperties.getLicenseKey();
 		Response<String> response = new Response<>();
 		response.setData(AESEncryption.encryptString(jsonString, licenseKey + licenseKey + licenseKey));
 		response.setStatus(HttpStatus.OK.value());

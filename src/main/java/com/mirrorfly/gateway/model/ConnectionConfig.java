@@ -15,16 +15,15 @@ import lombok.Data;
 @Entity
 @Table(name = "connection_config")
 public class ConnectionConfig implements Serializable {
-    @Id
+    private static final long serialVersionUID = 1L;
+
+	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private int id;
     
     @Column(name = "customer_domain")
     private String customerDomain;
-    
-    @Column(name = "customer_id")
-    private String customerId;
     
     @Column(name = "connection_string")
     private String connectionString;
@@ -41,5 +40,7 @@ public class ConnectionConfig implements Serializable {
     @Column(name = "maximum_connections")
     private int maximumConnections;
     
+    @Column(name = "license_key")
+    private String licenseKey;
     
 }

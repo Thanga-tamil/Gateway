@@ -14,22 +14,6 @@ public class ApplicationProperties {
 		return Long.parseLong(env.getProperty("token_Expiry_Time"));
 	}
 
-	public String getAWSSecretAccessKey() {
-		return env.getProperty("aws_secret_access_key");
-	}
-
-	public String getAWSAccessKey() {
-		return env.getProperty("aws_access_key_id");
-	}
-
-	public String getAWSS3Region() {
-		return env.getProperty("aws_s3_region");
-	}
-
-	public String getAWSS3BucketName() {
-		return env.getProperty("aws_s3_bucketname");
-	}
-
 	public String getFcmURL() {
 		return env.getProperty("fcm_url");
 	}
@@ -62,10 +46,6 @@ public class ApplicationProperties {
 		return env.getProperty("webportal.api_base_url");
 	}
 
-	public String getLicenseKey() {
-		return env.getProperty("licenseKey");
-	}
-
 	public String getLicenseDataQueue() {
 		return env.getProperty("queue.licensedata");
 	}
@@ -88,5 +68,23 @@ public class ApplicationProperties {
 	
 	public String getDbPassword() {
 		return env.getProperty("spring.datasource.password");
+	}
+	
+	public int getMinimumConnections() {
+		return env.getProperty("spring.datasource.hikari.minimum-idle", Integer.class);
+	}
+	
+	public int getMaximumConnections() {
+		return env.getProperty("spring.datasource.hikari.maximum-pool-size", Integer.class);
+	}
+	
+	public long getConnectionIdleTimeout() {
+		return env.getProperty("spring.datasource.hikari.idleTimeout", Long.class);
+	}
+	
+	public long getConnectionMaxLifeTime() {
+		// should be greater than spring.datasource.hikari.idleTimeout
+		// should be several minutes less than database global wait_timeout
+		return env.getProperty("spring.datasource.hikari.maxLifetime", Long.class);
 	}
 }

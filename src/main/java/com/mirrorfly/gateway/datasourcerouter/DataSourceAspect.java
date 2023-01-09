@@ -10,16 +10,19 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import com.mirrorfly.gateway.exception.DataSourceNotFoundException;
+import com.zaxxer.hikari.HikariDataSource;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Aspect
 @Component
 @Order(-10)
 public class DataSourceAspect {
-    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Pointcut("@annotation(com.mirrorfly.gateway.datasourcerouter.SwitchDataSource)")
     public void annotationPointCut() {
@@ -36,17 +39,17 @@ public class DataSourceAspect {
         if(annotation != null){
         	String targetDs = (String)args[0];
         	AbstractRoutingDataSourceImpl.setDatabaseName(targetDs);
-            logger.info("Switch DataSource for [{}] in Method [{}]",
+        	DataSource ds = AbstractRoutingDataSourceImpl.getActiveDataSource();
+        	if(ds == null) {
+        		throw new DataSourceNotFoundException("No datasource is configured for domain "+targetDs);
+        	}
+        	log.info("Switch DataSource for [{}] in Method [{}]",
             		targetDs, joinPoint.getSignature());
-            /*
-        	DataSource defaultDS = AbstractRoutingDataSourceImpl.getDefaultDataSource();
-        	DataSource activeDS = AbstractRoutingDataSourceImpl.getActiveDataSource();
-        	
-        	try{
-        		logger.info("Default DataSource is [{}]", defaultDS.getConnection().getMetaData().getURL());
-        		logger.info("Active DataSource is [{}]",  activeDS.getConnection().getMetaData().getURL());
-        	}catch (Exception e) {}
-        	*/
+            
+        	HikariDataSource defaultDS = (HikariDataSource) AbstractRoutingDataSourceImpl.getDefaultDataSource();
+        	HikariDataSource activeDS = (HikariDataSource) AbstractRoutingDataSourceImpl.getActiveDataSource();
+    		log.info("Default DataSource is [{}]", defaultDS.getJdbcUrl());
+    		log.info("Active DataSource is [{}]",  activeDS.getJdbcUrl());
         }
     }
     
@@ -57,15 +60,14 @@ public class DataSourceAspect {
         	AbstractRoutingDataSourceImpl.removeDatabaseName();
         	AbstractRoutingDataSourceImpl.setDatabaseName("default");
         	
-        	logger.info("Restore DataSource to [{}] in Method [{}]",
+        	log.info("Restore DataSource to [{}] in Method [{}]",
                     AbstractRoutingDataSourceImpl.getDatabaseName(), point.getSignature());
         	/*
-        	DataSource defaultDS = AbstractRoutingDataSourceImpl.getDefaultDataSource();
-        	DataSource activeDS = AbstractRoutingDataSourceImpl.getActiveDataSource();
-        	
         	try{
-        		logger.info("Default DataSource is [{}]", defaultDS.getConnection().getMetaData().getURL());
-        		logger.info("Active DataSource is [{}]",  activeDS.getConnection().getMetaData().getURL());
+        		HikariDataSource defaultDS = (HikariDataSource) AbstractRoutingDataSourceImpl.getDefaultDataSource();
+            	HikariDataSource activeDS = (HikariDataSource) AbstractRoutingDataSourceImpl.getActiveDataSource();
+        		log.info("Default DataSource is [{}]", defaultDS.getJdbcUrl());
+        		log.info("Active DataSource is [{}]",  activeDS.getJdbcUrl());
         	}catch (Exception e) {}
         	*/
         }

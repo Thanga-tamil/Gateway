@@ -74,15 +74,24 @@ public class LoginService {
 
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
-
-    @SwitchDataSource(value="[0].username")
-	public Response<LoginDetailsDto> login(LoginDto loginRequestDto) {
+	
+	@Autowired
+	private DataStore dataStore;
+	
+    @SwitchDataSource(value="[0]")
+	public Response<LoginDetailsDto> login(String userdomain, LoginDto loginRequestDto) {
 		// If incoming requested in encrypted means, we need to decrypt the password
 		// field to find the original password
+    	
+    	Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
+    	String licenseKey = config!=null ? (String) config : null;
+    	if (licenseKey == null) {
+			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
+		}
+    	
 		String password = "";
 		String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),
-				applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
-						+ applicationProperties.getLicenseKey());
+				licenseKey + licenseKey	+ licenseKey);
 		LoginRequestDto login;
 		ObjectMapper mapper = new ObjectMapper();
 		try {
@@ -133,7 +142,8 @@ public class LoginService {
 		return password.equals(GatewayUtil.getMd5String(userpassword));
 	}
 
-	public Response<String> logout(String authorization) {
+	@SwitchDataSource(value="[0]")
+	public Response<String> logout(String userdomain, String authorization) {
 		String username = tokenService.getUserNameByToken(authorization);
 		tokenService.deleteToken(authorization);
 		if (username != null) {
@@ -289,4 +299,12 @@ public class LoginService {
 		emailTokenRepo.save(validToken);
 	}
 
+	public Response<String> refreshInMemory() {
+		dataStore.reloadConnectionConfig();
+		Response<String> response = new Response<>();
+		response.setStatus(HttpStatus.OK.value());
+		response.setMessage(GatewayConstants.DOMAIN_CONFIG_RELOADED);
+		return response;
+	}
+	
 }

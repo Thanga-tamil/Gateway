@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.dto.LicenseAVResDto;
 import com.mirrorfly.gateway.dto.LicenseChatResDto;
 import com.mirrorfly.gateway.dto.LicenseDataDto;
@@ -67,8 +68,12 @@ public class LicenseService {
 
 	@Autowired
 	private UserRepo userRepo;
-
-	public Response<LicenseResDto> getLicense(LicenseReqDto licenseReq) {
+	
+	@Autowired
+	private DataStore dataStore;
+	
+	@SwitchDataSource(value="[0]")
+	public Response<LicenseResDto> getLicense(String userdomain, LicenseReqDto licenseReq) {
 
 		Response<LicenseResDto> response = new Response<>();
 		String sdkType = licenseReq.getSdk();
@@ -132,7 +137,8 @@ public class LicenseService {
 		return chatSettingsRepo.findAll().get(0);
 	}
 
-	public Response<String> updateLicense(LicenseUpdateRequestDto request) {
+	@SwitchDataSource(value="[0]")
+	public Response<String> updateLicense(String userdomain, LicenseUpdateRequestDto request) {
 		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
 		LicenseLookup data = new LicenseLookup();
 		if (!existingKey.isEmpty() && existingKey.get(0) != null) {
@@ -141,7 +147,7 @@ public class LicenseService {
 		data.setLkey(request.getLicenseKey());
 		licenseLookupRepo.save(data);
 		queueService.sendLicenseDataPayload(new LicenseDataPayload(request.getLicenseKey()));
-		decryptChatSettings(request.getLicenseKey());
+		decryptChatSettings(request.getLicenseKey(), userdomain);
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.SC_OK);
 		response.setMessage("License key updated successfully");
@@ -149,10 +155,16 @@ public class LicenseService {
 		return response;
 	}
 
-	private void decryptChatSettings(String licenseKey) {
+	private void decryptChatSettings(String licenseKey, String userdomain) {
+		
+    	Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
+    	String domainLicenseKey = config!=null ? (String) config : null;
+    	if (domainLicenseKey == null) {
+			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
+		}
+		
 		String decyptedString = AESEncryption.decryptConfigStringForLlicenseKey(licenseKey,
-				applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
-						+ applicationProperties.getLicenseKey());
+				domainLicenseKey + domainLicenseKey	+ domainLicenseKey);
 		LicenseDataDto licenseData;
 		ObjectMapper mapper = new ObjectMapper();
 		try {

@@ -17,6 +17,7 @@ import org.springframework.web.server.ServerWebExchange;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.service.TokenService;
+import com.mirrorfly.gateway.util.GatewayConstants;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -71,8 +72,12 @@ public class AccessGatewayFilter implements GlobalFilter {
 			if (username == null) {
 				return unauthorized(exchange);
 			}
+			
+			String userdomain = exchange.getRequest().getHeaders().getFirst(GatewayConstants.USER_DOMAIN);
+			
 			ServerHttpRequest.Builder builder = request.mutate();
 			builder.header("username", username);
+			builder.header(GatewayConstants.USER_DOMAIN, userdomain);
 			return chain.filter(exchange.mutate().request(builder.build()).build());
 		}
 	}

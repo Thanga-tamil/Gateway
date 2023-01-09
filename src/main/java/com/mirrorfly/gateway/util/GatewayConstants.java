@@ -223,6 +223,10 @@ public class GatewayConstants {
 	public static final String USER_COUNT_EXCEEDED = "Trail user count for registration has been exceeded";
 	
 	public static final String ERROR_IN_REGISTRATION = "Error in registration. Please try again later.";
+	
+	public static final String USER_DOMAIN = "userdomain";
+	
+	public static final String DOMAIN_CONFIG_RELOADED = "User domain specific configurations reloaded successfully";
 
 	private GatewayConstants() {
 	}
