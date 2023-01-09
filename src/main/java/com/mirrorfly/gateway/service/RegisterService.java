@@ -283,12 +283,10 @@ public class RegisterService {
 			if ((deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
 					&& p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)))
 				return true;
-			else if ((deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
+			return ((deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
 					|| (deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_IOS)))
 					&& (p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
-							|| p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)))
-				return true;
-			return false;
+							|| p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)));
 		}).sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
 		ChatUserDetails deletableRecord = null;
 		if (samePlatformDevices.isEmpty()) {
