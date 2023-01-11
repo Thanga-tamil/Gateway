@@ -22,8 +22,8 @@ public class ConfigService {
 	@Autowired
 	private ChatServerConfigRepo chatServerConfigRepo;
 
-	public ConfigDto getCongigData() {
-		ChatSettings settings = getConfigService();
+	public ConfigDto getConfigData(String licenseKey) {
+		ChatSettings settings = getChatSettingsData(licenseKey);
 		ConfigDto config = new ConfigDto();
 		config.setDomain(settings.getDomain());
 		config.setAudioLimit(settings.getAudioLimit());
@@ -85,8 +85,15 @@ public class ConfigService {
 		}
 	}
 
-	public ChatSettings getConfigService() {
-		return chatSettingsRepo.findAll().get(0);
+	public ChatSettings getChatSettingsData(String licenseKey) {
+		ChatSettings settings = null;
+		if (licenseKey != null && !licenseKey.isEmpty()) {
+			settings = chatSettingsRepo.findByLicenseKey(licenseKey);
+		}
+		if (settings == null) {
+			settings = chatSettingsRepo.findAll().get(0);
+		}
+		return settings;
 	}
 
 }
