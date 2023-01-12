@@ -8,6 +8,7 @@ import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -208,7 +209,7 @@ public class RegisterService {
 		userRepo.save(user);
 		return registerResponseDto;
 	}
-	
+
 	public String updateChatUserDetails(SanboxUserRegisterDto registerDto, ChatUser chatUser) {
 		RegisterDto data = new RegisterDto();
 		data.setDeviceId(registerDto.getDeviceId());
@@ -220,20 +221,18 @@ public class RegisterService {
 		data.setMode(registerDto.getMode());
 		data.setUserIdentifier(registerDto.getUserIdentifier());
 		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+		data.setForceRegister(registerDto.getForceRegister());
 		return updateChatUserDetails(data, chatUser);
 	}
 
 	public String updateChatUserDetails(RegisterDto registerDto, ChatUser chatUser) {
 		String deviceIdprefix = "";
-		List<ChatUserDetails> users = null;
-		if (registerDto.getDeviceType().equalsIgnoreCase("web")) {
+		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
 			deviceIdprefix = "-web";
-			users = chatUsersDetailsRepo.findByUsernameAndDeviceTypeWeb(chatUser.getUsername());			
 		} else {
 			deviceIdprefix = "-mobile";
-			users = chatUsersDetailsRepo.findByUsernameAndDeviceTypeAndroidIos(chatUser.getUsername());
 			chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
-			if (registerDto.getDeviceType().equalsIgnoreCase("ios")
+			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
 					&& (registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))) {
 				registerDto.setDeviceOsVersion("12.0");
 			}
@@ -244,11 +243,13 @@ public class RegisterService {
 		ChatUserDetails user = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
 		String password = passwordService.generateRandomPassword();
 		if (user == null) {
-			if (users.size() >= applicationProperties.getMaximumSessions()) {
-				// need to delete first logged in record
-				Collections.sort(users, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
-				ChatUserDetails deletableRecord = users.get(0);
-				chatUsersDetailsRepo.delete(deletableRecord);
+			List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
+					.findByUsername(chatUser.getUsername());
+			if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()) {
+				ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
+						registerDto.getDeviceType());
+				if (deletableRecord != null)
+					chatUsersDetailsRepo.delete(deletableRecord);
 			}
 			user = new ChatUserDetails();
 			user.setCreatedAt(LocalDateTime.now());
@@ -276,6 +277,29 @@ public class RegisterService {
 		}
 	}
 
+	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> existingChatUsersDetails,
+			String deviceType) {
+		List<ChatUserDetails> samePlatformDevices = existingChatUsersDetails.stream().filter(p -> {
+			if ((deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
+					&& p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)))
+				return true;
+			return ((deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
+					|| (deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_IOS)))
+					&& (p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
+							|| p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)));
+		}).sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
+		ChatUserDetails deletableRecord = null;
+		if (samePlatformDevices.isEmpty()) {
+			// need to delete first logged in record irrespective to platform
+			Collections.sort(existingChatUsersDetails, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
+			deletableRecord = existingChatUsersDetails.get(0);
+		} else {
+			// need to delete first logged in record respective to platform
+			deletableRecord = samePlatformDevices.get(0);
+		}
+		return deletableRecord;
+	}
+
 	private void inputDataValidating(RegisterDto registerDto) {
 		String userIdentifier = registerDto.getUserIdentifier();
 		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
@@ -300,6 +324,12 @@ public class RegisterService {
 				&& !registerDto.getDeviceType().equalsIgnoreCase("web")
 				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
+		}
+		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
+				.findByUsername(registerDto.getUserIdentifier());
+		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
+				&& Boolean.FALSE.equals(registerDto.getForceRegister())) {
+			throw new BadDataException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 		}
 	}
 
