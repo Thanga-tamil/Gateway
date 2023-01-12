@@ -30,7 +30,6 @@ public class ConfigService {
 		config.setDomain(settings.getDomain());
 		config.setPrivateTime(settings.getPrivateTime());
 		config.setRecallTime(settings.getRecallTime());
-		getStunAndTurnServers(settings, config);
 		config.setVideoLimit(settings.getVideoLimit());
 		config.setSignalServerDomain(settings.getSignalServerDomain());
 		config.setXmppDomain(settings.getXmppDomain());
@@ -64,12 +63,13 @@ public class ConfigService {
 		config.setOne2oneCall(settings.getOne2oneCall() == 1);
 		config.setGroupCall(settings.getGroupCall() == 1);
 		config.setRecentchatSearch(settings.getRecentchatSearch() == 1);
+		getStunAndTurnServers(config);
 		return config;
 	}
 
-	private void getStunAndTurnServers(ChatSettings settings, ConfigDto config) {
-		List<ChatServerConfig> chatServerConfig = chatServerConfigRepo.findByChatConfigId(settings.getId());
-		if (chatServerConfig != null && !chatServerConfig.isEmpty()) {
+	private void getStunAndTurnServers(ConfigDto config) {
+		List<ChatServerConfig> chatServerConfig = chatServerConfigRepo.findAll();
+		if (!chatServerConfig.isEmpty()) {
 			List<String> stuns = new ArrayList<>();
 			List<TurnDto> dtoList = new ArrayList<>();
 			for (ChatServerConfig chatServer : chatServerConfig) {
