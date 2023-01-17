@@ -149,7 +149,8 @@ public class SandboxUserService {
 		}
 		userRepo.save(users);
 		// get config details and return in the response
-		registerResponseDto.setConfig(configService.getCongigData());
+		String licenseKey = registerDto.getLicenseKey();
+		registerResponseDto.setConfig(configService.getConfigData(licenseKey));
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			jsonString = mapper.writeValueAsString(registerResponseDto);

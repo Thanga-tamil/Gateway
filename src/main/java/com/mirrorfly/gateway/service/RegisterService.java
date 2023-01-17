@@ -113,7 +113,8 @@ public class RegisterService {
 		}
 		RegisterResponseDto registerResponseDto = registerUser(registerDto);
 		// get config details and return in the response
-		registerResponseDto.setConfig(configService.getCongigData());
+		String licenseKey = applicationProperties.getLicenseKey();
+		registerResponseDto.setConfig(configService.getConfigData(licenseKey));
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonString;
 		try {
@@ -121,7 +122,6 @@ public class RegisterService {
 		} catch (JsonProcessingException e) {
 			throw new BadDataException("Json Parsing Error");
 		}
-		String licenseKey = applicationProperties.getLicenseKey();
 		Response<String> response = new Response<>();
 		response.setData(AESEncryption.encryptString(jsonString, licenseKey + licenseKey + licenseKey));
 		response.setStatus(HttpStatus.OK.value());
