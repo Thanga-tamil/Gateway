@@ -26,6 +26,9 @@ public class ChatSettings implements Serializable {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	private Integer id;
+	
+	@Column(name = "license_key")
+	private String licenseKey;
 
 	@Column(name = "domain")
 	private String domain;
