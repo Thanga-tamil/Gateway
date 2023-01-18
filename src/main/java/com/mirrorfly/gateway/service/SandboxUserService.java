@@ -25,7 +25,6 @@ import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
-import com.mirrorfly.gateway.repo.VcardRepo;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
@@ -55,9 +54,6 @@ public class SandboxUserService {
 
 	@Autowired
 	private UserRepo userRepo;
-
-	@Autowired
-	private VcardRepo vcardRepo;
 
 	@Autowired
 	private RegisterService registerService;
@@ -143,7 +139,7 @@ public class SandboxUserService {
 			// Insert the vcard details
 			VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(username);
 			vcardService.updateVcard(vcardSearch, new Vcard());
-			registerResponseDto.setIsProfileUpdated(false);			
+			registerResponseDto.setIsProfileUpdated(false);
 		}
 		registerResponseDto.setPassword(passwordService.generateRandomPassword());
 		registerResponseDto.setToken(tokenService.getToken(registerResponseDto.getUsername(),
@@ -155,7 +151,8 @@ public class SandboxUserService {
 		}
 		userRepo.save(users);
 		// get config details and return in the response
-		registerResponseDto.setConfig(configService.getCongigData());
+		String licenseKey = registerDto.getLicenseKey();
+		registerResponseDto.setConfig(configService.getConfigData(licenseKey));
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			jsonString = mapper.writeValueAsString(registerResponseDto);

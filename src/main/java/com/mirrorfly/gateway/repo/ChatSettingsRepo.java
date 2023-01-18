@@ -8,4 +8,6 @@ import com.mirrorfly.gateway.model.ChatSettings;
 @Repository
 public interface ChatSettingsRepo extends JpaRepository<ChatSettings, Integer> {
 
+	ChatSettings findByLicenseKey(String licenseKey);
+
 }
