@@ -198,8 +198,16 @@ public class RegisterService {
 		chatUserRepo.save(chatUser);
 		String password = updateChatUserDetails(registerDto, chatUser);
 		registerResponseDto.setPassword(password);
-		registerResponseDto.setToken(tokenService.getToken(registerDto.getUserIdentifier(), registerDto.getDeviceType(),
-				registerDto.getDeviceType()));
+		String deviceIdprefix = "";
+		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
+			deviceIdprefix = "-web";
+		} else {
+			deviceIdprefix = "-mobile";
+		}
+		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
+				? registerDto.getDeviceId()
+				: "MF-01" + deviceIdprefix;
+		registerResponseDto.setToken(tokenService.getToken(registerDto.getUserIdentifier(), deviceId, ""));
 		registerResponseDto.setUsername(user.getUsername());
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
 			user.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));

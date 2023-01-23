@@ -140,8 +140,16 @@ public class SandboxUserService {
 		}
 		String password = registerService.updateChatUserDetails(registerDto, chatUser);
 		registerResponseDto.setPassword(password);
-		registerResponseDto.setToken(tokenService.getToken(registerResponseDto.getUsername(),
-				registerDto.getDeviceType(), registerDto.getDeviceType()));
+		String deviceIdprefix = "";
+		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
+			deviceIdprefix = "-web";
+		} else {
+			deviceIdprefix = "-mobile";
+		}
+		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
+				? registerDto.getDeviceId()
+				: "MF-01" + deviceIdprefix;
+		registerResponseDto.setToken(tokenService.getToken(registerResponseDto.getUsername(), deviceId, ""));
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
 			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		} else {
