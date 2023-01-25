@@ -129,7 +129,7 @@ public class RegisterService {
 		return response;
 	}
 
-	public void registerLogintime(String username) {
+	public void registerLastSeenTime(String username) {
 		Last last = new Last();
 		last.setUsername(username);
 		last.setStatus(0);
@@ -143,11 +143,8 @@ public class RegisterService {
 
 	private RegisterResponseDto registerUser(RegisterDto registerDto) {
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
-
 		inputDataValidating(registerDto);
-
 		Users user = new Users();
-
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
 			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
@@ -168,8 +165,8 @@ public class RegisterService {
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 			chatUser.setLicenseKey(registerDto.getLicenseKey());
 			chatUser.setIsDeleteInprogrees(0);
-			// To insert the register login time
-			registerLogintime(registerDto.getUserIdentifier());
+			// To insert the register last seen time
+			registerLastSeenTime(registerDto.getUserIdentifier());
 			user.setUsername(registerDto.getUserIdentifier());
 			// Insert the vcard details
 			VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(registerDto.getUserIdentifier());
@@ -194,9 +191,8 @@ public class RegisterService {
 			}
 			registerResponseDto.setIsExisting(true);
 		}
-
 		chatUserRepo.save(chatUser);
-		String password = updateChatUserDetails(registerDto, chatUser);
+		String password = updateChatUserDetails(registerDto, chatUser, registerResponseDto);
 		registerResponseDto.setPassword(password);
 		String deviceIdprefix = "";
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
@@ -218,7 +214,8 @@ public class RegisterService {
 		return registerResponseDto;
 	}
 
-	public String updateChatUserDetails(SanboxUserRegisterDto registerDto, ChatUser chatUser) {
+	public String updateChatUserDetails(SanboxUserRegisterDto registerDto, ChatUser chatUser,
+			RegisterResponseDto registerResponseDto) {
 		RegisterDto data = new RegisterDto();
 		data.setDeviceId(registerDto.getDeviceId());
 		data.setDeviceOsVersion(registerDto.getDeviceOsVersion());
@@ -230,10 +227,11 @@ public class RegisterService {
 		data.setUserIdentifier(registerDto.getUserIdentifier());
 		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		data.setForceRegister(registerDto.getForceRegister());
-		return updateChatUserDetails(data, chatUser);
+		return updateChatUserDetails(data, chatUser, registerResponseDto);
 	}
 
-	public String updateChatUserDetails(RegisterDto registerDto, ChatUser chatUser) {
+	public String updateChatUserDetails(RegisterDto registerDto, ChatUser chatUser,
+			RegisterResponseDto registerResponseDto) {
 		String deviceIdprefix = "";
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
 			deviceIdprefix = "-web";
@@ -251,6 +249,7 @@ public class RegisterService {
 		ChatUserDetails user = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
 		String password = passwordService.generateRandomPassword();
 		if (user == null) {
+			registerResponseDto.setIsExisting(false);
 			List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 					.findByUsername(chatUser.getUsername());
 			if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()) {
@@ -273,6 +272,7 @@ public class RegisterService {
 			chatUsersDetailsRepo.save(user);
 			return password;
 		} else {
+			registerResponseDto.setIsExisting(true);
 			user.setDeviceOsVersion(registerDto.getDeviceOsVersion());
 			user.setDeviceToken(registerDto.getDeviceToken());
 			user.setDeviceType(registerDto.getDeviceType());
