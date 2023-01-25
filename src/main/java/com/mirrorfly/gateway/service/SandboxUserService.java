@@ -130,7 +130,6 @@ public class SandboxUserService {
 			// Create new user
 			chatUser = registerUser(registerDto, username);
 			registerResponseDto.setUsername(username);
-			registerResponseDto.setIsExisting(false);
 			users.setUsername(username);
 			// Insert the vcard details
 			VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(username);

@@ -172,7 +172,6 @@ public class RegisterService {
 			VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(registerDto.getUserIdentifier());
 			vcardService.updateVcard(vcardSearch, new Vcard());
 			registerResponseDto.setIsProfileUpdated(false);
-			registerResponseDto.setIsExisting(false);
 		} else {
 			user = userRepo.findByUsername(chatUser.getUsername());
 			if (chatUser.getIsDeleteInprogrees() == 1) {
@@ -189,7 +188,6 @@ public class RegisterService {
 				}
 				registerResponseDto.setIsProfileUpdated(true);
 			}
-			registerResponseDto.setIsExisting(true);
 		}
 		chatUserRepo.save(chatUser);
 		String password = updateChatUserDetails(registerDto, chatUser, registerResponseDto);
