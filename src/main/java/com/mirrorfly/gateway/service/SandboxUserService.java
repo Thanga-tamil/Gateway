@@ -16,8 +16,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.AddUserDto;
 import com.mirrorfly.gateway.dto.LicenseValidateResponseDto;
-import com.mirrorfly.gateway.dto.RegisterResponseDto;
 import com.mirrorfly.gateway.dto.SanboxUserRegisterDto;
+import com.mirrorfly.gateway.dto.SandboxRegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.ChatUser;
@@ -71,7 +71,7 @@ public class SandboxUserService {
 	private ChatUsersDetailsRepo chatUsersDetailsRepo;
 
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) throws JsonProcessingException {
-		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
+		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
 		dataValidating(registerDto);
 		Users users = new Users();
@@ -89,6 +89,7 @@ public class SandboxUserService {
 			}
 			users = userRepo.findByUsername(chatUser.getUsername());
 			registerResponseDto.setUsername(chatUser.getUsername());
+			registerResponseDto.setIsExisting(true);
 			if (vcardSearch == null) {
 				vcardSearch = vcardService.updateVcardSearchDetails(registerDto.getUserIdentifier());
 				vcardService.updateVcard(vcardSearch, new Vcard());
@@ -104,7 +105,7 @@ public class SandboxUserService {
 			URI url = UriComponentsBuilder
 					.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/addUserCount").build()
 					.toUri();
-			registerService.registerLastSeenTime(registerDto.getUserIdentifier());// New entry in last login time
+			registerService.registerLogintime(registerDto.getUserIdentifier());// New entry in last login time
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
 			try {
@@ -130,13 +131,14 @@ public class SandboxUserService {
 			// Create new user
 			chatUser = registerUser(registerDto, username);
 			registerResponseDto.setUsername(username);
+			registerResponseDto.setIsExisting(false);
 			users.setUsername(username);
 			// Insert the vcard details
 			VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(username);
 			vcardService.updateVcard(vcardSearch, new Vcard());
 			registerResponseDto.setIsProfileUpdated(false);
 		}
-		String password = registerService.updateChatUserDetails(registerDto, chatUser, registerResponseDto);
+		String password = registerService.updateChatUserDetails(registerDto, chatUser);
 		registerResponseDto.setPassword(password);
 		String deviceIdprefix = "";
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
