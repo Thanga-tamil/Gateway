@@ -22,8 +22,8 @@ public class ChatSettingService {
 		if (chatSettingValue != null) {
 			updateChatSettings(request, chatSettingValue);
 		} else {
-			ChatSettings ChatSettingsValue = chatSettingsRepo.findBySingleChatSettingData();
-			createChatSettings(request, ChatSettingsValue);
+			ChatSettings singleChatSettingsValue = chatSettingsRepo.findBySingleChatSettingData();
+			createChatSettings(request, singleChatSettingsValue);
 		}
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.SC_OK);
@@ -32,39 +32,39 @@ public class ChatSettingService {
 		return response;
 	}
 
-	private void createChatSettings(ChatSettingDataDto request, ChatSettings ChatSettingsValue) {
+	private void createChatSettings(ChatSettingDataDto request, ChatSettings singleChatSettingsValue) {
 		LocalDateTime currentTimestamp = LocalDateTime.now();
 		ChatSettings chatSettings = new ChatSettings();
-		chatSettings.setDomain(ChatSettingsValue.getDomain());
-		chatSettings.setAdminUser(ChatSettingsValue.getAdminUser());
-		chatSettings.setMailLogin(ChatSettingsValue.getMailLogin());
-		chatSettings.setVideoLimit(ChatSettingsValue.getVideoLimit());
-		chatSettings.setAudioLimit(ChatSettingsValue.getAudioLimit());
-		chatSettings.setRecallTime(ChatSettingsValue.getRecallTime());
-		chatSettings.setPrivateTime(ChatSettingsValue.getPrivateTime());
-		chatSettings.setStatus(ChatSettingsValue.getStatus().toString());
-		chatSettings.setFeedbackFrom(ChatSettingsValue.getFeedbackFrom());
-		chatSettings.setFeedbackTo(ChatSettingsValue.getFeedbackTo());
-		chatSettings.setXmppDomain(ChatSettingsValue.getXmppDomain());
-		chatSettings.setSignalServerDomain(ChatSettingsValue.getSignalServerDomain());
-		chatSettings.setXmppHost(ChatSettingsValue.getXmppHost());
-		chatSettings.setGoogleTranslate(ChatSettingsValue.getGoogleTranslate());
-		chatSettings.setNotificationHelpUrl(ChatSettingsValue.getNotificationHelpUrl());
-		chatSettings.setXmppPort(ChatSettingsValue.getXmppPort());
-		chatSettings.setSdkUrl(ChatSettingsValue.getSdkUrl());
-		chatSettings.setPinExpireDays(ChatSettingsValue.getPinExpireDays());
-		chatSettings.setPinTimeOut(ChatSettingsValue.getPinTimeOut());
-		chatSettings.setFileSizeLimit(ChatSettingsValue.getFileSizeLimit());
-		chatSettings.setIsLiveStreamingEnabled(ChatSettingsValue.getIsLiveStreamingEnabled());
-		chatSettings.setLiveStreamingSignalServer(ChatSettingsValue.getLiveStreamingSignalServer());
-		chatSettings.setSipcallEnabled(ChatSettingsValue.getSipcallEnabled());
-		chatSettings.setSipServer(ChatSettingsValue.getSipServer());
-		chatSettings.setChatBackupType(ChatSettingsValue.getChatBackupType());
-		chatSettings.setChatBackupFrequency(ChatSettingsValue.getChatBackupFrequency());
-		chatSettings.setCallRoutingServer(ChatSettingsValue.getCallRoutingServer());
-		chatSettings.setXmppPortWeb(ChatSettingsValue.getXmppPortWeb());
-		chatSettings.setIv(ChatSettingsValue.getIv());
-		chatSettings.setIvProfile(ChatSettingsValue.getIvProfile());
+		chatSettings.setDomain(singleChatSettingsValue.getDomain());
+		chatSettings.setAdminUser(singleChatSettingsValue.getAdminUser());
+		chatSettings.setMailLogin(singleChatSettingsValue.getMailLogin());
+		chatSettings.setVideoLimit(singleChatSettingsValue.getVideoLimit());
+		chatSettings.setAudioLimit(singleChatSettingsValue.getAudioLimit());
+		chatSettings.setRecallTime(singleChatSettingsValue.getRecallTime());
+		chatSettings.setPrivateTime(singleChatSettingsValue.getPrivateTime());
+		chatSettings.setStatus(singleChatSettingsValue.getStatus().toString());
+		chatSettings.setFeedbackFrom(singleChatSettingsValue.getFeedbackFrom());
+		chatSettings.setFeedbackTo(singleChatSettingsValue.getFeedbackTo());
+		chatSettings.setXmppDomain(singleChatSettingsValue.getXmppDomain());
+		chatSettings.setSignalServerDomain(singleChatSettingsValue.getSignalServerDomain());
+		chatSettings.setXmppHost(singleChatSettingsValue.getXmppHost());
+		chatSettings.setGoogleTranslate(singleChatSettingsValue.getGoogleTranslate());
+		chatSettings.setNotificationHelpUrl(singleChatSettingsValue.getNotificationHelpUrl());
+		chatSettings.setXmppPort(singleChatSettingsValue.getXmppPort());
+		chatSettings.setSdkUrl(singleChatSettingsValue.getSdkUrl());
+		chatSettings.setPinExpireDays(singleChatSettingsValue.getPinExpireDays());
+		chatSettings.setPinTimeOut(singleChatSettingsValue.getPinTimeOut());
+		chatSettings.setFileSizeLimit(singleChatSettingsValue.getFileSizeLimit());
+		chatSettings.setIsLiveStreamingEnabled(singleChatSettingsValue.getIsLiveStreamingEnabled());
+		chatSettings.setLiveStreamingSignalServer(singleChatSettingsValue.getLiveStreamingSignalServer());
+		chatSettings.setSipcallEnabled(singleChatSettingsValue.getSipcallEnabled());
+		chatSettings.setSipServer(singleChatSettingsValue.getSipServer());
+		chatSettings.setChatBackupType(singleChatSettingsValue.getChatBackupType());
+		chatSettings.setChatBackupFrequency(singleChatSettingsValue.getChatBackupFrequency());
+		chatSettings.setCallRoutingServer(singleChatSettingsValue.getCallRoutingServer());
+		chatSettings.setXmppPortWeb(singleChatSettingsValue.getXmppPortWeb());
+		chatSettings.setIv(singleChatSettingsValue.getIv());
+		chatSettings.setIvProfile(singleChatSettingsValue.getIvProfile());
 
 		chatSettings.setGroupChat(request.getGroupChat());
 		chatSettings.setAttachment(request.getAttachment());
@@ -83,21 +83,21 @@ public class ChatSettingService {
 		chatSettingsRepo.save(chatSettings);
 	}
 
-	private void updateChatSettings(ChatSettingDataDto request, ChatSettings chatSettings) {
+	private void updateChatSettings(ChatSettingDataDto request, ChatSettings chatSettingValue) {
 		LocalDateTime currentTimestamp = LocalDateTime.now();
-		chatSettings.setGroupChat(request.getGroupChat());
-		chatSettings.setAttachment(request.getAttachment());
-		chatSettings.setImageAttachment(request.getImageAttachment());
-		chatSettings.setVideoAttachment(request.getVideoAttachment());
-		chatSettings.setAudioAttachment(request.getAudioAttachment());
-		chatSettings.setDocumentAttachment(request.getDocumentAttachment());
-		chatSettings.setContactAttachment(request.getContactAttachment());
-		chatSettings.setLocationAttachment(request.getLocationAttachment());
-		chatSettings.setOne2oneCall(request.getOne2oneCall());
-		chatSettings.setGroupCall(request.getGroupCall());
-		chatSettings.setRecentchatSearch(request.getRecentchatSearch());
-		chatSettings.setUpdatedAt(currentTimestamp);
-		chatSettingsRepo.save(chatSettings);
+		chatSettingValue.setGroupChat(request.getGroupChat());
+		chatSettingValue.setAttachment(request.getAttachment());
+		chatSettingValue.setImageAttachment(request.getImageAttachment());
+		chatSettingValue.setVideoAttachment(request.getVideoAttachment());
+		chatSettingValue.setAudioAttachment(request.getAudioAttachment());
+		chatSettingValue.setDocumentAttachment(request.getDocumentAttachment());
+		chatSettingValue.setContactAttachment(request.getContactAttachment());
+		chatSettingValue.setLocationAttachment(request.getLocationAttachment());
+		chatSettingValue.setOne2oneCall(request.getOne2oneCall());
+		chatSettingValue.setGroupCall(request.getGroupCall());
+		chatSettingValue.setRecentchatSearch(request.getRecentchatSearch());
+		chatSettingValue.setUpdatedAt(currentTimestamp);
+		chatSettingsRepo.save(chatSettingValue);
 	}
 
 }
