@@ -1,6 +1,7 @@
 package com.mirrorfly.gateway.repo;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.mirrorfly.gateway.model.ChatSettings;
@@ -9,5 +10,8 @@ import com.mirrorfly.gateway.model.ChatSettings;
 public interface ChatSettingsRepo extends JpaRepository<ChatSettings, Integer> {
 
 	ChatSettings findByLicenseKey(String licenseKey);
+	
+	@Query(value="select * from chat_settings LIMIT 1", nativeQuery = true)	
+	public ChatSettings findBySingleChatSettingData();
 
 }
