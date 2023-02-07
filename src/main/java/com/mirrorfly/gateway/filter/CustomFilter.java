@@ -3,6 +3,7 @@ package com.mirrorfly.gateway.filter;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
@@ -41,6 +42,7 @@ public class CustomFilter implements WebFilter, Ordered {
 			log.info("customDomain ------> " + customDomain);
 			ServerHttpRequest.Builder builder = request.mutate();
 			builder.header(GatewayConstants.USER_DOMAIN, customDomain);
+			MDC.put(GatewayConstants.USER_DOMAIN, customDomain);
 			return builder;
 		} catch (MalformedURLException e) {
 			throw new BadDataException("Unable to identify the domain from request");

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
 import com.mirrorfly.gateway.model.TokenDetail;
 import com.mirrorfly.gateway.repo.TokenRepo;
@@ -33,14 +34,14 @@ public class TokenService {
 	 * @param header as Bearer in JSON input type
 	 */
 
-	public String validateToken(String token) {
+	public String validateToken(String userdomain, String token) {
 		log.info("requesting token: " + token);
 		try {
 			String u = stringRedisTemplate.opsForValue().get(token);
-			return u != null ? u : getTokenFromDB(token);
+			return u != null ? u : getTokenFromDB(userdomain, token);
 		} catch (Exception e) {
 			log.error("Error in redis connection {}", e.getMessage());
-			return getTokenFromDB(token);
+			return getTokenFromDB(userdomain, token);
 		}
 	}
 
@@ -71,7 +72,8 @@ public class TokenService {
 
 	}
 
-	private String getTokenFromDB(String header) {
+	@SwitchDataSource(value="[0]")
+	private String getTokenFromDB(String userdomain, String header) {
 		TokenDetail token = tokenRepo.findTop1ByTokenOrderByIdDesc(header);
 		if (token == null)
 			return null;
@@ -88,15 +90,16 @@ public class TokenService {
 		return token.getUsername();
 	}
 
-	public String getUserNameByToken(String authorization) {
-		String username = validateToken(authorization);
+	public String getUserNameByToken(String userdomain, String authorization) {
+		String username = validateToken(userdomain, authorization);
 		if (username == null) {
 			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
 		}
 		return username;
 	}
 
-	public void deleteToken(String authorization) {
+	@SwitchDataSource(value="[0]")
+	public void deleteToken(String userdomain, String authorization) {
 		TokenDetail token = tokenRepo.findByToken(authorization);
 		if (token != null)
 			tokenRepo.delete(token);
