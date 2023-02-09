@@ -146,7 +146,7 @@ public class LicenseService {
 		}
 		data.setLkey(request.getLicenseKey());
 		licenseLookupRepo.save(data);
-		queueService.sendLicenseDataPayload(new LicenseDataPayload(request.getLicenseKey()));
+		queueService.sendLicenseDataPayload(new LicenseDataPayload(request.getLicenseKey(), userdomain));
 		decryptChatSettings(request.getLicenseKey(), userdomain);
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.SC_OK);
