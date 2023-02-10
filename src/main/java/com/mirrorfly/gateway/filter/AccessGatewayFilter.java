@@ -68,12 +68,12 @@ public class AccessGatewayFilter implements GlobalFilter {
 		if (header == null || header.isEmpty()) {
 			return unauthorized(exchange);
 		} else {
-			String username = tokenService.validateToken(header);
+			String userdomain = exchange.getRequest().getHeaders().getFirst(GatewayConstants.USER_DOMAIN);
+			
+			String username = tokenService.validateToken(userdomain, header);
 			if (username == null) {
 				return unauthorized(exchange);
 			}
-			
-			String userdomain = exchange.getRequest().getHeaders().getFirst(GatewayConstants.USER_DOMAIN);
 			
 			ServerHttpRequest.Builder builder = request.mutate();
 			builder.header("username", username);

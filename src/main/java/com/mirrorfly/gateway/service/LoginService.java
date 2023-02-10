@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.dto.AdminLoginDto;
 import com.mirrorfly.gateway.dto.AdminLoginResponse;
@@ -144,9 +145,10 @@ public class LoginService {
 
 	@SwitchDataSource(value="[0]")
 	public Response<String> logout(String userdomain, String authorization) {
-		String username = tokenService.getUserNameByToken(authorization);
-		tokenService.deleteToken(authorization);
+		String username = tokenService.getUserNameByToken(userdomain, authorization);
+		tokenService.deleteToken(userdomain, authorization);
 		if (username != null) {
+			AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 			Optional<ChatUser> chatUser = chatUserRepo.findById(username);
 			if (chatUser.isPresent()) {
 				chatUser.get().setDeviceToken("");
