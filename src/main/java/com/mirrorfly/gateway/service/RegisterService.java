@@ -244,7 +244,7 @@ public class RegisterService {
 			}
 			if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().isEmpty()) {
 				chatUsersDetailsRepo.updateVoipDeviceTokenAsEmpty(registerDto.getVoipDeviceToken());
-			}			
+			}
 			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
 					&& (registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))) {
 				registerDto.setDeviceOsVersion("12.0");
@@ -293,9 +293,9 @@ public class RegisterService {
 	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> existingChatUsersDetails,
 			String deviceType) {
 		if (deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-			List<ChatUserDetails> samePlatformDevices = existingChatUsersDetails.stream().filter(p -> {
-				return p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB);
-			}).sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
+			List<ChatUserDetails> samePlatformDevices = existingChatUsersDetails.stream()
+					.filter(p -> p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
+					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
 			if (!samePlatformDevices.isEmpty()) {
 				// need to delete first logged in web device
 				return samePlatformDevices.get(0);
