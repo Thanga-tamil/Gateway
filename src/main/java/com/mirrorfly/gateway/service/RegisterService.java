@@ -239,7 +239,12 @@ public class RegisterService {
 			deviceIdprefix = "-web";
 		} else {
 			deviceIdprefix = "-mobile";
-			chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
+			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().isEmpty()) {
+				chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
+			}
+			if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().isEmpty()) {
+				chatUsersDetailsRepo.updateVoipDeviceTokenAsEmpty(registerDto.getVoipDeviceToken());
+			}
 			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
 					&& (registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))) {
 				registerDto.setDeviceOsVersion("12.0");
@@ -287,25 +292,18 @@ public class RegisterService {
 
 	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> existingChatUsersDetails,
 			String deviceType) {
-		List<ChatUserDetails> samePlatformDevices = existingChatUsersDetails.stream().filter(p -> {
-			if ((deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
-					&& p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)))
-				return true;
-			return ((deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
-					|| (deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_IOS)))
-					&& (p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
-							|| p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)));
-		}).sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
-		ChatUserDetails deletableRecord = null;
-		if (samePlatformDevices.isEmpty()) {
-			// need to delete first logged in record irrespective to platform
-			Collections.sort(existingChatUsersDetails, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
-			deletableRecord = existingChatUsersDetails.get(0);
-		} else {
-			// need to delete first logged in record respective to platform
-			deletableRecord = samePlatformDevices.get(0);
+		if (deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
+			List<ChatUserDetails> samePlatformDevices = existingChatUsersDetails.stream()
+					.filter(p -> p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
+					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
+			if (!samePlatformDevices.isEmpty()) {
+				// need to delete first logged in web device
+				return samePlatformDevices.get(0);
+			}
 		}
-		return deletableRecord;
+		// need to delete first logged in record irrespective to platform
+		Collections.sort(existingChatUsersDetails, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
+		return existingChatUsersDetails.get(0);
 	}
 
 	private void inputDataValidating(RegisterDto registerDto) {
