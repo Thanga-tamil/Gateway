@@ -164,7 +164,8 @@ public class LoginService {
 	}
 
 	@SuppressWarnings("unused")
-	public Response<AdminLoginResponse> adminLogin(AdminLoginDto login) {
+	@SwitchDataSource(value = "[0]")
+	public Response<AdminLoginResponse> adminLogin(String userdomain, AdminLoginDto login) {
 		AdminUser adminUser = null;
 		if (login.getUsername() != null) {
 			adminUser = adminUserRepo.findByUsername(login.getUsername());

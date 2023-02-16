@@ -58,8 +58,9 @@ public class LoginController {
 	 */
 
 	@PostMapping("/admin/login")
-	public @ResponseBody Response<AdminLoginResponse> admin(@Validated @RequestBody AdminLoginDto login) {
-		return loginService.adminLogin(login);
+	public @ResponseBody Response<AdminLoginResponse> admin(@Validated @RequestBody AdminLoginDto login,
+			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain) {
+		return loginService.adminLogin(userdomain, login);
 	}
 
 	/**

@@ -72,7 +72,7 @@ public class TokenService {
 
 	}
 
-	@SwitchDataSource(value="[0]")
+	@SwitchDataSource(value = "[0]")
 	private String getTokenFromDB(String userdomain, String header) {
 		TokenDetail token = tokenRepo.findTop1ByTokenOrderByIdDesc(header);
 		if (token == null)

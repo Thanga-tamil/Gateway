@@ -90,7 +90,7 @@ public class SandboxUserService {
 				if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().trim().equals("")) {
 					chatUserRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
 				}
-				updateUserMobileDetails(registerDto, chatUser);
+				updateUserMobileDetails(userdomain, registerDto, chatUser);
 			}
 			users = userRepo.findByUsername(chatUser.getUsername());
 			registerResponseDto.setUsername(users.getUsername());
@@ -122,7 +122,7 @@ public class SandboxUserService {
 				if (result != null && result.getStatus() != null && result.getData() != null
 						&& result.getStatus() == 200) {
 					if (Boolean.TRUE.equals(result.getData().getIsFreemiumUser())) {
-						validateUserCount(result.getData().getMaxUsersCount(), registerDto.getLicenseKey());
+						validateUserCount(userdomain, result.getData().getMaxUsersCount(), registerDto.getLicenseKey());
 					}
 				} else {
 					log.error("Error in validating the license key => " + result);
@@ -134,7 +134,7 @@ public class SandboxUserService {
 			}
 			String username = registerDto.getUserIdentifier();
 			// Create new user
-			registerUser(registerDto, username);
+			registerUser(userdomain, registerDto, username);
 			registerResponseDto.setUsername(username);
 			registerResponseDto.setIsExisting(false);
 			users.setUsername(username);
@@ -168,7 +168,8 @@ public class SandboxUserService {
 		return response;
 	}
 
-	private void validateUserCount(Long maxUserCount, String licenseKey) {
+	@SwitchDataSource(value = "[0]")
+	private void validateUserCount(String userdomain, Long maxUserCount, String licenseKey) {
 		Long count = chatUserRepo.getCountByLicenseKey(licenseKey);
 		if (count >= maxUserCount) {
 			throw new BadDataException(GatewayConstants.USER_COUNT_EXCEEDED);
@@ -192,7 +193,8 @@ public class SandboxUserService {
 		}
 	}
 
-	private void updateUserMobileDetails(SanboxUserRegisterDto registerDto, ChatUser chatUser) {
+	@SwitchDataSource(value = "[0]")
+	private void updateUserMobileDetails(String userdomain, SanboxUserRegisterDto registerDto, ChatUser chatUser) {
 		if (registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 			chatUser.setDeviceToken(registerDto.getDeviceToken());
@@ -212,7 +214,8 @@ public class SandboxUserService {
 		chatUserRepo.save(chatUser);
 	}
 
-	private void registerUser(SanboxUserRegisterDto registerDto, String username) {
+	@SwitchDataSource(value = "[0]")
+	private void registerUser(String userdomain, SanboxUserRegisterDto registerDto, String username) {
 		ChatUser chatUser = new ChatUser();
 		chatUser.setUsername(username);
 		chatUser.setMobileNumber(registerDto.getMobileNumber());
