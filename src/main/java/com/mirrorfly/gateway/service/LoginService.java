@@ -146,7 +146,7 @@ public class LoginService {
 	@SwitchDataSource(value="[0]")
 	public Response<String> logout(String userdomain, String authorization) {
 		String username = tokenService.getUserNameByToken(userdomain, authorization);
-		tokenService.deleteToken(authorization);
+		tokenService.deleteToken(userdomain, authorization);
 		if (username != null) {
 			AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 			Optional<ChatUser> chatUser = chatUserRepo.findById(username);

@@ -98,7 +98,8 @@ public class TokenService {
 		return username;
 	}
 
-	public void deleteToken(String authorization) {
+	@SwitchDataSource(value="[0]")
+	public void deleteToken(String userdomain, String authorization) {
 		TokenDetail token = tokenRepo.findByToken(authorization);
 		if (token != null)
 			tokenRepo.delete(token);
