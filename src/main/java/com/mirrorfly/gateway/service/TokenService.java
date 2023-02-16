@@ -72,7 +72,7 @@ public class TokenService {
 
 	}
 
-	@SwitchDataSource(value="[0]")
+	@SwitchDataSource(value = "[0]")
 	private String getTokenFromDB(String userdomain, String header) {
 		TokenDetail token = tokenRepo.findTop1ByTokenOrderByIdDesc(header);
 		if (token == null)
@@ -98,8 +98,7 @@ public class TokenService {
 		return username;
 	}
 
-	@SwitchDataSource(value="[0]")
-	public void deleteToken(String userdomain, String authorization) {
+	public void deleteToken(String authorization) {
 		TokenDetail token = tokenRepo.findByToken(authorization);
 		if (token != null)
 			tokenRepo.delete(token);

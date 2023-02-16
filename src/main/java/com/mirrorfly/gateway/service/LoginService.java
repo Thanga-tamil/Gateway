@@ -146,7 +146,7 @@ public class LoginService {
 	@SwitchDataSource(value="[0]")
 	public Response<String> logout(String userdomain, String authorization) {
 		String username = tokenService.getUserNameByToken(userdomain, authorization);
-		tokenService.deleteToken(userdomain, authorization);
+		tokenService.deleteToken(authorization);
 		if (username != null) {
 			AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 			Optional<ChatUser> chatUser = chatUserRepo.findById(username);
@@ -164,7 +164,8 @@ public class LoginService {
 	}
 
 	@SuppressWarnings("unused")
-	public Response<AdminLoginResponse> adminLogin(AdminLoginDto login) {
+	@SwitchDataSource(value = "[0]")
+	public Response<AdminLoginResponse> adminLogin(String userdomain, AdminLoginDto login) {
 		AdminUser adminUser = null;
 		if (login.getUsername() != null) {
 			adminUser = adminUserRepo.findByUsername(login.getUsername());
