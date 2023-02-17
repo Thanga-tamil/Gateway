@@ -16,6 +16,6 @@ public interface SpoolRepo extends JpaRepository<Spool, Long> {
 	@Modifying
 	@Transactional
 	@Query("DELETE FROM Spool s WHERE s.username = :username and s.deviceId = :deviceId")
-	public void deleteOfflilneRecordsByUsernameAndDeviceId(@Param("username") String username, @Param("username") String deviceId);
+	public void deleteOfflilneRecordsByUsernameAndDeviceId(@Param("username") String username, @Param("deviceId") String deviceId);
 
 }
