@@ -83,7 +83,7 @@ public class LoginService {
 	public Response<LoginDetailsDto> login(String userdomain, LoginDto loginRequestDto) {
 		// If incoming requested in encrypted means, we need to decrypt the password
 		// field to find the original password
-    	
+    	AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
     	Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
     	String licenseKey = config!=null ? (String) config : null;
     	if (licenseKey == null) {
@@ -129,7 +129,7 @@ public class LoginService {
 
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
-		loginDetails.setToken(tokenService.getToken(loginRequestDto.getUsername(), "", ""));
+		loginDetails.setToken(tokenService.getToken(userdomain, loginRequestDto.getUsername(), "", ""));
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
@@ -166,6 +166,7 @@ public class LoginService {
 	@SuppressWarnings("unused")
 	@SwitchDataSource(value = "[0]")
 	public Response<AdminLoginResponse> adminLogin(String userdomain, AdminLoginDto login) {
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		AdminUser adminUser = null;
 		if (login.getUsername() != null) {
 			adminUser = adminUserRepo.findByUsername(login.getUsername());
@@ -189,7 +190,7 @@ public class LoginService {
 		Response<AdminLoginResponse> response = new Response<>();
 		AdminLoginResponse loginDetails = new AdminLoginResponse();
 		loginDetails.setImage(adminUser != null ? adminUser.getImage() : "");
-		loginDetails.setToken(tokenService.getToken(adminUser != null ? adminUser.getUsername() : "", "", ""));
+		loginDetails.setToken(tokenService.getToken(userdomain, adminUser != null ? adminUser.getUsername() : "", "", ""));
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
