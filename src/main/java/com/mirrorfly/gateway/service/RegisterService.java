@@ -42,6 +42,7 @@ import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 import com.mirrorfly.gateway.repo.LastRepo;
+import com.mirrorfly.gateway.repo.SpoolRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
@@ -83,6 +84,9 @@ public class RegisterService {
 
 	@Autowired
 	private ChatUsersDetailsRepo chatUsersDetailsRepo;
+
+	@Autowired
+	private SpoolRepo spoolRepo;
 
 	public Response<RegisterInfoDto> getRegisterInfo() {
 		ChatSettings settings = settingsRepo.findAll().get(0);
@@ -261,8 +265,11 @@ public class RegisterService {
 			if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()) {
 				ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
 						registerDto.getDeviceType());
-				if (deletableRecord != null)
+				if (deletableRecord != null) {
 					chatUsersDetailsRepo.delete(deletableRecord);
+					spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
+							deletableRecord.getDeviceId());
+				}
 			}
 			user = new ChatUserDetails();
 			user.setCreatedAt(LocalDateTime.now());
