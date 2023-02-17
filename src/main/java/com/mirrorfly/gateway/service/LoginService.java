@@ -31,6 +31,7 @@ import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.AdminUserRepo;
 import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 import com.mirrorfly.gateway.repo.EmailTokenRepo;
+import com.mirrorfly.gateway.repo.SpoolRepo;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
@@ -56,9 +57,6 @@ public class LoginService {
 	private EmailTokenRepo emailTokenRepo;
 
 	@Autowired
-	private PasswordService passwordService;
-
-	@Autowired
 	private ApplicationProperties applicationProperties;
 
 	@Autowired
@@ -66,6 +64,9 @@ public class LoginService {
 
 	@Autowired
 	private ChatUsersDetailsRepo chatUsersDetailsRepo;
+
+	@Autowired
+	private SpoolRepo spoolRepo;
 
 	public Response<LoginDetailsDto> login(LoginDto loginRequestDto) {
 		// If incoming requested in encrypted means, we need to decrypt the password
@@ -122,6 +123,7 @@ public class LoginService {
 					deviceId);
 			if (chatUserDetail != null) {
 				chatUsersDetailsRepo.delete(chatUserDetail);
+				spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(tokenDetail.getUsername(), deviceId);
 			}
 		}
 		Response<String> response = new Response<>();
