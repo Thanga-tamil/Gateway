@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.dto.AddUserDto;
 import com.mirrorfly.gateway.dto.LicenseValidateResponseDto;
@@ -70,6 +71,7 @@ public class SandboxUserService {
 	
 	@SwitchDataSource(value="[0]")
 	public Response<String> registerNewUser(String userdomain, SanboxUserRegisterDto registerDto) throws JsonProcessingException {
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
 		dataValidating(registerDto);// validate Empty value
@@ -144,7 +146,7 @@ public class SandboxUserService {
 			registerResponseDto.setIsProfileUpdated(false);			
 		}
 		registerResponseDto.setPassword(passwordService.generateRandomPassword());
-		registerResponseDto.setToken(tokenService.getToken(registerResponseDto.getUsername(),
+		registerResponseDto.setToken(tokenService.getToken(userdomain, registerResponseDto.getUsername(),
 				registerDto.getDeviceType(), registerDto.getDeviceType()));
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
 			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));

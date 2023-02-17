@@ -20,6 +20,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
@@ -80,6 +81,7 @@ public class RegisterService {
 	
 	@SwitchDataSource(value="[0]")
 	public Response<RegisterInfoDto> getRegisterInfo(String userdomain) {
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		ChatSettings settings = settingsRepo.findAll().get(0);
 		RegisterInfoDto info = new RegisterInfoDto();
 		info.setDomain(settings.getDomain());
@@ -93,7 +95,6 @@ public class RegisterService {
 
 	@SwitchDataSource(value="[0]")
 	public Response<String> registerNewUser(String userdomain, RegisterRequestDto registerRequestDto) {
-		
 		Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
     	String licenseKey = config!=null ? (String) config : null;
     	if (licenseKey == null) {
@@ -113,8 +114,9 @@ public class RegisterService {
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
 			throw new BadDataException(GatewayConstants.INVALID_ERROR);
 		}
-		RegisterResponseDto registerResponseDto = registerUser(registerDto);
+		RegisterResponseDto registerResponseDto = registerUser(userdomain, registerDto);
 		// get config details and return in the response
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		registerResponseDto.setConfig(configService.getCongigData());
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonString;
@@ -142,7 +144,9 @@ public class RegisterService {
 		lastRepo.save(last);
 	}
 
-	private RegisterResponseDto registerUser(RegisterDto registerDto) {
+	@SwitchDataSource(value = "[0]")
+	private RegisterResponseDto registerUser(String userdomain, RegisterDto registerDto) {
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
 		inputDataValidating(registerDto);
 		Users user = new Users();
@@ -216,7 +220,7 @@ public class RegisterService {
 		chatUser.setIsDeleteInprogrees(0);
 		chatUserRepo.save(chatUser);
 		registerResponseDto.setPassword(passwordService.generateRandomPassword());
-		registerResponseDto.setToken(tokenService.getToken(registerDto.getUserIdentifier(), registerDto.getDeviceType(),
+		registerResponseDto.setToken(tokenService.getToken(userdomain, registerDto.getUserIdentifier(), registerDto.getDeviceType(),
 				registerDto.getDeviceType()));
 		registerResponseDto.setUsername(user.getUsername());
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
@@ -224,6 +228,7 @@ public class RegisterService {
 		} else {
 			user.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		}
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain); //Again setup the DB based on the domain
 		userRepo.save(user);
 		return registerResponseDto;
 	}

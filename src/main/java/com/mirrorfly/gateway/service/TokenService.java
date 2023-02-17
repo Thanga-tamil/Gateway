@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
 import com.mirrorfly.gateway.model.TokenDetail;
@@ -33,7 +34,8 @@ public class TokenService {
 	 * 
 	 * @param header as Bearer in JSON input type
 	 */
-
+	
+	@SwitchDataSource(value = "[0]")
 	public String validateToken(String userdomain, String token) {
 		log.info("requesting token: " + token);
 		try {
@@ -53,7 +55,9 @@ public class TokenService {
 		}
 	}
 
-	public String getToken(String username, String devicetype, String clientIp) {
+	@SwitchDataSource(value = "[0]")
+	public String getToken(String userdomain, String username, String devicetype, String clientIp) {
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		TokenDetail tokenDetail = new TokenDetail();
 		tokenDetail.setClientIp(clientIp);
 		tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
@@ -74,6 +78,7 @@ public class TokenService {
 
 	@SwitchDataSource(value = "[0]")
 	private String getTokenFromDB(String userdomain, String header) {
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		TokenDetail token = tokenRepo.findTop1ByTokenOrderByIdDesc(header);
 		if (token == null)
 			return null;
@@ -90,9 +95,11 @@ public class TokenService {
 		return token.getUsername();
 	}
 
+	@SwitchDataSource(value="[0]")
 	public String getUserNameByToken(String userdomain, String authorization) {
 		String username = validateToken(userdomain, authorization);
 		if (username == null) {
+			log.error("Username not found in DB");
 			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
 		}
 		return username;
@@ -100,6 +107,7 @@ public class TokenService {
 
 	@SwitchDataSource(value="[0]")
 	public void deleteToken(String userdomain, String authorization) {
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		TokenDetail token = tokenRepo.findByToken(authorization);
 		if (token != null)
 			tokenRepo.delete(token);
