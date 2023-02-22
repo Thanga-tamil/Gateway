@@ -23,7 +23,7 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.LoginService;
 
 @RestController
-@RequestMapping("/api/v1")
+//@RequestMapping("/v1")
 public class LoginController {
 
 	@Autowired
@@ -39,8 +39,13 @@ public class LoginController {
 	 * @throws JsonProcessingException
 	 */
 
-	@PostMapping("/login")
+	@PostMapping("api/v1/gateway/login")
 	public @ResponseBody Response<LoginDetailsDto> login(@Validated @RequestBody LoginDto loginDto) {
+		return loginService.login(loginDto);
+	}
+	
+	@PostMapping("api/v2/gateway/login")
+	public @ResponseBody Response<LoginDetailsDto> loginv1(@Validated @RequestBody LoginDto loginDto) {
 		return loginService.login(loginDto);
 	}
 
@@ -53,8 +58,13 @@ public class LoginController {
 	 * @return success full response login screen with token for authorization.
 	 */
 
-	@PostMapping("/admin/login")
+	@PostMapping("api/v1/gateway/admin/login")
 	public @ResponseBody Response<AdminLoginResponse> admin(@Validated @RequestBody AdminLoginDto login) {
+		return loginService.adminLogin(login);
+	}
+	
+	@PostMapping("api/v2/gateway/admin/login")
+	public @ResponseBody Response<AdminLoginResponse> adminv2(@Validated @RequestBody AdminLoginDto login) {
 		return loginService.adminLogin(login);
 	}
 
@@ -67,8 +77,13 @@ public class LoginController {
 	 * @return success full response login screen with token for authorization.
 	 */
 
-	@PostMapping("/admin/forgotpassword")
+	@PostMapping("api/v1/gateway/admin/forgotpassword")
 	public @ResponseBody Response<String> login(@Validated @RequestBody ForgetPasswordDto forgetPasswordDto) {
+		return loginService.sendForgotPasswordEmail(forgetPasswordDto.getEmailId());
+	}
+	
+	@PostMapping("api/v2/gateway/admin/forgotpassword")
+	public @ResponseBody Response<String> loginv2(@Validated @RequestBody ForgetPasswordDto forgetPasswordDto) {
 		return loginService.sendForgotPasswordEmail(forgetPasswordDto.getEmailId());
 	}
 
@@ -82,8 +97,13 @@ public class LoginController {
 	 * @return success full response login screen with token for authorization.
 	 */
 
-	@GetMapping("/admin/resetpassword")
+	@GetMapping("api/v1/gateway/admin/resetpassword")
 	public @ResponseBody Response<String> resetpassword(@RequestParam String userName, PasswordDto passwordDto) {
+		return loginService.resetPassword(userName, passwordDto);
+	}
+	
+	@GetMapping("api/v2/gateway/admin/resetpassword")
+	public @ResponseBody Response<String> resetpasswordv2(@RequestParam String userName, PasswordDto passwordDto) {
 		return loginService.resetPassword(userName, passwordDto);
 	}
 
@@ -96,13 +116,23 @@ public class LoginController {
 	 * @param passwordDto
 	 * @return
 	 */
-	@GetMapping("/admin/activateaccount")
+	@GetMapping("api/v1/gateway/admin/activateaccount")
 	public @ResponseBody Response<String> activateAccount(@RequestParam String token, PasswordDto passwordDto) {
 		return loginService.activateAccount(token, passwordDto);
 	}
+	
+	@GetMapping("api/v2/gateway/admin/activateaccount")
+	public @ResponseBody Response<String> activateAccountv2(@RequestParam String token, PasswordDto passwordDto) {
+		return loginService.activateAccount(token, passwordDto);
+	}
 
-	@GetMapping("/logout")
+	@GetMapping("api/v1/gateway/logout")
 	public @ResponseBody Response<String> logout(@RequestHeader("Authorization") String authorization) {
+		return loginService.logout(authorization);
+	}
+	
+	@GetMapping("api/v2/gateway/logout")
+	public @ResponseBody Response<String> logoutv2(@RequestHeader("Authorization") String authorization) {
 		return loginService.logout(authorization);
 	}
 
