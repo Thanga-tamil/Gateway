@@ -13,7 +13,7 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.OtpService;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 public class OtpController {
 
 	@Autowired
@@ -27,14 +27,18 @@ public class OtpController {
 	 * @param otp this has mobilenumber.
 	 * @return success full response verify otp for authorization.
 	 */
-	@PostMapping("/verifyuser")
+	@PostMapping("api/v1/gateway/verifyuser")
 	public @ResponseBody Response<VerifyUserResponse> verifyUser(@RequestBody VerifyUserDto userDto) {
 		return otpService.verifyUser(userDto);
 	}
+	
 
-	@PostMapping("/verifyfcm")
+
+	@PostMapping("api/v1/gateway/verifyfcm")
 	public @ResponseBody Response<VerifyUserResponse> verifyfcm(@RequestBody VerifyUserDto userDto) {
 		return otpService.verifyUser(userDto);
 	}
+	
+
 
 }

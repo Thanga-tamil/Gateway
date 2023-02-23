@@ -1,5 +1,7 @@
 package com.mirrorfly.gateway.config;
 
+import static springfox.documentation.spi.DocumentationType.SWAGGER_2;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -36,6 +38,26 @@ public class GatewaySwaggerConfig{
 				.apis(RequestHandlerSelectors.basePackage("com.mirrorfly.gateway")).paths(PathSelectors.any()).build()
 				.apiInfo(apiEndPointsInfo());
 	}
+	
+	@Bean
+	  public Docket jsonApi1() {
+	      return new Docket(SWAGGER_2)
+	          .groupName("Api Documentation 1.0")
+	          .select()
+	              .apis(RequestHandlerSelectors.basePackage("com.mirrorfly.gateway"))
+	              .paths(PathSelectors.ant("api/v1/gateway/**"))
+	          .build();
+	  }
+	
+	@Bean
+	  public Docket jsonApi2() {
+	      return new Docket(SWAGGER_2)
+	          .groupName("Api Documentation 2.0")
+	          .select()
+	              .apis(RequestHandlerSelectors.basePackage("com.mirrorfly.gateway"))
+	              .paths(PathSelectors.ant("api/v2/gateway/**"))
+	          .build();
+	  }
 
 	private ApiInfo apiEndPointsInfo() {
 		return new ApiInfoBuilder().title("REST API").description(" REST API for Chat Service")
