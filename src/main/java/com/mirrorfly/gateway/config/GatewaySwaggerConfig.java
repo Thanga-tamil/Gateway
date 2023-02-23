@@ -21,6 +21,8 @@ import springfox.documentation.spring.web.plugins.Docket;
 @Profile(value = { "!production" })
 @Configuration
 public class GatewaySwaggerConfig{
+	
+	final String basePackage = "com.mirrorfly.gateway";
 
 	@Bean
 	public Jackson2JsonEncoder jackson2JsonEncoder(ObjectMapper mapper) {
@@ -35,7 +37,7 @@ public class GatewaySwaggerConfig{
 	@Bean
 	public Docket api() {
 		return new Docket(DocumentationType.SWAGGER_2).select()
-				.apis(RequestHandlerSelectors.basePackage("com.mirrorfly.gateway")).paths(PathSelectors.any()).build()
+				.apis(RequestHandlerSelectors.basePackage(basePackage)).paths(PathSelectors.any()).build()
 				.apiInfo(apiEndPointsInfo());
 	}
 	
@@ -44,7 +46,7 @@ public class GatewaySwaggerConfig{
 	      return new Docket(SWAGGER_2)
 	          .groupName("Api Documentation 1.0")
 	          .select()
-	              .apis(RequestHandlerSelectors.basePackage("com.mirrorfly.gateway"))
+	          .apis(RequestHandlerSelectors.basePackage(basePackage))
 	              .paths(PathSelectors.ant("api/v1/gateway/**"))
 	          .build();
 	  }
@@ -54,7 +56,7 @@ public class GatewaySwaggerConfig{
 	      return new Docket(SWAGGER_2)
 	          .groupName("Api Documentation 2.0")
 	          .select()
-	              .apis(RequestHandlerSelectors.basePackage("com.mirrorfly.gateway"))
+	          .apis(RequestHandlerSelectors.basePackage(basePackage))
 	              .paths(PathSelectors.ant("api/v2/gateway/**"))
 	          .build();
 	  }
