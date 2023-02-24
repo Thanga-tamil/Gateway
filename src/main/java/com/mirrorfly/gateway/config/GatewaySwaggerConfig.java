@@ -22,7 +22,7 @@ import springfox.documentation.spring.web.plugins.Docket;
 @Configuration
 public class GatewaySwaggerConfig{
 	
-	final String basePackage = "com.mirrorfly.gateway";
+	private static final String basePackage = "com.mirrorfly.gateway";
 
 	@Bean
 	public Jackson2JsonEncoder jackson2JsonEncoder(ObjectMapper mapper) {
