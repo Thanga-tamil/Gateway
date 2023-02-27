@@ -10,7 +10,7 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mirrorfly.gateway.config.ApplicationProperties;
+
 
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
