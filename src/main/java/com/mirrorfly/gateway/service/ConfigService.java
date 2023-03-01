@@ -63,6 +63,14 @@ public class ConfigService {
 		config.setOne2oneCall(settings.getOne2oneCall() == 1);
 		config.setGroupCall(settings.getGroupCall() == 1);
 		config.setRecentchatSearch(settings.getRecentchatSearch() == 1);
+		config.setStarMessage(settings.getStarMessage() == 1);
+		config.setClearChat(settings.getClearChat() == 1);
+		config.setDeleteChat(settings.getDeleteChat() == 1);
+		config.setTranslation(settings.getTranslation() == 1);
+		config.setDeleteMessage(settings.getDeleteMessage() == 1);
+		config.setReport(settings.getReport() == 1);
+		config.setBlock(settings.getBlock() == 1);
+		config.setViewAllMedias(settings.getViewAllMedias() == 1);
 		getStunAndTurnServers(config);
 		return config;
 	}
