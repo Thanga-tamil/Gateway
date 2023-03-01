@@ -135,7 +135,7 @@ public class LicenseService {
 	}
 
 	public Response<String> updateLicense(LicenseUpdateRequestDto request, String remoteIPAddress) {
-		System.out.print("Remote IP ---> " + remoteIPAddress);
+		log.info("Remote IP ---> " + remoteIPAddress);
 		if (Boolean.FALSE.equals(GatewayUtil.userIpAccessValidation(remoteIPAddress))) {
 			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
 		}
