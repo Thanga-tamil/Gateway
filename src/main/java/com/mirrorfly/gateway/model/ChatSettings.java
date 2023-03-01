@@ -158,5 +158,29 @@ public class ChatSettings implements Serializable {
 	
 	@Column(name = "recentchat_search")
 	private Integer recentchatSearch = 1;
+	
+	@Column(name = "star_message")
+	private Integer starMessage = 1;
+	
+	@Column(name = "clear_chat")
+	private Integer clearChat = 1;
+	
+	@Column(name = "delete_chat")
+	private Integer deleteChat = 1;
+	
+	@Column(name = "translation")
+	private Integer translation = 1;
+	
+	@Column(name = "block")
+	private Integer block = 1;
+	
+	@Column(name = "report")
+	private Integer report = 1;
+	
+	@Column(name = "delete_message")
+	private Integer deleteMessage = 1;
+	
+	@Column(name = "view_all_medias")
+	private Integer viewAllMedias = 1;
 
 }
