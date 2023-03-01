@@ -19,34 +19,21 @@ import com.mirrorfly.gateway.service.LicenseService;
 import io.swagger.annotations.ApiParam;
 
 @RestController
-//@RequestMapping("api/v1/gateway/license")
+@RequestMapping("/api/v1/license")
 public class LicenseController {
 
 	@Autowired
 	private LicenseService licenseService;
 
-	@GetMapping("api/v1/gateway/getLicense")
+	@GetMapping
 	public @ResponseBody Response<LicenseResDto> getLicense(LicenseReqDto license) {
 		return licenseService.getLicense(license);
 	}
 	
-	@GetMapping("api/v2/gateway/getLicense")
-	public @ResponseBody Response<LicenseResDto> getLicensev1(LicenseReqDto license) {
-		return licenseService.getLicense(license);
-	}
-	
-	@PostMapping("api/v1/gateway/updateLicense")
+	@PostMapping
 	public @ResponseBody Response<String> postLicenseEncyptedData(
 			@ApiParam(hidden = true) @RequestHeader(value = "remoteip") String remoteIPAddress,
 			@Validated @RequestBody LicenseUpdateRequestDto request) {
 		return licenseService.updateLicense(request, remoteIPAddress);
 	}
-	
-	@PostMapping("api/v2/gateway/updateLicense")
-	public @ResponseBody Response<String> postLicenseEncyptedDatav2(
-			@ApiParam(hidden = true) @RequestHeader(value = "remoteip") String remoteIPAddress,
-			@Validated @RequestBody LicenseUpdateRequestDto request) {
-		return licenseService.updateLicense(request, remoteIPAddress);
-	}
-	
 }

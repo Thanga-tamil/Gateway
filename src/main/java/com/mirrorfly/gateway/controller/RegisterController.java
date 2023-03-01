@@ -15,7 +15,7 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.RegisterService;
 
 @RestController
-//@RequestMapping("/v1/register")
+@RequestMapping("/api/v1/register")
 public class RegisterController {
 
 	@Autowired
@@ -30,15 +30,11 @@ public class RegisterController {
 	 * @return success full response login screen with token for authorization.
 	 */
 
-	@GetMapping("api/v1/gateway/info")
+	@GetMapping("/info")
 	public @ResponseBody Response<RegisterInfoDto> getRegisterInfo() {
 		return registerService.getRegisterInfo();
 	}
 
-	@GetMapping("api/v2/gateway/info")
-	public @ResponseBody Response<RegisterInfoDto> getRegisterInfov1() {
-		return registerService.getRegisterInfo();
-	}
 	/**
 	 * Function to validate username and password by passing through loginService.
 	 * This function return a response stating that login success or error with
@@ -48,13 +44,8 @@ public class RegisterController {
 	 * @return success full response login screen with token for authorization.
 	 */
 
-	@PostMapping("api/v1/gateway/registerNewUser")
+	@PostMapping
 	public @ResponseBody Response<String> registerNewUser(@Validated @RequestBody RegisterRequestDto registerRequestDto) {
-		return registerService.registerNewUser(registerRequestDto);
-	}
-	
-	@PostMapping("api/v2/gateway/registerNewUser")
-	public @ResponseBody Response<String> registerNewUserv2(@Validated @RequestBody RegisterRequestDto registerRequestDto) {
 		return registerService.registerNewUser(registerRequestDto);
 	}
 

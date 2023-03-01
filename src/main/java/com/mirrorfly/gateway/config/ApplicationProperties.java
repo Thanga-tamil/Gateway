@@ -82,3 +82,4 @@ public class ApplicationProperties {
 		return env.getProperty("user.maxSessions") != null ? Integer.parseInt(env.getProperty("user.maxSessions")) : 2;
 	}
 }
+
