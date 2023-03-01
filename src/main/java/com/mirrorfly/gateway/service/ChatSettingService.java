@@ -7,9 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.mirrorfly.gateway.dto.ChatSettingDataDto;
+import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.response.Response;
+import com.mirrorfly.gateway.util.GatewayConstants;
+import com.mirrorfly.gateway.util.GatewayUtil;
 
 @Service
 public class ChatSettingService {
@@ -17,7 +20,11 @@ public class ChatSettingService {
 	@Autowired
 	private ChatSettingsRepo chatSettingsRepo;
 
-	public Response<String> updateChatSetting(ChatSettingDataDto request) {
+	public Response<String> updateChatSetting(ChatSettingDataDto request, String remoteIPAddress) {
+		System.out.print("Remote IP ---> " + remoteIPAddress);
+		if (Boolean.FALSE.equals(GatewayUtil.userIpAccessValidation(remoteIPAddress))) {
+			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
+		}
 		ChatSettings chatSettingValue = chatSettingsRepo.findByLicenseKey(request.getLicenceKey());
 		if (chatSettingValue != null) {
 			updateChatSettings(request, chatSettingValue);

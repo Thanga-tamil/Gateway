@@ -6,12 +6,19 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 
+import com.mirrorfly.gateway.config.ApplicationProperties;
+
+import inet.ipaddr.IPAddressString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GatewayUtil {
+	
+	@Autowired
+	private static ApplicationProperties applicationProperties;
 
 	private GatewayUtil() {
 	}
@@ -60,6 +67,18 @@ public class GatewayUtil {
 			log.error(e.getMessage());
 		}
 		return hashtext.toString();
+	}
+	
+	public static Boolean userIpAccessValidation(String remoteIP) {
+		IPAddressString ipAddress = new IPAddressString(remoteIP);
+		String[] array = applicationProperties.getWhiteListIps().split(",");
+		for (String rangeIp : array) {
+			IPAddressString range = new IPAddressString(rangeIp);
+			if (range.contains(ipAddress)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }
