@@ -1,8 +1,5 @@
 package com.mirrorfly.gateway.config;
 
-import static springfox.documentation.spi.DocumentationType.SWAGGER_2;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -10,7 +7,6 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
@@ -23,10 +19,6 @@ import springfox.documentation.spring.web.plugins.Docket;
 @Profile(value = { "!production" })
 @Configuration
 public class GatewaySwaggerConfig{
-	
-	
-	@Autowired
-	private ApplicationProperties applicationProperties;
 
 	@Bean
 	public Jackson2JsonEncoder jackson2JsonEncoder(ObjectMapper mapper) {
@@ -41,29 +33,9 @@ public class GatewaySwaggerConfig{
 	@Bean
 	public Docket api() {
 		return new Docket(DocumentationType.SWAGGER_2).select()
-				.apis(RequestHandlerSelectors.basePackage(applicationProperties.getBasePackageUrl())).paths(PathSelectors.any()).build()
+				.apis(RequestHandlerSelectors.basePackage("com.mirrorfly.gateway")).paths(PathSelectors.any()).build()
 				.apiInfo(apiEndPointsInfo());
 	}
-	
-	@Bean
-	  public Docket jsonApi1() {
-	      return new Docket(SWAGGER_2)
-	          .groupName("Api Documentation 1.0")
-	          .select()
-	          .apis(RequestHandlerSelectors.basePackage(applicationProperties.getBasePackageUrl()))
-	              .paths(PathSelectors.ant("api/v1/gateway/**"))
-	          .build();
-	  }
-	
-	@Bean
-	  public Docket jsonApi2() {
-	      return new Docket(SWAGGER_2)
-	          .groupName("Api Documentation 2.0")
-	          .select()
-	          .apis(RequestHandlerSelectors.basePackage(applicationProperties.getBasePackageUrl()))
-	              .paths(PathSelectors.ant("api/v2/gateway/**"))
-	          .build();
-	  }
 
 	private ApiInfo apiEndPointsInfo() {
 		return new ApiInfoBuilder().title("REST API").description(" REST API for Chat Service")

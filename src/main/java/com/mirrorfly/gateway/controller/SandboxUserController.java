@@ -15,21 +15,14 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.SandboxUserService;
 
 @RestController
-//@RequestMapping("/v1/sandbox")
+@RequestMapping("/api/v1/sandbox")
 public class SandboxUserController {
 
 	@Autowired
 	private SandboxUserService sandboxUserService;
 
-	@PostMapping("api/v1/gateway/register")
+	@PostMapping("/register")
 	public @ResponseBody ResponseEntity<Response<String>> registerNewUser(
-			@Validated @RequestBody SanboxUserRegisterDto registerDto) throws JsonProcessingException {
-		Response<String> response = sandboxUserService.registerNewUser(registerDto);
-		return ResponseEntity.status(response.getStatus()).body(response);
-	}
-	
-	@PostMapping("api/v2/gateway/register")
-	public @ResponseBody ResponseEntity<Response<String>> registerNewUserv1(
 			@Validated @RequestBody SanboxUserRegisterDto registerDto) throws JsonProcessingException {
 		Response<String> response = sandboxUserService.registerNewUser(registerDto);
 		return ResponseEntity.status(response.getStatus()).body(response);
