@@ -22,10 +22,13 @@ public class ChatSettingService {
 
 	@Autowired
 	private ChatSettingsRepo chatSettingsRepo;
+	
+	@Autowired
+	private GatewayUtil gatewayUtil;
 
 	public Response<String> updateChatSetting(ChatSettingDataDto request, String remoteIPAddress) {
 		log.info("Remote IP ---> " + remoteIPAddress);
-		if (Boolean.FALSE.equals(GatewayUtil.userIpAccessValidation(remoteIPAddress))) {
+		if (Boolean.FALSE.equals(gatewayUtil.userIpAccessValidation(remoteIPAddress))) {
 			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
 		}
 		ChatSettings chatSettingValue = chatSettingsRepo.findByLicenseKey(request.getLicenceKey());

@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
 
 import com.mirrorfly.gateway.config.ApplicationProperties;
 
@@ -15,14 +16,16 @@ import inet.ipaddr.IPAddressString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Service
 public class GatewayUtil {
 	
+
 	@Autowired
-	private static ApplicationProperties applicationProperties;
+	private ApplicationProperties applicationProperties;
 
 	private GatewayUtil() {
 	}
-
+	
 	private static SecureRandom rnd = new SecureRandom();
 
 	public static PageRequest getPagination(Integer page, Integer size) {
@@ -69,7 +72,7 @@ public class GatewayUtil {
 		return hashtext.toString();
 	}
 	
-	public static Boolean userIpAccessValidation(String remoteIP) {
+	public Boolean userIpAccessValidation(String remoteIP) {
 		IPAddressString ipAddress = new IPAddressString(remoteIP);
 		String[] array = applicationProperties.getWhiteListIps().split(",");
 		for (String rangeIp : array) {

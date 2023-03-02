@@ -69,6 +69,9 @@ public class LicenseService {
 
 	@Autowired
 	private UserRepo userRepo;
+	
+	@Autowired
+	private GatewayUtil gatewayUtil;
 
 	public Response<LicenseResDto> getLicense(LicenseReqDto licenseReq) {
 
@@ -136,7 +139,7 @@ public class LicenseService {
 
 	public Response<String> updateLicense(LicenseUpdateRequestDto request, String remoteIPAddress) {
 		log.info("Remote IP ---> " + remoteIPAddress);
-		if (Boolean.FALSE.equals(GatewayUtil.userIpAccessValidation(remoteIPAddress))) {
+		if (Boolean.FALSE.equals(gatewayUtil.userIpAccessValidation(remoteIPAddress))) {
 			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
 		}
 		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
