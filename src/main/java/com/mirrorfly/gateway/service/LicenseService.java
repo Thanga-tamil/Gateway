@@ -24,6 +24,7 @@ import com.mirrorfly.gateway.dto.LicenseResDto;
 import com.mirrorfly.gateway.dto.LicenseUpdateRequestDto;
 import com.mirrorfly.gateway.dto.TurnDto;
 import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
 import com.mirrorfly.gateway.model.ChatServerConfig;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.License;
@@ -40,6 +41,7 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.EnumSDKType;
 import com.mirrorfly.gateway.util.GatewayConstants;
+import com.mirrorfly.gateway.util.GatewayUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -67,6 +69,9 @@ public class LicenseService {
 
 	@Autowired
 	private UserRepo userRepo;
+	
+	@Autowired
+	private GatewayUtil gatewayUtil;
 
 	public Response<LicenseResDto> getLicense(LicenseReqDto licenseReq) {
 
@@ -132,7 +137,11 @@ public class LicenseService {
 		return chatSettingsRepo.findAll().get(0);
 	}
 
-	public Response<String> updateLicense(LicenseUpdateRequestDto request) {
+	public Response<String> updateLicense(LicenseUpdateRequestDto request, String remoteIPAddress) {
+		log.info("Remote IP ---> " + remoteIPAddress);
+		if (Boolean.FALSE.equals(gatewayUtil.userIpAccessValidation(remoteIPAddress))) {
+			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
+		}
 		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
 		LicenseLookup data = new LicenseLookup();
 		if (!existingKey.isEmpty() && existingKey.get(0) != null) {

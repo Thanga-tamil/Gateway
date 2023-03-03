@@ -6,16 +6,26 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
 
+import com.mirrorfly.gateway.config.ApplicationProperties;
+
+import inet.ipaddr.IPAddressString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Service
 public class GatewayUtil {
+	
+
+	@Autowired
+	private ApplicationProperties applicationProperties;
 
 	private GatewayUtil() {
 	}
-
+	
 	private static SecureRandom rnd = new SecureRandom();
 
 	public static PageRequest getPagination(Integer page, Integer size) {
@@ -60,6 +70,18 @@ public class GatewayUtil {
 			log.error(e.getMessage());
 		}
 		return hashtext.toString();
+	}
+	
+	public Boolean userIpAccessValidation(String remoteIP) {
+		IPAddressString ipAddress = new IPAddressString(remoteIP);
+		String[] array = applicationProperties.getWhiteListIps().split(",");
+		for (String rangeIp : array) {
+			IPAddressString range = new IPAddressString(rangeIp);
+			if (range.contains(ipAddress)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

@@ -1,6 +1,7 @@
 package com.mirrorfly.gateway.filter;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import org.springframework.web.server.ServerWebExchange;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.service.TokenService;
+import com.mirrorfly.gateway.util.GatewayConstants;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -71,8 +73,12 @@ public class AccessGatewayFilter implements GlobalFilter {
 			if (username == null) {
 				return unauthorized(exchange);
 			}
+			InetSocketAddress address = exchange.getRequest().getRemoteAddress();
+			String remoteIPAddress = address != null ? address.getAddress().toString().replace("/", "") : "";
+			log.info("Remote IP Address ------> " + remoteIPAddress);
 			ServerHttpRequest.Builder builder = request.mutate();
 			builder.header("username", username);
+			builder.header(GatewayConstants.REMOTE_IP, remoteIPAddress);
 			return chain.filter(exchange.mutate().request(builder.build()).build());
 		}
 	}
