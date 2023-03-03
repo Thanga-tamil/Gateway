@@ -138,18 +138,9 @@ public class LicenseService {
 	}
 
 	public Response<String> updateLicense(LicenseUpdateRequestDto request, String remoteIPAddress) {
-		log.info("Remote IP ---> " + remoteIPAddress);
 		if (Boolean.FALSE.equals(gatewayUtil.userIpAccessValidation(remoteIPAddress))) {
 			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
 		}
-		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
-		LicenseLookup data = new LicenseLookup();
-		if (!existingKey.isEmpty() && existingKey.get(0) != null) {
-			data = existingKey.get(0);
-		}
-		data.setLkey(request.getLicenseKey());
-		licenseLookupRepo.save(data);
-		queueService.sendLicenseDataPayload(new LicenseDataPayload(request.getLicenseKey()));
 		decryptChatSettings(request.getLicenseKey());
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.SC_OK);
@@ -167,6 +158,14 @@ public class LicenseService {
 		try {
 			licenseData = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
 					LicenseDataDto.class);
+			List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
+			LicenseLookup data = new LicenseLookup();
+			if (!existingKey.isEmpty() && existingKey.get(0) != null) {
+				data = existingKey.get(0);
+			}
+			data.setLkey(licenseKey);
+			licenseLookupRepo.save(data);
+			queueService.sendLicenseDataPayload(new LicenseDataPayload(licenseKey));
 			Users user = userRepo.findByUsername(licenseData.getApiUsername());
 			if (user == null) {
 				log.info("First Time Insert Api Username and Password.................... "
@@ -187,6 +186,7 @@ public class LicenseService {
 			updateChatSettings(licenseData);
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
 			log.error("Unable to unserialize the license details " + e.getMessage());
+			throw new BadDataException("Error occured while updating the license details.");
 		}
 	}
 
