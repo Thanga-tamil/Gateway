@@ -16,7 +16,7 @@ import com.mirrorfly.gateway.service.ChatSettingService;
 import io.swagger.annotations.ApiParam;
 
 @RestController
-@RequestMapping("/api/v1/config")
+@RequestMapping("/api/v1/chatsetting")
 public class ChatSettingController {
 
 	@Autowired
