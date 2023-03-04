@@ -6,7 +6,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 @AutoConfigureMockMvc
 class ContactControllerRosterTests {
 	
-	//@Test
+	@Test
 	void contextLoads() {
 	}
 }
