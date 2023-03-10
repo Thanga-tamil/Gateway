@@ -74,13 +74,8 @@ public class AccessGatewayFilter implements GlobalFilter {
 				return unauthorized(exchange);
 			}
 			InetSocketAddress address = exchange.getRequest().getRemoteAddress();
-			String path = exchange.getRequest().getPath().toString();
-			String urlPath = exchange.getRequest().getURI().toString();
 			String remoteIPAddress = address != null ? address.getAddress().toString().replace("/", "") : "";
-			log.info("Request -----> " + exchange.getRequest());
-			log.info("Request Path -----> " + exchange.getRequest().getMethodValue());
-			log.info("Request Path 1 -----> " + exchange.getRequest().getBody().toString());
-			log.info("Remote IP Address ------> " + remoteIPAddress + " // "+ urlPath + " // " + path);
+			log.info("Remote IP Address ------> " + remoteIPAddress);
 			ServerHttpRequest.Builder builder = request.mutate();
 			builder.header("username", username);
 			builder.header(GatewayConstants.REMOTE_IP, remoteIPAddress);
