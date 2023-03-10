@@ -33,8 +33,10 @@ public class IpWhitelistingFilter implements WebFilter, Ordered {
 	private ServerHttpRequest.Builder setHeaders(ServerHttpRequest request) {
 		try {
 			InetSocketAddress address = request.getLocalAddress();
+			String path = request.getPath().toString();
+			String urlPath = request.getURI().toString();
 			String remoteIPAddress = address != null ? address.getAddress().toString().replace("/", "") : "";
-			log.info("Remote IP Address ------> " + remoteIPAddress);
+			log.info("Remote IP Address ------> " + remoteIPAddress + " // "+ urlPath + " // " + path);
 			ServerHttpRequest.Builder builder = request.mutate();
 			builder.header(GatewayConstants.REMOTE_IP, remoteIPAddress);
 			return builder;
