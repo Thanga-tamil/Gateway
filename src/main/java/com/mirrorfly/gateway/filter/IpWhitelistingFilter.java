@@ -32,7 +32,7 @@ public class IpWhitelistingFilter implements WebFilter, Ordered {
 
 	private ServerHttpRequest.Builder setHeaders(ServerHttpRequest request) {
 		try {
-			InetSocketAddress address = request.getLocalAddress();
+			InetSocketAddress address = request.getRemoteAddress();
 			String remoteIPAddress = address != null ? address.getAddress().toString().replace("/", "") : "";
 			log.info("Remote IP Address ------> " + remoteIPAddress);
 			ServerHttpRequest.Builder builder = request.mutate();
