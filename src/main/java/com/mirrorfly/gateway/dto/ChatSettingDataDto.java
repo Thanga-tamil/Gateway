@@ -1,5 +1,7 @@
 package com.mirrorfly.gateway.dto;
 
+import java.sql.Timestamp;
+
 import lombok.Data;
 
 @Data
@@ -28,5 +30,7 @@ public class ChatSettingDataDto {
 	private Integer groupCall;
 	
 	private Integer recentchatSearch;
+	
+	private Timestamp licencekeyExpiryDate;
 
 }
