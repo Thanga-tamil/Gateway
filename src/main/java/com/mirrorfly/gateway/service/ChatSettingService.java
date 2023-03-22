@@ -7,17 +7,30 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.mirrorfly.gateway.dto.ChatSettingDataDto;
+import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.response.Response;
+import com.mirrorfly.gateway.util.GatewayConstants;
+import com.mirrorfly.gateway.util.GatewayUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class ChatSettingService {
 
 	@Autowired
 	private ChatSettingsRepo chatSettingsRepo;
+	
+	@Autowired
+	private GatewayUtil gatewayUtil;
 
-	public Response<String> updateChatSetting(ChatSettingDataDto request) {
+	public Response<String> updateChatSetting(ChatSettingDataDto request, String remoteIPAddress) {
+		log.info("Remote IP ---> " + remoteIPAddress);
+		if (Boolean.FALSE.equals(gatewayUtil.userIpAccessValidation(remoteIPAddress))) {
+			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
+		}
 		ChatSettings chatSettingValue = chatSettingsRepo.findByLicenseKey(request.getLicenceKey());
 		if (chatSettingValue != null) {
 			updateChatSettings(request, chatSettingValue);

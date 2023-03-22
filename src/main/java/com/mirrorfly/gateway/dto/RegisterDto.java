@@ -1,5 +1,7 @@
 package com.mirrorfly.gateway.dto;
 
+import java.util.Map;
+
 import lombok.Data;
 
 @Data
@@ -24,5 +26,7 @@ public class RegisterDto {
 	private String deviceId = "";
 	
 	private Boolean forceRegister = true;
+	
+	private Map<String, Object> metaData;
 	
 }

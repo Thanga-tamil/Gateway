@@ -42,6 +42,7 @@ import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 import com.mirrorfly.gateway.repo.LastRepo;
+import com.mirrorfly.gateway.repo.SpoolRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
@@ -83,6 +84,9 @@ public class RegisterService {
 
 	@Autowired
 	private ChatUsersDetailsRepo chatUsersDetailsRepo;
+
+	@Autowired
+	private SpoolRepo spoolRepo;
 
 	public Response<RegisterInfoDto> getRegisterInfo() {
 		ChatSettings settings = settingsRepo.findAll().get(0);
@@ -129,7 +133,7 @@ public class RegisterService {
 		return response;
 	}
 
-	public void registerLastSeenTime(String username) {
+	public void registerLogintime(String username) {
 		Last last = new Last();
 		last.setUsername(username);
 		last.setStatus(0);
@@ -143,8 +147,11 @@ public class RegisterService {
 
 	private RegisterResponseDto registerUser(RegisterDto registerDto) {
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
+
 		inputDataValidating(registerDto);
+
 		Users user = new Users();
+
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
 			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
@@ -165,13 +172,15 @@ public class RegisterService {
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 			chatUser.setLicenseKey(registerDto.getLicenseKey());
 			chatUser.setIsDeleteInprogrees(0);
-			// To insert the register last seen time
-			registerLastSeenTime(registerDto.getUserIdentifier());
+			
+			// To insert the register login time
+			registerLogintime(registerDto.getUserIdentifier());
 			user.setUsername(registerDto.getUserIdentifier());
 			// Insert the vcard details
 			VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(registerDto.getUserIdentifier());
 			vcardService.updateVcard(vcardSearch, new Vcard());
 			registerResponseDto.setIsProfileUpdated(false);
+			registerResponseDto.setIsExisting(false);
 		} else {
 			user = userRepo.findByUsername(chatUser.getUsername());
 			if (chatUser.getIsDeleteInprogrees() == 1) {
@@ -188,9 +197,15 @@ public class RegisterService {
 				}
 				registerResponseDto.setIsProfileUpdated(true);
 			}
+			registerResponseDto.setIsExisting(true);
+			
 		}
+		
+		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
+		chatUser.setMetaData(metadata);
+
 		chatUserRepo.save(chatUser);
-		String password = updateChatUserDetails(registerDto, chatUser, registerResponseDto);
+		String password = updateChatUserDetails(registerDto, chatUser);
 		registerResponseDto.setPassword(password);
 		String deviceIdprefix = "";
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
@@ -212,8 +227,7 @@ public class RegisterService {
 		return registerResponseDto;
 	}
 
-	public String updateChatUserDetails(SanboxUserRegisterDto registerDto, ChatUser chatUser,
-			RegisterResponseDto registerResponseDto) {
+	public String updateChatUserDetails(SanboxUserRegisterDto registerDto, ChatUser chatUser) {
 		RegisterDto data = new RegisterDto();
 		data.setDeviceId(registerDto.getDeviceId());
 		data.setDeviceOsVersion(registerDto.getDeviceOsVersion());
@@ -225,17 +239,21 @@ public class RegisterService {
 		data.setUserIdentifier(registerDto.getUserIdentifier());
 		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		data.setForceRegister(registerDto.getForceRegister());
-		return updateChatUserDetails(data, chatUser, registerResponseDto);
+		return updateChatUserDetails(data, chatUser);
 	}
 
-	public String updateChatUserDetails(RegisterDto registerDto, ChatUser chatUser,
-			RegisterResponseDto registerResponseDto) {
+	public String updateChatUserDetails(RegisterDto registerDto, ChatUser chatUser) {
 		String deviceIdprefix = "";
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
 			deviceIdprefix = "-web";
 		} else {
 			deviceIdprefix = "-mobile";
-			chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
+			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().isEmpty()) {
+				chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
+			}
+			if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().isEmpty()) {
+				chatUsersDetailsRepo.updateVoipDeviceTokenAsEmpty(registerDto.getVoipDeviceToken());
+			}
 			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
 					&& (registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))) {
 				registerDto.setDeviceOsVersion("12.0");
@@ -247,14 +265,16 @@ public class RegisterService {
 		ChatUserDetails user = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
 		String password = passwordService.generateRandomPassword();
 		if (user == null) {
-			registerResponseDto.setIsExisting(false);
 			List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 					.findByUsername(chatUser.getUsername());
 			if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()) {
 				ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
 						registerDto.getDeviceType());
-				if (deletableRecord != null)
+				if (deletableRecord != null) {
 					chatUsersDetailsRepo.delete(deletableRecord);
+					spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
+							deletableRecord.getDeviceId());
+				}
 			}
 			user = new ChatUserDetails();
 			user.setCreatedAt(LocalDateTime.now());
@@ -270,7 +290,6 @@ public class RegisterService {
 			chatUsersDetailsRepo.save(user);
 			return password;
 		} else {
-			registerResponseDto.setIsExisting(true);
 			user.setDeviceOsVersion(registerDto.getDeviceOsVersion());
 			user.setDeviceToken(registerDto.getDeviceToken());
 			user.setDeviceType(registerDto.getDeviceType());
@@ -285,25 +304,18 @@ public class RegisterService {
 
 	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> existingChatUsersDetails,
 			String deviceType) {
-		List<ChatUserDetails> samePlatformDevices = existingChatUsersDetails.stream().filter(p -> {
-			if ((deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
-					&& p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)))
-				return true;
-			return ((deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
-					|| (deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_IOS)))
-					&& (p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
-							|| p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)));
-		}).sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
-		ChatUserDetails deletableRecord = null;
-		if (samePlatformDevices.isEmpty()) {
-			// need to delete first logged in record irrespective to platform
-			Collections.sort(existingChatUsersDetails, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
-			deletableRecord = existingChatUsersDetails.get(0);
-		} else {
-			// need to delete first logged in record respective to platform
-			deletableRecord = samePlatformDevices.get(0);
+		if (deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
+			List<ChatUserDetails> samePlatformDevices = existingChatUsersDetails.stream()
+					.filter(p -> p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
+					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
+			if (!samePlatformDevices.isEmpty()) {
+				// need to delete first logged in web device
+				return samePlatformDevices.get(0);
+			}
 		}
-		return deletableRecord;
+		// need to delete first logged in record irrespective to platform
+		Collections.sort(existingChatUsersDetails, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
+		return existingChatUsersDetails.get(0);
 	}
 
 	private void inputDataValidating(RegisterDto registerDto) {
@@ -331,6 +343,9 @@ public class RegisterService {
 				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
 		}
+		
+		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
+		
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
 		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
@@ -349,5 +364,4 @@ public class RegisterService {
 			throw new BadDataException("Error in registration. Please try again later");
 		}
 	}
-
 }

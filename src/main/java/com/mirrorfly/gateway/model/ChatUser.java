@@ -65,5 +65,8 @@ public class ChatUser implements Serializable {
 
 	@Column(name = "is_delete_inprogrees")
 	private Integer isDeleteInprogrees;
+	
+	@Column(columnDefinition = "JSON", name = "metadata")
+	private String metaData;
 
 }

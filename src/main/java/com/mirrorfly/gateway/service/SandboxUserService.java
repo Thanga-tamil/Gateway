@@ -16,8 +16,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.dto.AddUserDto;
 import com.mirrorfly.gateway.dto.LicenseValidateResponseDto;
-import com.mirrorfly.gateway.dto.RegisterResponseDto;
 import com.mirrorfly.gateway.dto.SanboxUserRegisterDto;
+import com.mirrorfly.gateway.dto.SandboxRegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.ChatUser;
@@ -69,9 +69,9 @@ public class SandboxUserService {
 
 	@Autowired
 	private ChatUsersDetailsRepo chatUsersDetailsRepo;
-
+	
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) throws JsonProcessingException {
-		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
+		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
 		dataValidating(registerDto);
 		Users users = new Users();
@@ -89,6 +89,7 @@ public class SandboxUserService {
 			}
 			users = userRepo.findByUsername(chatUser.getUsername());
 			registerResponseDto.setUsername(chatUser.getUsername());
+			registerResponseDto.setIsExisting(true);
 			if (vcardSearch == null) {
 				vcardSearch = vcardService.updateVcardSearchDetails(registerDto.getUserIdentifier());
 				vcardService.updateVcard(vcardSearch, new Vcard());
@@ -96,6 +97,8 @@ public class SandboxUserService {
 			} else {
 				registerResponseDto.setIsProfileUpdated(true);
 			}
+			String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
+			chatUserRepo.updateMetaData(metadata, registerDto.getUserIdentifier());
 		} else {
 			URI targetUrl = UriComponentsBuilder
 					.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/validate")
@@ -104,7 +107,7 @@ public class SandboxUserService {
 			URI url = UriComponentsBuilder
 					.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/addUserCount").build()
 					.toUri();
-			registerService.registerLastSeenTime(registerDto.getUserIdentifier());// New entry in last login time
+			registerService.registerLogintime(registerDto.getUserIdentifier());// New entry in last login time
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
 			try {
@@ -130,13 +133,14 @@ public class SandboxUserService {
 			// Create new user
 			chatUser = registerUser(registerDto, username);
 			registerResponseDto.setUsername(username);
+			registerResponseDto.setIsExisting(false);
 			users.setUsername(username);
 			// Insert the vcard details
 			VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(username);
 			vcardService.updateVcard(vcardSearch, new Vcard());
 			registerResponseDto.setIsProfileUpdated(false);
 		}
-		String password = registerService.updateChatUserDetails(registerDto, chatUser, registerResponseDto);
+		String password = registerService.updateChatUserDetails(registerDto, chatUser);
 		registerResponseDto.setPassword(password);
 		String deviceIdprefix = "";
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
@@ -193,6 +197,9 @@ public class SandboxUserService {
 				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
 		}
+		
+		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
+		
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
 		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
@@ -209,6 +216,10 @@ public class SandboxUserService {
 		chatUser.setLicenseKey(registerDto.getLicenseKey());
 		chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 		chatUser.setIsDeleteInprogrees(0);
+		
+		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
+		chatUser.setMetaData(metadata);
+		
 		chatUserRepo.save(chatUser);
 		return chatUser;
 	}
@@ -223,5 +234,5 @@ public class SandboxUserService {
 			throw new BadDataException(GatewayConstants.ERROR_IN_REGISTRATION);
 		}
 	}
-
+	
 }
