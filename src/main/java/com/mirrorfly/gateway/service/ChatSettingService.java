@@ -93,6 +93,7 @@ public class ChatSettingService {
 		chatSettings.setLicenseKey(request.getLicenceKey());
 		chatSettings.setCreatedAt(currentTimestamp);
 		chatSettings.setUpdatedAt(currentTimestamp);
+		chatSettings.setLicense_expiry(request.getLicencekeyExpiryDate());
 		chatSettingsRepo.save(chatSettings);
 	}
 
@@ -110,6 +111,7 @@ public class ChatSettingService {
 		chatSettingValue.setGroupCall(request.getGroupCall());
 		chatSettingValue.setRecentchatSearch(request.getRecentchatSearch());
 		chatSettingValue.setUpdatedAt(currentTimestamp);
+		chatSettingValue.setLicense_expiry(request.getLicencekeyExpiryDate());
 		chatSettingsRepo.save(chatSettingValue);
 	}
 
