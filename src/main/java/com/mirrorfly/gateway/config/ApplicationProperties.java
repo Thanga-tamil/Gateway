@@ -77,4 +77,8 @@ public class ApplicationProperties {
 	public String getWhiteListIps() {
 		return env.getProperty("white-list-ips");
 	}
+	
+	public int getMaximumSessions() {
+		return env.getProperty("user.maxSessions") != null ? Integer.parseInt(env.getProperty("user.maxSessions")) : 2;
+	}
 }
