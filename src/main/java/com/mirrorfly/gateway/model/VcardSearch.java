@@ -79,12 +79,6 @@ public class VcardSearch {
 	@Column(name = "limage")
 	private String limage = "";
 	
-	@Column(name = "imageprivacy")
-	private String imageprivacy = "";
-	
-	@Column(name = "limageprivacy")
-	private String limageprivacy = "";
-	
 	@Column(name = "status")
 	private String status = "";
 	
@@ -108,18 +102,6 @@ public class VcardSearch {
 	
 	@Column(name = "lorgunit")
 	private String lorgunit = "";
-	
-	@Column(name = "coverimg")		
-	private String coverimg = "";
-	
-	@Column(name = "lcoverimg")		
-	private String lcoverimg = "";
-	
-	@Column(name = "designation")
-	private String designation = "";
-	
-	@Column(name = "ldesignation")
-	private String ldesignation = "";
 	
 	@Column(name = "is_block")
 	private int isBlock = 0;
