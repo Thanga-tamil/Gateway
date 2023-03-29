@@ -165,11 +165,13 @@ public class LicenseService {
 				user = new Users();
 				user.setUsername(licenseData.getApiUsername());
 				user.setPassword(licenseData.getApiPassword());
+				user.setIsAdmin(1);
 				userRepo.save(user);
 			} else {
 				if (licenseData.getIsApiPasswordRevoked() == 1) {
 					log.info("API password updated.................... " + licenseData.getApiPassword());
 					user.setPassword(licenseData.getApiPassword());
+					user.setIsAdmin(1);
 					userRepo.save(user);
 				}
 			}

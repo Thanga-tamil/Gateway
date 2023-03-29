@@ -28,5 +28,8 @@ public class Users implements Serializable {
 
 	@Column(name = "ws_password")
 	private String wsPassword;
+	
+	@Column(name = "is_admin")
+	private int isAdmin;
 
 }

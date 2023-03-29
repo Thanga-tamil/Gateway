@@ -50,9 +50,6 @@ public class SandboxUserService {
 	private TokenService tokenService;
 
 	@Autowired
-	private PasswordService passwordService;
-
-	@Autowired
 	private UserRepo userRepo;
 
 	@Autowired
@@ -70,7 +67,7 @@ public class SandboxUserService {
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) throws JsonProcessingException {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
-		dataValidating(registerDto);// validate Empty value
+		dataValidating(registerDto);
 		Users users = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser != null) {
@@ -84,14 +81,8 @@ public class SandboxUserService {
 			if (!chatUser.getLicenseKey().equalsIgnoreCase(registerDto.getLicenseKey())) {
 				throw new BadDataException(GatewayConstants.USER_USERIDENTIFIER_ALREADY_REGISTERED);
 			}
-			if (!registerDto.getDeviceType().equalsIgnoreCase("web")) {
-				if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().trim().equals("")) {
-					chatUserRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
-				}
-				updateUserMobileDetails(registerDto, chatUser);
-			}
 			users = userRepo.findByUsername(chatUser.getUsername());
-			registerResponseDto.setUsername(users.getUsername());
+			registerResponseDto.setUsername(chatUser.getUsername());
 			registerResponseDto.setIsExisting(true);
 			if (vcardSearch == null) {
 				vcardSearch = vcardService.updateVcardSearchDetails(registerDto.getUserIdentifier());
@@ -132,7 +123,7 @@ public class SandboxUserService {
 			}
 			String username = registerDto.getUserIdentifier();
 			// Create new user
-			registerUser(registerDto, username);
+			chatUser = registerUser(registerDto, username);
 			registerResponseDto.setUsername(username);
 			registerResponseDto.setIsExisting(false);
 			users.setUsername(username);
@@ -141,7 +132,8 @@ public class SandboxUserService {
 			vcardService.updateVcard(vcardSearch, new Vcard());
 			registerResponseDto.setIsProfileUpdated(false);
 		}
-		registerResponseDto.setPassword(passwordService.generateRandomPassword());
+		String password = registerService.updateChatUserDetails(registerDto, chatUser);
+		registerResponseDto.setPassword(password);
 		registerResponseDto.setToken(tokenService.getToken(registerResponseDto.getUsername(),
 				registerDto.getDeviceType(), registerDto.getDeviceType()));
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
@@ -191,56 +183,16 @@ public class SandboxUserService {
 		}
 	}
 
-	private void updateUserMobileDetails(SanboxUserRegisterDto registerDto, ChatUser chatUser) {
-		if (registerDto.getDeviceType().equalsIgnoreCase("ios")) {
-			chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-			chatUser.setDeviceToken(registerDto.getDeviceToken());
-			if (registerDto.getDeviceOsVersion() != null && !registerDto.getDeviceOsVersion().equals("")) {
-				chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-			} else {
-				chatUser.setDeviceOsVersion("12.0");
-			}
-		} else if (registerDto.getDeviceType().equalsIgnoreCase("android")) {
-			chatUser.setDeviceToken(registerDto.getDeviceToken());
-			chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-		} else {
-			throw new BadDataException("Invaild device type");
-		}
-		chatUser.setDevicetype(registerDto.getDeviceType());
-		chatUser.setMode(registerDto.getMode());
-		chatUserRepo.save(chatUser);
-	}
-
-	private void registerUser(SanboxUserRegisterDto registerDto, String username) {
+	private ChatUser registerUser(SanboxUserRegisterDto registerDto, String username) {
 		ChatUser chatUser = new ChatUser();
 		chatUser.setUsername(username);
 		chatUser.setMobileNumber(registerDto.getMobileNumber());
 		chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
-		if (!registerDto.getDeviceType().equalsIgnoreCase("web")) {
-			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().trim().equals("")) {
-				chatUserRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
-			}
-			if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().equals("")) {
-				chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-			} else {
-				chatUser.setVoipDeviceToken(registerDto.getDeviceToken());
-			}
-			if (registerDto.getDeviceOsVersion() != null && !registerDto.getDeviceOsVersion().equals("")) {
-				chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-			} else if ((registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))
-					&& registerDto.getDeviceType().equalsIgnoreCase("ios")) {
-				chatUser.setDeviceOsVersion("12.0");
-			} else {
-				chatUser.setDeviceOsVersion("");
-			}
-			chatUser.setDeviceToken(registerDto.getDeviceToken());
-			chatUser.setMode(registerDto.getMode());
-		}
-		chatUser.setDevicetype(registerDto.getDeviceType());
 		chatUser.setLicenseKey(registerDto.getLicenseKey());
 		chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 		chatUser.setIsDeleteInprogrees(0);
 		chatUserRepo.save(chatUser);
+		return chatUser;
 	}
 
 	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
