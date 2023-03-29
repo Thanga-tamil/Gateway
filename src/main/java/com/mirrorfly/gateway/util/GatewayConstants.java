@@ -223,6 +223,14 @@ public class GatewayConstants {
 	public static final String USER_COUNT_EXCEEDED = "Trail user count for registration has been exceeded";
 	
 	public static final String ERROR_IN_REGISTRATION = "Error in registration. Please try again later.";
+	
+	public static final String USER_REGISTRATION_MAX_SESSIONS_REACHED = "You have reached maximum sessions allowed.";
+	
+	public static final String DEVICE_ANDROID = "android";
+	
+	public static final String DEVICE_IOS = "ios";
+	
+	public static final String DEVICE_WEB = "web";
 
 	private GatewayConstants() {
 	}

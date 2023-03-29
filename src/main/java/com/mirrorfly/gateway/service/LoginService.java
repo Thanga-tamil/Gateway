@@ -121,13 +121,7 @@ public class LoginService {
 			ChatUserDetails chatUserDetail = chatUsersDetailsRepo.findByUsernameAndDeviceId(tokenDetail.getUsername(),
 					deviceId);
 			if (chatUserDetail != null) {
-				chatUserDetail.setDeviceToken("");
-				chatUserDetail.setVoipDeviceToken("");
-				chatUserDetail.setDeviceId("");
-				chatUserDetail.setDeviceOsVersion("");
-				chatUserDetail.setMode(0);
-				chatUserDetail.setPassword(GatewayUtil.getMd5String(passwordService.generateRandomPassword()));
-				chatUsersDetailsRepo.save(chatUserDetail);
+				chatUsersDetailsRepo.delete(chatUserDetail);
 			}
 		}
 		Response<String> response = new Response<>();
