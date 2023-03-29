@@ -8,6 +8,8 @@ public class SanboxUserRegisterDto {
 	private String mobileNumber;
 
 	private String deviceType;
+	
+	private String deviceId = "";
 
 	private int mode = 0;
 
@@ -20,5 +22,7 @@ public class SanboxUserRegisterDto {
 	private String licenseKey = "";
 
 	private String userIdentifier = "";
+	
+	private Boolean forceRegister = true;
 
 }
