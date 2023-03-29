@@ -65,7 +65,7 @@ public class TokenService {
 			stringRedisTemplate.opsForValue().set(tokenDetail.getToken(), username, 1, TimeUnit.HOURS);
 		} catch (Exception e) {
 			log.error("Error in redis connection ", e);
-			return tokenDetail.getToken();	
+			return tokenDetail.getToken();
 		}
 		return tokenDetail.getToken();
 
@@ -84,7 +84,6 @@ public class TokenService {
 			token.setTokenExpiryTime(LocalDateTime.now().plusMinutes(15));
 			tokenRepo.save(token);
 		}
-
 		return token.getUsername();
 	}
 
@@ -101,4 +100,9 @@ public class TokenService {
 		if (token != null)
 			tokenRepo.delete(token);
 	}
+	
+	public TokenDetail getTokenDetail(String token) {
+		return tokenRepo.findTop1ByTokenOrderByIdDesc(token);
+	}
+
 }
