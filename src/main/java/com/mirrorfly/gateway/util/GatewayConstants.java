@@ -226,6 +226,10 @@ public class GatewayConstants {
 	
 	public static final String USER_REGISTRATION_MAX_SESSIONS_REACHED = "You have reached maximum sessions allowed.";
 	
+	public static final String USER_DOMAIN = "userdomain";
+	
+	public static final String REMOTE_IP = "remoteip";
+	
 	public static final String DEVICE_ANDROID = "android";
 	
 	public static final String DEVICE_IOS = "ios";

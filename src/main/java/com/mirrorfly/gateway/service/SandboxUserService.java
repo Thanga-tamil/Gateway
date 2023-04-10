@@ -69,7 +69,7 @@ public class SandboxUserService {
 
 	@Autowired
 	private ChatUsersDetailsRepo chatUsersDetailsRepo;
-
+	
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) throws JsonProcessingException {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
@@ -97,6 +97,8 @@ public class SandboxUserService {
 			} else {
 				registerResponseDto.setIsProfileUpdated(true);
 			}
+			String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
+			chatUserRepo.updateMetaData(metadata, registerDto.getUserIdentifier());
 		} else {
 			URI targetUrl = UriComponentsBuilder
 					.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/validate")
@@ -195,6 +197,9 @@ public class SandboxUserService {
 				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
 		}
+		
+		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
+		
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
 		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
@@ -211,6 +216,10 @@ public class SandboxUserService {
 		chatUser.setLicenseKey(registerDto.getLicenseKey());
 		chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 		chatUser.setIsDeleteInprogrees(0);
+		
+		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
+		chatUser.setMetaData(metadata);
+		
 		chatUserRepo.save(chatUser);
 		return chatUser;
 	}
@@ -225,5 +234,5 @@ public class SandboxUserService {
 			throw new BadDataException(GatewayConstants.ERROR_IN_REGISTRATION);
 		}
 	}
-
+	
 }
