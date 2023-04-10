@@ -3,9 +3,11 @@ package com.mirrorfly.gateway.repo;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.mirrorfly.gateway.dto.ChatUserDto;
 import com.mirrorfly.gateway.model.ChatUser;
@@ -30,5 +32,10 @@ public interface ChatUserRepo extends JpaRepository<ChatUser, String> {
 
 	@Query("Select count(cu) from ChatUser cu where cu.licenseKey=:licenseKey")
 	public Long getCountByLicenseKey(@Param(value = "licenseKey") String licenseKey);
+	
+	@Transactional
+	@Modifying
+	@Query("Update ChatUser c set c.metaData=:metaData where c.userIdentifier = :userIdentifier")
+	public void updateMetaData(@Param("metaData") String metaData, @Param("userIdentifier") String userIdentifier);
 
 }

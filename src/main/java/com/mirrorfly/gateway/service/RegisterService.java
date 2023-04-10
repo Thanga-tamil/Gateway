@@ -172,6 +172,7 @@ public class RegisterService {
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 			chatUser.setLicenseKey(registerDto.getLicenseKey());
 			chatUser.setIsDeleteInprogrees(0);
+			
 			// To insert the register login time
 			registerLogintime(registerDto.getUserIdentifier());
 			user.setUsername(registerDto.getUserIdentifier());
@@ -197,7 +198,11 @@ public class RegisterService {
 				registerResponseDto.setIsProfileUpdated(true);
 			}
 			registerResponseDto.setIsExisting(true);
+			
 		}
+		
+		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
+		chatUser.setMetaData(metadata);
 
 		chatUserRepo.save(chatUser);
 		String password = updateChatUserDetails(registerDto, chatUser);
@@ -338,6 +343,9 @@ public class RegisterService {
 				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
 		}
+		
+		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
+		
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
 		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
@@ -356,5 +364,4 @@ public class RegisterService {
 			throw new BadDataException("Error in registration. Please try again later");
 		}
 	}
-
 }

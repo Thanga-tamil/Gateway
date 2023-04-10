@@ -81,4 +81,9 @@ public class ApplicationProperties {
 	public int getMaximumSessions() {
 		return env.getProperty("user.maxSessions") != null ? Integer.parseInt(env.getProperty("user.maxSessions")) : 2;
 	}
+	
+	public int getMetaDataLimit() {
+		return env.getProperty("metadata.limit", Integer.class, 3);
+	}
 }
+
