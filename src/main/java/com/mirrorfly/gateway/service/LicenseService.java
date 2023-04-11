@@ -24,6 +24,7 @@ import com.mirrorfly.gateway.dto.LicenseResDto;
 import com.mirrorfly.gateway.dto.LicenseUpdateRequestDto;
 import com.mirrorfly.gateway.dto.TurnDto;
 import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
 import com.mirrorfly.gateway.model.ChatServerConfig;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.License;
@@ -40,6 +41,7 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.EnumSDKType;
 import com.mirrorfly.gateway.util.GatewayConstants;
+import com.mirrorfly.gateway.util.GatewayUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -67,6 +69,9 @@ public class LicenseService {
 
 	@Autowired
 	private UserRepo userRepo;
+	
+	@Autowired
+	private GatewayUtil gatewayUtil;
 
 	public Response<LicenseResDto> getLicense(LicenseReqDto licenseReq) {
 
@@ -132,15 +137,11 @@ public class LicenseService {
 		return chatSettingsRepo.findAll().get(0);
 	}
 
-	public Response<String> updateLicense(LicenseUpdateRequestDto request) {
-		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
-		LicenseLookup data = new LicenseLookup();
-		if (!existingKey.isEmpty() && existingKey.get(0) != null) {
-			data = existingKey.get(0);
+	public Response<String> updateLicense(LicenseUpdateRequestDto request, String remoteIPAddress) {
+		log.info("Remote IP ---> " + remoteIPAddress);
+		if (Boolean.FALSE.equals(gatewayUtil.userIpAccessValidation(remoteIPAddress))) {
+			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
 		}
-		data.setLkey(request.getLicenseKey());
-		licenseLookupRepo.save(data);
-		queueService.sendLicenseDataPayload(new LicenseDataPayload(request.getLicenseKey()));
 		decryptChatSettings(request.getLicenseKey());
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.SC_OK);
@@ -158,6 +159,14 @@ public class LicenseService {
 		try {
 			licenseData = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
 					LicenseDataDto.class);
+			List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
+			LicenseLookup data = new LicenseLookup();
+			if (!existingKey.isEmpty() && existingKey.get(0) != null) {
+				data = existingKey.get(0);
+			}
+			data.setLkey(licenseKey);
+			licenseLookupRepo.save(data);
+			queueService.sendLicenseDataPayload(new LicenseDataPayload(licenseKey));
 			Users user = userRepo.findByUsername(licenseData.getApiUsername());
 			if (user == null) {
 				log.info("First Time Insert Api Username and Password.................... "
@@ -178,6 +187,7 @@ public class LicenseService {
 			updateChatSettings(licenseData);
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
 			log.error("Unable to unserialize the license details " + e.getMessage());
+			throw new BadDataException("Error occured while updating the license details.");
 		}
 	}
 
