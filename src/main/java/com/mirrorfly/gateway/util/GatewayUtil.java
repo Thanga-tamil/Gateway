@@ -5,17 +5,33 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.exception.BadDataException;
+
+import inet.ipaddr.IPAddressString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Service
 public class GatewayUtil {
+	
+
+	@Autowired
+	private ApplicationProperties applicationProperties;
 
 	private GatewayUtil() {
 	}
-
+	
 	private static SecureRandom rnd = new SecureRandom();
 
 	public static PageRequest getPagination(Integer page, Integer size) {
@@ -60,6 +76,66 @@ public class GatewayUtil {
 			log.error(e.getMessage());
 		}
 		return hashtext.toString();
+	}
+	
+	public Boolean userIpAccessValidation(String remoteIP) {
+		IPAddressString ipAddress = new IPAddressString(remoteIP);
+		String[] array = applicationProperties.getWhiteListIps().split(",");
+		for (String rangeIp : array) {
+			IPAddressString range = new IPAddressString(rangeIp);
+			if (range.contains(ipAddress)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public static Map<String, Object> convertJsonStringToMap(String jsonString) throws JsonProcessingException {
+		return new ObjectMapper().readValue(jsonString, new TypeReference<Map<String, Object>>() {
+		});
+	}
+
+	public static String convertMapToJson(Map<String, Object> messageContent) throws JsonProcessingException {
+		return new ObjectMapper().writeValueAsString(messageContent);
+	}
+	
+	public static String convertMetaDataAsJson(Map<String, Object> metaData) {
+		String jsonMetadata = null;
+		if (metaData != null && metaData.size() > 0) {
+			try {
+				Map<String, Object> meta = new HashMap<>();
+				for (Map.Entry<String, Object> entry : metaData.entrySet()) {
+					if(entry.getValue() instanceof String) {
+						meta.put(entry.getKey().trim(), entry.getValue().toString().trim());
+					}else {
+						meta.put(entry.getKey().trim(), entry.getValue());
+					}
+				}
+				jsonMetadata = convertMapToJson(meta);
+			} catch (JsonProcessingException e) {
+				throw new BadDataException("Json Parsing Error");
+			}
+		}
+		return jsonMetadata;
+	}
+	
+	public static void validateMetaData(Map<String, Object> meta, int maxLimit) {
+		if (meta != null && meta.size() > 0) {
+			if (meta.size() > maxLimit) {
+				throw new BadDataException(
+						"Metadata can have maximum of " + maxLimit + " fields");
+			} else {
+				for (Map.Entry<String, Object> entry : meta.entrySet()) {
+					if (entry.getKey() == null || entry.getKey().trim().length() == 0) {
+						throw new BadDataException("Metadata key can not be empty");
+					} else if (entry.getValue() == null || entry.getValue().toString().trim().length() == 0) {
+						throw new BadDataException("Metadata value for the key " + entry.getKey().trim() + " is required");
+					}
+				}
+				// just to verify if given data can safely converted to json string
+				convertMetaDataAsJson(meta);
+			}
+		}
 	}
 
 }
