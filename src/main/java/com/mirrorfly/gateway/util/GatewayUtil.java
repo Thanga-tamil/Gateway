@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -79,6 +80,10 @@ public class GatewayUtil {
 	}
 	
 	public Boolean userIpAccessValidation(String remoteIP) {
+		if (StringUtils.isBlank(remoteIP)) {
+			log.error("Remote IP is null or Blank " + remoteIP);
+			return false;
+		}
 		IPAddressString ipAddress = new IPAddressString(remoteIP);
 		String[] array = applicationProperties.getWhiteListIps().split(",");
 		for (String rangeIp : array) {

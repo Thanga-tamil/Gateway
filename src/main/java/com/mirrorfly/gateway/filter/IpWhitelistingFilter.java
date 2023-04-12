@@ -32,13 +32,17 @@ public class IpWhitelistingFilter implements WebFilter, Ordered {
 
 	private ServerHttpRequest.Builder setHeaders(ServerHttpRequest request) {
 		try {
-			InetSocketAddress address = request.getLocalAddress();
-			String remoteIPAddress = address != null ? address.getAddress().toString().replace("/", "") : "";
-			log.info("Remote IP Address ------> " + remoteIPAddress);
+			InetSocketAddress address = request.getRemoteAddress();
+			String remoteIPAddress = "";
+			if (address != null && address.getAddress() != null) {
+				remoteIPAddress = address.getAddress().toString().replace("/", "");
+				log.info("Remote IP Address ------> " + remoteIPAddress);
+			}
 			ServerHttpRequest.Builder builder = request.mutate();
 			builder.header(GatewayConstants.REMOTE_IP, remoteIPAddress);
 			return builder;
 		} catch (Exception e) {
+			log.error("Remote IP Address fetching error ---> " + e.getMessage());
 			throw new BadDataException("Unable to identify the remote ip from request");
 		}
 	}
