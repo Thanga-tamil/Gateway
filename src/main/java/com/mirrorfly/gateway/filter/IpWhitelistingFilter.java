@@ -1,8 +1,11 @@
 package com.mirrorfly.gateway.filter;
 
 import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.Map.Entry;
 
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -32,13 +35,23 @@ public class IpWhitelistingFilter implements WebFilter, Ordered {
 
 	private ServerHttpRequest.Builder setHeaders(ServerHttpRequest request) {
 		try {
-			InetSocketAddress address = request.getLocalAddress();
-			String remoteIPAddress = address != null ? address.getAddress().toString().replace("/", "") : "";
-			log.info("Remote IP Address ------> " + remoteIPAddress);
+			HttpHeaders headers = request.getHeaders();
+			for (Entry<String, List<String>> header : headers.entrySet()) {
+				log.info("Header Key ---> " + header.getKey() + " Value ---> " + header.getValue());
+			}
+			
+			InetSocketAddress address = request.getRemoteAddress();
+			String remoteIPAddress = "";
+			if (address != null && address.getAddress() != null) {
+				remoteIPAddress = address.getAddress().toString().replace("/", "");
+				log.info("Remote IP Address ------> " + remoteIPAddress);
+				log.info("Host IP Address ------> " + address.getAddress().getHostAddress());
+			}
 			ServerHttpRequest.Builder builder = request.mutate();
 			builder.header(GatewayConstants.REMOTE_IP, remoteIPAddress);
 			return builder;
 		} catch (Exception e) {
+			log.error("Remote IP Address fetching error ---> " + e.getMessage());
 			throw new BadDataException("Unable to identify the remote ip from request");
 		}
 	}
