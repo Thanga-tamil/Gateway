@@ -235,6 +235,10 @@ public class GatewayConstants {
 	public static final String DEVICE_IOS = "ios";
 	
 	public static final String DEVICE_WEB = "web";
+	
+	public static final String PUSH_TYPE_NOT_VALID = "Push type value is not valid";
+	
+	public static final String PUSH_TYPE_DEFAULT = "default";
 
 	private GatewayConstants() {
 	}

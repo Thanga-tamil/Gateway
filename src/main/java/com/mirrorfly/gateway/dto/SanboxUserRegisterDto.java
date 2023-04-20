@@ -28,5 +28,7 @@ public class SanboxUserRegisterDto {
 	private Boolean forceRegister = true;
 	
 	private Map<String, Object> metaData;
+	
+	private String pushType;
 
 }

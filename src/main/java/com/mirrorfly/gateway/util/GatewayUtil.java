@@ -6,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
@@ -140,6 +141,12 @@ public class GatewayUtil {
 				// just to verify if given data can safely converted to json string
 				convertMetaDataAsJson(meta);
 			}
+		}
+	}
+	
+	public static void validatePushType(String pushType, List<String> pushTypes) {
+		if (StringUtils.isNotBlank(pushType) && !pushTypes.contains(pushType.trim().toLowerCase())) {
+			throw new BadDataException(GatewayConstants.PUSH_TYPE_NOT_VALID);
 		}
 	}
 

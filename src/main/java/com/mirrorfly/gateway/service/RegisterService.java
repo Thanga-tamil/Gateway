@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -172,7 +173,7 @@ public class RegisterService {
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 			chatUser.setLicenseKey(registerDto.getLicenseKey());
 			chatUser.setIsDeleteInprogrees(0);
-			
+
 			// To insert the register login time
 			registerLogintime(registerDto.getUserIdentifier());
 			user.setUsername(registerDto.getUserIdentifier());
@@ -198,9 +199,9 @@ public class RegisterService {
 				registerResponseDto.setIsProfileUpdated(true);
 			}
 			registerResponseDto.setIsExisting(true);
-			
+
 		}
-		
+
 		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
 		chatUser.setMetaData(metadata);
 
@@ -239,6 +240,7 @@ public class RegisterService {
 		data.setUserIdentifier(registerDto.getUserIdentifier());
 		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		data.setForceRegister(registerDto.getForceRegister());
+		data.setPushType(registerDto.getPushType());
 		return updateChatUserDetails(data, chatUser);
 	}
 
@@ -287,6 +289,10 @@ public class RegisterService {
 			user.setPassword(GatewayUtil.getMd5String(password));
 			user.setUsername(chatUser.getUsername());
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+			user.setPushType(GatewayConstants.PUSH_TYPE_DEFAULT);
+			if(StringUtils.isNotBlank(registerDto.getPushType())) {
+				user.setPushType(registerDto.getPushType().trim());
+			}
 			chatUsersDetailsRepo.save(user);
 			return password;
 		} else {
@@ -297,6 +303,9 @@ public class RegisterService {
 			user.setMode(registerDto.getMode());
 			user.setPassword(GatewayUtil.getMd5String(password));
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+			if(StringUtils.isNotBlank(registerDto.getPushType())) {
+				user.setPushType(registerDto.getPushType().trim());
+			}
 			chatUsersDetailsRepo.save(user);
 			return password;
 		}
@@ -343,9 +352,11 @@ public class RegisterService {
 				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
 		}
-		
+
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
 		
+		GatewayUtil.validatePushType(registerDto.getPushType(), applicationProperties.getPushTypes());
+
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
 		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()

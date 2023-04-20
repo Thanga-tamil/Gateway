@@ -1,5 +1,9 @@
 package com.mirrorfly.gateway.config;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -77,13 +81,29 @@ public class ApplicationProperties {
 	public String getWhiteListIps() {
 		return env.getProperty("white-list-ips");
 	}
-	
+
 	public int getMaximumSessions() {
 		return env.getProperty("user.maxSessions") != null ? Integer.parseInt(env.getProperty("user.maxSessions")) : 2;
 	}
-	
+
 	public int getMetaDataLimit() {
 		return env.getProperty("metadata.limit", Integer.class, 3);
 	}
-}
 
+	public List<String> getPushTypes() {
+		List<String> push = new ArrayList<>();
+		String[] pushTypes = StringUtils.split(env.getProperty("push.types", "default"), ",");
+		// looping through data manually to hanlde spaces
+		for (String pushType : pushTypes) {
+			if (StringUtils.isNotBlank(pushType)) {
+				push.add(pushType.trim().toLowerCase());
+			}
+		}
+
+		if (push.isEmpty()) {
+			push.add("default");
+		}
+
+		return push;
+	}
+}

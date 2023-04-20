@@ -200,6 +200,8 @@ public class SandboxUserService {
 		
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
 		
+		GatewayUtil.validatePushType(registerDto.getPushType(), applicationProperties.getPushTypes());
+		
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
 		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
