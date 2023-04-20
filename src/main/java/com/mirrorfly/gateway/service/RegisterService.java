@@ -88,6 +88,9 @@ public class RegisterService {
 
 	@Autowired
 	private SpoolRepo spoolRepo;
+	
+	@Autowired
+	private GatewayUtil gatewayUtil;
 
 	public Response<RegisterInfoDto> getRegisterInfo() {
 		ChatSettings settings = settingsRepo.findAll().get(0);
@@ -337,32 +340,18 @@ public class RegisterService {
 				|| userIdentifier.contains(">") || userIdentifier.contains("@")) {
 			throw new BadDataException("User identifier should not contain (\",&,\',/,:,<,>,@).");
 		}
-		inputDataValidation(registerDto);
+		setSandBoxUserAndValidate(registerDto);
 	}
-
-	private void inputDataValidation(RegisterDto registerDto) {
-		if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
-		}
-		if (registerDto.getDeviceType() == null || registerDto.getDeviceType().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.DEVICE_TYPE_EMPTY);
-		}
-		if (!registerDto.getDeviceType().equalsIgnoreCase("android")
-				&& !registerDto.getDeviceType().equalsIgnoreCase("web")
-				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
-			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
-		}
-
-		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
-		
-		GatewayUtil.validatePushType(registerDto.getPushType(), applicationProperties.getPushTypes());
-
-		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
-				.findByUsername(registerDto.getUserIdentifier());
-		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
-				&& Boolean.FALSE.equals(registerDto.getForceRegister())) {
-			throw new BadDataException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
-		}
+	
+	private void setSandBoxUserAndValidate(RegisterDto registerDto) {
+		SanboxUserRegisterDto sandbox = new SanboxUserRegisterDto();
+		sandbox.setUserIdentifier(registerDto.getUserIdentifier());
+		sandbox.setPushType(registerDto.getPushType());
+		sandbox.setDeviceType(registerDto.getDeviceType());
+		sandbox.setMetaData(registerDto.getMetaData());
+		sandbox.setForceRegister(registerDto.getForceRegister());
+		sandbox.setLicenseKey(registerDto.getLicenseKey());
+		gatewayUtil.dataValidating(sandbox);
 	}
 
 	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
