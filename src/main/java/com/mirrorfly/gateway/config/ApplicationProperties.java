@@ -91,27 +91,27 @@ public class ApplicationProperties {
 		return env.getProperty("metadata.limit", Integer.class, 3);
 	}
 
-	public List<String> getPushTypes() {
-		List<String> push = new ArrayList<>();
-		String[] pushTypes = StringUtils.split(env.getProperty("push.types"), ",");
-		
+	public List<String> getUserTypes() {
+		List<String> types = new ArrayList<>();
+		String[] userTypes = StringUtils.split(env.getProperty("user.types"), ",");
+
 		// looping through data manually to hanlde spaces
-		if(ArrayUtils.isNotEmpty(pushTypes)) {
-			for (String pushType : pushTypes) {
-				if (StringUtils.isNotBlank(pushType)) {
-					push.add(pushType.trim().toLowerCase());
+		if (ArrayUtils.isNotEmpty(userTypes)) {
+			for (String userType : userTypes) {
+				if (StringUtils.isNotBlank(userType)) {
+					types.add(userType.trim().toLowerCase());
 				}
 			}
 		}
 
-		if (push.isEmpty()) {
-			push.add(getDefaultPushType());
+		if (types.isEmpty()) {
+			types.add(getDefaultUserType());
 		}
 
-		return push;
+		return types;
 	}
-	
-	public String getDefaultPushType() {
-		return env.getProperty("push.type.default","u");
+
+	public String getDefaultUserType() {
+		return env.getProperty("user.type.default", "u");
 	}
 }

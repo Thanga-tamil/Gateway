@@ -243,7 +243,7 @@ public class RegisterService {
 		data.setUserIdentifier(registerDto.getUserIdentifier());
 		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		data.setForceRegister(registerDto.getForceRegister());
-		data.setPushType(registerDto.getPushType());
+		data.setUserType(registerDto.getUserType());
 		return updateChatUserDetails(data, chatUser);
 	}
 
@@ -292,9 +292,9 @@ public class RegisterService {
 			user.setPassword(GatewayUtil.getMd5String(password));
 			user.setUsername(chatUser.getUsername());
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-			user.setPushType(applicationProperties.getDefaultPushType());
-			if(StringUtils.isNotBlank(registerDto.getPushType())) {
-				user.setPushType(registerDto.getPushType().trim());
+			user.setUserType(applicationProperties.getDefaultUserType());
+			if(StringUtils.isNotBlank(registerDto.getUserType())) {
+				user.setUserType(registerDto.getUserType().trim());
 			}
 			chatUsersDetailsRepo.save(user);
 			return password;
@@ -306,8 +306,8 @@ public class RegisterService {
 			user.setMode(registerDto.getMode());
 			user.setPassword(GatewayUtil.getMd5String(password));
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-			if(StringUtils.isNotBlank(registerDto.getPushType())) {
-				user.setPushType(registerDto.getPushType().trim());
+			if(StringUtils.isNotBlank(registerDto.getUserType())) {
+				user.setUserType(registerDto.getUserType().trim());
 			}
 			chatUsersDetailsRepo.save(user);
 			return password;
@@ -346,7 +346,7 @@ public class RegisterService {
 	private void setSandBoxUserAndValidate(RegisterDto registerDto) {
 		SanboxUserRegisterDto sandbox = new SanboxUserRegisterDto();
 		sandbox.setUserIdentifier(registerDto.getUserIdentifier());
-		sandbox.setPushType(registerDto.getPushType());
+		sandbox.setUserType(registerDto.getUserType());
 		sandbox.setDeviceType(registerDto.getDeviceType());
 		sandbox.setMetaData(registerDto.getMetaData());
 		sandbox.setForceRegister(registerDto.getForceRegister());

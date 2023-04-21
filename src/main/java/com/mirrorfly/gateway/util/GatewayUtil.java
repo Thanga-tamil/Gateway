@@ -151,9 +151,9 @@ public class GatewayUtil {
 		}
 	}
 	
-	public static void validatePushType(String pushType, List<String> pushTypes) {
-		if (StringUtils.isNotBlank(pushType) && !pushTypes.contains(pushType.trim().toLowerCase())) {
-			throw new BadDataException(GatewayConstants.PUSH_TYPE_NOT_VALID);
+	public static void validateUserType(String userType, List<String> userTypes) {
+		if (StringUtils.isNotBlank(userType) && !userTypes.contains(userType.trim().toLowerCase())) {
+			throw new BadDataException(GatewayConstants.USER_TYPE_NOT_VALID);
 		}
 	}
 	
@@ -175,7 +175,7 @@ public class GatewayUtil {
 
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
 
-		GatewayUtil.validatePushType(registerDto.getPushType(), applicationProperties.getPushTypes());
+		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
 
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
