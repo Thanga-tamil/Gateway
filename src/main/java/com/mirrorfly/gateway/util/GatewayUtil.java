@@ -6,8 +6,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -16,7 +18,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.dto.SanboxUserRegisterDto;
 import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.exception.ForbiddenException;
+import com.mirrorfly.gateway.model.ChatUserDetails;
+import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 
 import inet.ipaddr.IPAddressString;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +34,9 @@ public class GatewayUtil {
 
 	@Autowired
 	private ApplicationProperties applicationProperties;
+	
+	@Autowired
+	private ChatUsersDetailsRepo chatUsersDetailsRepo;
 
 	private GatewayUtil() {
 	}
@@ -79,6 +88,10 @@ public class GatewayUtil {
 	}
 	
 	public Boolean userIpAccessValidation(String remoteIP) {
+		if (StringUtils.isBlank(remoteIP)) {
+			log.error("Remote IP is null or Blank " + remoteIP);
+			return false;
+		}
 		IPAddressString ipAddress = new IPAddressString(remoteIP);
 		String[] array = applicationProperties.getWhiteListIps().split(",");
 		for (String rangeIp : array) {
@@ -135,6 +148,40 @@ public class GatewayUtil {
 				// just to verify if given data can safely converted to json string
 				convertMetaDataAsJson(meta);
 			}
+		}
+	}
+	
+	public static void validateUserType(String userType, List<String> userTypes) {
+		if (StringUtils.isNotBlank(userType) && !userTypes.contains(userType.trim().toLowerCase())) {
+			throw new BadDataException(GatewayConstants.USER_TYPE_NOT_VALID);
+		}
+	}
+	
+	public void dataValidating(SanboxUserRegisterDto registerDto) {
+		if (registerDto.getUserIdentifier() == null || registerDto.getUserIdentifier().trim().isEmpty()) {
+			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
+		}
+		if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
+			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
+		}
+		if (registerDto.getDeviceType() == null || registerDto.getDeviceType().trim().isEmpty()) {
+			throw new BadDataException(GatewayConstants.DEVICE_TYPE_EMPTY);
+		}
+		if (!registerDto.getDeviceType().equalsIgnoreCase("android")
+				&& !registerDto.getDeviceType().equalsIgnoreCase("web")
+				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
+			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
+		}
+
+		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
+
+		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
+
+		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
+				.findByUsername(registerDto.getUserIdentifier());
+		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
+				&& Boolean.FALSE.equals(registerDto.getForceRegister())) {
+			throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 		}
 	}
 

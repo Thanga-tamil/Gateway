@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -87,6 +88,9 @@ public class RegisterService {
 
 	@Autowired
 	private SpoolRepo spoolRepo;
+	
+	@Autowired
+	private GatewayUtil gatewayUtil;
 
 	public Response<RegisterInfoDto> getRegisterInfo() {
 		ChatSettings settings = settingsRepo.findAll().get(0);
@@ -172,7 +176,7 @@ public class RegisterService {
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 			chatUser.setLicenseKey(registerDto.getLicenseKey());
 			chatUser.setIsDeleteInprogrees(0);
-			
+
 			// To insert the register login time
 			registerLogintime(registerDto.getUserIdentifier());
 			user.setUsername(registerDto.getUserIdentifier());
@@ -198,9 +202,9 @@ public class RegisterService {
 				registerResponseDto.setIsProfileUpdated(true);
 			}
 			registerResponseDto.setIsExisting(true);
-			
+
 		}
-		
+
 		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
 		chatUser.setMetaData(metadata);
 
@@ -239,6 +243,7 @@ public class RegisterService {
 		data.setUserIdentifier(registerDto.getUserIdentifier());
 		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		data.setForceRegister(registerDto.getForceRegister());
+		data.setUserType(registerDto.getUserType());
 		return updateChatUserDetails(data, chatUser);
 	}
 
@@ -287,6 +292,10 @@ public class RegisterService {
 			user.setPassword(GatewayUtil.getMd5String(password));
 			user.setUsername(chatUser.getUsername());
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+			user.setUserType(applicationProperties.getDefaultUserType());
+			if(StringUtils.isNotBlank(registerDto.getUserType())) {
+				user.setUserType(registerDto.getUserType().trim());
+			}
 			chatUsersDetailsRepo.save(user);
 			return password;
 		} else {
@@ -297,6 +306,9 @@ public class RegisterService {
 			user.setMode(registerDto.getMode());
 			user.setPassword(GatewayUtil.getMd5String(password));
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+			if(StringUtils.isNotBlank(registerDto.getUserType())) {
+				user.setUserType(registerDto.getUserType().trim());
+			}
 			chatUsersDetailsRepo.save(user);
 			return password;
 		}
@@ -328,30 +340,18 @@ public class RegisterService {
 				|| userIdentifier.contains(">") || userIdentifier.contains("@")) {
 			throw new BadDataException("User identifier should not contain (\",&,\',/,:,<,>,@).");
 		}
-		inputDataValidation(registerDto);
+		setSandBoxUserAndValidate(registerDto);
 	}
-
-	private void inputDataValidation(RegisterDto registerDto) {
-		if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
-		}
-		if (registerDto.getDeviceType() == null || registerDto.getDeviceType().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.DEVICE_TYPE_EMPTY);
-		}
-		if (!registerDto.getDeviceType().equalsIgnoreCase("android")
-				&& !registerDto.getDeviceType().equalsIgnoreCase("web")
-				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
-			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
-		}
-		
-		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
-		
-		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
-				.findByUsername(registerDto.getUserIdentifier());
-		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
-				&& Boolean.FALSE.equals(registerDto.getForceRegister())) {
-			throw new BadDataException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
-		}
+	
+	private void setSandBoxUserAndValidate(RegisterDto registerDto) {
+		SanboxUserRegisterDto sandbox = new SanboxUserRegisterDto();
+		sandbox.setUserIdentifier(registerDto.getUserIdentifier());
+		sandbox.setUserType(registerDto.getUserType());
+		sandbox.setDeviceType(registerDto.getDeviceType());
+		sandbox.setMetaData(registerDto.getMetaData());
+		sandbox.setForceRegister(registerDto.getForceRegister());
+		sandbox.setLicenseKey(registerDto.getLicenseKey());
+		gatewayUtil.dataValidating(sandbox);
 	}
 
 	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
