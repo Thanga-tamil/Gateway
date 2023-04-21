@@ -292,7 +292,7 @@ public class RegisterService {
 			user.setPassword(GatewayUtil.getMd5String(password));
 			user.setUsername(chatUser.getUsername());
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-			user.setPushType(GatewayConstants.PUSH_TYPE_DEFAULT);
+			user.setPushType(applicationProperties.getDefaultPushType());
 			if(StringUtils.isNotBlank(registerDto.getPushType())) {
 				user.setPushType(registerDto.getPushType().trim());
 			}

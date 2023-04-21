@@ -3,6 +3,7 @@ package com.mirrorfly.gateway.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -92,18 +93,25 @@ public class ApplicationProperties {
 
 	public List<String> getPushTypes() {
 		List<String> push = new ArrayList<>();
-		String[] pushTypes = StringUtils.split(env.getProperty("push.types", "default"), ",");
+		String[] pushTypes = StringUtils.split(env.getProperty("push.types"), ",");
+		
 		// looping through data manually to hanlde spaces
-		for (String pushType : pushTypes) {
-			if (StringUtils.isNotBlank(pushType)) {
-				push.add(pushType.trim().toLowerCase());
+		if(ArrayUtils.isNotEmpty(pushTypes)) {
+			for (String pushType : pushTypes) {
+				if (StringUtils.isNotBlank(pushType)) {
+					push.add(pushType.trim().toLowerCase());
+				}
 			}
 		}
 
 		if (push.isEmpty()) {
-			push.add("default");
+			push.add(getDefaultPushType());
 		}
 
 		return push;
+	}
+	
+	public String getDefaultPushType() {
+		return env.getProperty("push.type.default","u");
 	}
 }
