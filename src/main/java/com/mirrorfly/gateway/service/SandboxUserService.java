@@ -153,6 +153,7 @@ public class SandboxUserService {
 		} else {
 			users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		}
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		userRepo.save(users);
 		// get config details and return in the response
 		registerResponseDto.setConfig(configService.getCongigData());
