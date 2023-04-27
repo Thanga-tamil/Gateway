@@ -43,6 +43,9 @@ import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class RegisterService {
 
@@ -112,6 +115,7 @@ public class RegisterService {
 			registerDto = decryptmapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
 					RegisterDto.class);
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
+			log.error("RegisterDto values are not readable ::: " + e.getMessage());
 			throw new BadDataException(GatewayConstants.INVALID_ERROR);
 		}
 		RegisterResponseDto registerResponseDto = registerUser(userdomain, registerDto);
