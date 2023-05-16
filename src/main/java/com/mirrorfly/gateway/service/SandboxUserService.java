@@ -216,6 +216,7 @@ public class SandboxUserService {
 		chatUser.setLicenseKey(registerDto.getLicenseKey());
 		chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 		chatUser.setIsDeleteInprogrees(0);
+		chatUser.setDeviceType(registerDto.getDeviceType());
 		
 		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
 		chatUser.setMetaData(metadata);
