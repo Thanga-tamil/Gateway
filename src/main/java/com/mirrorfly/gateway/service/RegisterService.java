@@ -172,6 +172,7 @@ public class RegisterService {
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 			chatUser.setLicenseKey(registerDto.getLicenseKey());
 			chatUser.setIsDeleteInprogrees(0);
+			chatUser.setDeviceType(registerDto.getDeviceType());
 			
 			// To insert the register login time
 			registerLogintime(registerDto.getUserIdentifier());
