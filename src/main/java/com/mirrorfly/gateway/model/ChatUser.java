@@ -68,5 +68,8 @@ public class ChatUser implements Serializable {
 	
 	@Column(columnDefinition = "JSON", name = "metadata")
 	private String metaData;
+	
+	@Column(name = "device_type")
+	private String deviceType;
 
 }
