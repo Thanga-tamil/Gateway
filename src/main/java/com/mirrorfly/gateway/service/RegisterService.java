@@ -147,11 +147,8 @@ public class RegisterService {
 
 	private RegisterResponseDto registerUser(RegisterDto registerDto) {
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
-
-		inputDataValidating(registerDto);
-
+		inputDataValidation(registerDto);
 		Users user = new Users();
-
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
 			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
@@ -330,8 +327,25 @@ public class RegisterService {
 		Collections.sort(existingChatUsersDetails, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
 		return existingChatUsersDetails.get(0);
 	}
+	
+	public void inputDataValidation(SanboxUserRegisterDto registerDto) {
+		RegisterDto data = new RegisterDto();
+		data.setDeviceId(registerDto.getDeviceId());
+		data.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+		data.setDeviceToken(registerDto.getDeviceToken());
+		data.setDeviceType(registerDto.getDeviceType());
+		data.setLicenseKey(registerDto.getLicenseKey());
+		data.setMobileNumber(registerDto.getMobileNumber());
+		data.setMode(registerDto.getMode());
+		data.setUserIdentifier(registerDto.getUserIdentifier());
+		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+		data.setForceRegister(registerDto.getForceRegister());
+		data.setPushServerType(registerDto.getPushServerType());
+		data.setMetaData(registerDto.getMetaData());
+		inputDataValidation(data);
+	}
 
-	private void inputDataValidating(RegisterDto registerDto) {
+	private void inputDataValidation(RegisterDto registerDto) {
 		String userIdentifier = registerDto.getUserIdentifier();
 		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
@@ -341,10 +355,6 @@ public class RegisterService {
 				|| userIdentifier.contains(">") || userIdentifier.contains("@")) {
 			throw new BadDataException("User identifier should not contain (\",&,\',/,:,<,>,@).");
 		}
-		inputDataValidation(registerDto);
-	}
-
-	private void inputDataValidation(RegisterDto registerDto) {
 		if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
 		}
@@ -362,12 +372,11 @@ public class RegisterService {
 			throw new BadDataException(GatewayConstants.PUSH_SERVER_TYPE_NOT_VALID);
 		}
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
-		
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
 		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
 				&& Boolean.FALSE.equals(registerDto.getForceRegister())) {
-			throw new BadDataException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
+			throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 		}
 	}
 
