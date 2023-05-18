@@ -69,11 +69,11 @@ public class SandboxUserService {
 
 	@Autowired
 	private ChatUsersDetailsRepo chatUsersDetailsRepo;
-	
+
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) throws JsonProcessingException {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
-		dataValidating(registerDto);
+		inputDataValidation(registerDto);
 		Users users = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser != null) {
@@ -182,7 +182,7 @@ public class SandboxUserService {
 		}
 	}
 
-	private void dataValidating(SanboxUserRegisterDto registerDto) {
+	private void inputDataValidation(SanboxUserRegisterDto registerDto) {
 		if (registerDto.getUserIdentifier() == null || registerDto.getUserIdentifier().trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
 		}
@@ -197,9 +197,14 @@ public class SandboxUserService {
 				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
 		}
-		
+		if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
+			if (!registerDto.getPushServerType().equalsIgnoreCase("apns")
+					&& !registerDto.getPushServerType().equalsIgnoreCase("fcm")) {
+				throw new BadDataException(GatewayConstants.PUSH_SERVER_TYPE_NOT_VALID);
+			}
+		}
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
-		
+
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
 		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
@@ -219,7 +224,6 @@ public class SandboxUserService {
 		chatUser.setDeviceType(registerDto.getDeviceType());
 		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
 		chatUser.setMetaData(metadata);
-		
 		chatUserRepo.save(chatUser);
 		return chatUser;
 	}
@@ -234,5 +238,5 @@ public class SandboxUserService {
 			throw new BadDataException(GatewayConstants.ERROR_IN_REGISTRATION);
 		}
 	}
-	
+
 }

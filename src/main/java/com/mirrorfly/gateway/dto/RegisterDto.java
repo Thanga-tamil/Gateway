@@ -29,4 +29,6 @@ public class RegisterDto {
 	
 	private Map<String, Object> metaData;
 	
+	private String pushServerType = "";
+	
 }

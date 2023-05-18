@@ -239,11 +239,13 @@ public class RegisterService {
 		data.setUserIdentifier(registerDto.getUserIdentifier());
 		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		data.setForceRegister(registerDto.getForceRegister());
+		data.setPushServerType(registerDto.getPushServerType());
 		return updateChatUserDetails(data, chatUser);
 	}
 
 	public String updateChatUserDetails(RegisterDto registerDto, ChatUser chatUser) {
 		String deviceIdprefix = "";
+		String pushServerType = "";
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
 			deviceIdprefix = "-web";
 		} else {
@@ -257,6 +259,15 @@ public class RegisterService {
 			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
 					&& (registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))) {
 				registerDto.setDeviceOsVersion("12.0");
+			}
+			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)) {
+				pushServerType = "fcm";
+			} else {
+				if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
+					pushServerType = registerDto.getPushServerType();
+				} else {
+					pushServerType = "apns";
+				}
 			}
 		}
 		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
@@ -287,6 +298,7 @@ public class RegisterService {
 			user.setPassword(GatewayUtil.getMd5String(password));
 			user.setUsername(chatUser.getUsername());
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+			user.setPushServerType(pushServerType);
 			chatUsersDetailsRepo.save(user);
 			return password;
 		} else {
@@ -297,6 +309,7 @@ public class RegisterService {
 			user.setMode(registerDto.getMode());
 			user.setPassword(GatewayUtil.getMd5String(password));
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+			user.setPushServerType(pushServerType);
 			chatUsersDetailsRepo.save(user);
 			return password;
 		}
@@ -343,7 +356,12 @@ public class RegisterService {
 				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
 		}
-		
+		if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
+			if (!registerDto.getPushServerType().equalsIgnoreCase("apns")
+					&& !registerDto.getPushServerType().equalsIgnoreCase("fcm")) {
+				throw new BadDataException(GatewayConstants.PUSH_SERVER_TYPE_NOT_VALID);
+			}
+		}
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
 		
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
