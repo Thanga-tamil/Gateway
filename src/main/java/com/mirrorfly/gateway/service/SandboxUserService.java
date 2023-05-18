@@ -197,11 +197,10 @@ public class SandboxUserService {
 				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
 		}
-		if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
-			if (!registerDto.getPushServerType().equalsIgnoreCase("apns")
-					&& !registerDto.getPushServerType().equalsIgnoreCase("fcm")) {
-				throw new BadDataException(GatewayConstants.PUSH_SERVER_TYPE_NOT_VALID);
-			}
+		if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()
+				&& !registerDto.getPushServerType().equalsIgnoreCase("apns")
+				&& !registerDto.getPushServerType().equalsIgnoreCase("fcm")) {
+			throw new BadDataException(GatewayConstants.PUSH_SERVER_TYPE_NOT_VALID);
 		}
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
 
