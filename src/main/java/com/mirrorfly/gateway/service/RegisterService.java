@@ -329,20 +329,20 @@ public class RegisterService {
 	}
 	
 	public void inputDataValidation(SanboxUserRegisterDto registerDto) {
-		RegisterDto data = new RegisterDto();
-		data.setDeviceId(registerDto.getDeviceId());
-		data.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-		data.setDeviceToken(registerDto.getDeviceToken());
-		data.setDeviceType(registerDto.getDeviceType());
-		data.setLicenseKey(registerDto.getLicenseKey());
-		data.setMobileNumber(registerDto.getMobileNumber());
-		data.setMode(registerDto.getMode());
-		data.setUserIdentifier(registerDto.getUserIdentifier());
-		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-		data.setForceRegister(registerDto.getForceRegister());
-		data.setPushServerType(registerDto.getPushServerType());
-		data.setMetaData(registerDto.getMetaData());
-		inputDataValidation(data);
+		RegisterDto registerData = new RegisterDto();
+		registerData.setDeviceId(registerDto.getDeviceId());
+		registerData.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+		registerData.setDeviceToken(registerDto.getDeviceToken());
+		registerData.setDeviceType(registerDto.getDeviceType());
+		registerData.setLicenseKey(registerDto.getLicenseKey());
+		registerData.setMobileNumber(registerDto.getMobileNumber());
+		registerData.setMode(registerDto.getMode());
+		registerData.setUserIdentifier(registerDto.getUserIdentifier());
+		registerData.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+		registerData.setForceRegister(registerDto.getForceRegister());
+		registerData.setPushServerType(registerDto.getPushServerType());
+		registerData.setMetaData(registerDto.getMetaData());
+		inputDataValidation(registerData);
 	}
 
 	private void inputDataValidation(RegisterDto registerDto) {
