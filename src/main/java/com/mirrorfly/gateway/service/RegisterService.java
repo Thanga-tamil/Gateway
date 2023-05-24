@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -87,7 +88,7 @@ public class RegisterService {
 
 	@Autowired
 	private SpoolRepo spoolRepo;
-
+	
 	public Response<RegisterInfoDto> getRegisterInfo() {
 		ChatSettings settings = settingsRepo.findAll().get(0);
 		RegisterInfoDto info = new RegisterInfoDto();
@@ -195,9 +196,9 @@ public class RegisterService {
 				registerResponseDto.setIsProfileUpdated(true);
 			}
 			registerResponseDto.setIsExisting(true);
-			
+
 		}
-		
+
 		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
 		chatUser.setMetaData(metadata);
 
@@ -237,6 +238,7 @@ public class RegisterService {
 		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		data.setForceRegister(registerDto.getForceRegister());
 		data.setPushServerType(registerDto.getPushServerType());
+		data.setUserType(registerDto.getUserType());
 		return updateChatUserDetails(data, chatUser);
 	}
 
@@ -296,6 +298,10 @@ public class RegisterService {
 			user.setUsername(chatUser.getUsername());
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 			user.setPushServerType(pushServerType);
+			user.setUserType(applicationProperties.getDefaultUserType());
+			if(StringUtils.isNotBlank(registerDto.getUserType())) {
+				user.setUserType(registerDto.getUserType().trim());
+			}
 			chatUsersDetailsRepo.save(user);
 			return password;
 		} else {
@@ -307,6 +313,9 @@ public class RegisterService {
 			user.setPassword(GatewayUtil.getMd5String(password));
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 			user.setPushServerType(pushServerType);
+			if(StringUtils.isNotBlank(registerDto.getUserType())) {
+				user.setUserType(registerDto.getUserType().trim());
+			}
 			chatUsersDetailsRepo.save(user);
 			return password;
 		}
@@ -342,6 +351,7 @@ public class RegisterService {
 		registerData.setForceRegister(registerDto.getForceRegister());
 		registerData.setPushServerType(registerDto.getPushServerType());
 		registerData.setMetaData(registerDto.getMetaData());
+		registerData.setUserType(registerDto.getUserType());
 		inputDataValidation(registerData);
 	}
 
@@ -372,6 +382,7 @@ public class RegisterService {
 			throw new BadDataException(GatewayConstants.PUSH_SERVER_TYPE_NOT_VALID);
 		}
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
+		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
 		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()

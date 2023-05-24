@@ -53,5 +53,8 @@ public class ChatUserDetails {
 	
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
+	
+	@Column(name = "user_type")
+	private String userType;
 
 }
