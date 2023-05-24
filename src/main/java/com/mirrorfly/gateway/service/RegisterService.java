@@ -89,9 +89,6 @@ public class RegisterService {
 	@Autowired
 	private SpoolRepo spoolRepo;
 	
-	@Autowired
-	private GatewayUtil gatewayUtil;
-
 	public Response<RegisterInfoDto> getRegisterInfo() {
 		ChatSettings settings = settingsRepo.findAll().get(0);
 		RegisterInfoDto info = new RegisterInfoDto();
@@ -151,11 +148,8 @@ public class RegisterService {
 
 	private RegisterResponseDto registerUser(RegisterDto registerDto) {
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
-
-		inputDataValidating(registerDto);
-
+		inputDataValidation(registerDto);
 		Users user = new Users();
-
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
 			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
@@ -243,12 +237,14 @@ public class RegisterService {
 		data.setUserIdentifier(registerDto.getUserIdentifier());
 		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		data.setForceRegister(registerDto.getForceRegister());
+		data.setPushServerType(registerDto.getPushServerType());
 		data.setUserType(registerDto.getUserType());
 		return updateChatUserDetails(data, chatUser);
 	}
 
 	public String updateChatUserDetails(RegisterDto registerDto, ChatUser chatUser) {
 		String deviceIdprefix = "";
+		String pushServerType = "";
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
 			deviceIdprefix = "-web";
 		} else {
@@ -262,6 +258,15 @@ public class RegisterService {
 			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
 					&& (registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))) {
 				registerDto.setDeviceOsVersion("12.0");
+			}
+			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)) {
+				pushServerType = "fcm";
+			} else {
+				if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
+					pushServerType = registerDto.getPushServerType();
+				} else {
+					pushServerType = "apns";
+				}
 			}
 		}
 		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
@@ -292,6 +297,7 @@ public class RegisterService {
 			user.setPassword(GatewayUtil.getMd5String(password));
 			user.setUsername(chatUser.getUsername());
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+			user.setPushServerType(pushServerType);
 			user.setUserType(applicationProperties.getDefaultUserType());
 			if(StringUtils.isNotBlank(registerDto.getUserType())) {
 				user.setUserType(registerDto.getUserType().trim());
@@ -306,6 +312,7 @@ public class RegisterService {
 			user.setMode(registerDto.getMode());
 			user.setPassword(GatewayUtil.getMd5String(password));
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+			user.setPushServerType(pushServerType);
 			if(StringUtils.isNotBlank(registerDto.getUserType())) {
 				user.setUserType(registerDto.getUserType().trim());
 			}
@@ -329,8 +336,26 @@ public class RegisterService {
 		Collections.sort(existingChatUsersDetails, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
 		return existingChatUsersDetails.get(0);
 	}
+	
+	public void inputDataValidation(SanboxUserRegisterDto registerDto) {
+		RegisterDto registerData = new RegisterDto();
+		registerData.setDeviceId(registerDto.getDeviceId());
+		registerData.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+		registerData.setDeviceToken(registerDto.getDeviceToken());
+		registerData.setDeviceType(registerDto.getDeviceType());
+		registerData.setLicenseKey(registerDto.getLicenseKey());
+		registerData.setMobileNumber(registerDto.getMobileNumber());
+		registerData.setMode(registerDto.getMode());
+		registerData.setUserIdentifier(registerDto.getUserIdentifier());
+		registerData.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+		registerData.setForceRegister(registerDto.getForceRegister());
+		registerData.setPushServerType(registerDto.getPushServerType());
+		registerData.setMetaData(registerDto.getMetaData());
+		registerData.setUserType(registerDto.getUserType());
+		inputDataValidation(registerData);
+	}
 
-	private void inputDataValidating(RegisterDto registerDto) {
+	private void inputDataValidation(RegisterDto registerDto) {
 		String userIdentifier = registerDto.getUserIdentifier();
 		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
@@ -340,18 +365,30 @@ public class RegisterService {
 				|| userIdentifier.contains(">") || userIdentifier.contains("@")) {
 			throw new BadDataException("User identifier should not contain (\",&,\',/,:,<,>,@).");
 		}
-		setSandBoxUserAndValidate(registerDto);
-	}
-	
-	private void setSandBoxUserAndValidate(RegisterDto registerDto) {
-		SanboxUserRegisterDto sandbox = new SanboxUserRegisterDto();
-		sandbox.setUserIdentifier(registerDto.getUserIdentifier());
-		sandbox.setUserType(registerDto.getUserType());
-		sandbox.setDeviceType(registerDto.getDeviceType());
-		sandbox.setMetaData(registerDto.getMetaData());
-		sandbox.setForceRegister(registerDto.getForceRegister());
-		sandbox.setLicenseKey(registerDto.getLicenseKey());
-		gatewayUtil.dataValidating(sandbox);
+		if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
+			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
+		}
+		if (registerDto.getDeviceType() == null || registerDto.getDeviceType().trim().isEmpty()) {
+			throw new BadDataException(GatewayConstants.DEVICE_TYPE_EMPTY);
+		}
+		if (!registerDto.getDeviceType().equalsIgnoreCase("android")
+				&& !registerDto.getDeviceType().equalsIgnoreCase("web")
+				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
+			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
+		}
+		if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()
+				&& !registerDto.getPushServerType().equalsIgnoreCase("apns")
+				&& !registerDto.getPushServerType().equalsIgnoreCase("fcm")) {
+			throw new BadDataException(GatewayConstants.PUSH_SERVER_TYPE_NOT_VALID);
+		}
+		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
+		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
+		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
+				.findByUsername(registerDto.getUserIdentifier());
+		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
+				&& Boolean.FALSE.equals(registerDto.getForceRegister())) {
+			throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
+		}
 	}
 
 	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {

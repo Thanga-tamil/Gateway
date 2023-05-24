@@ -28,6 +28,8 @@ public class RegisterDto {
 	private Boolean forceRegister = true;
 
 	private Map<String, Object> metaData;
+	
+	private String pushServerType = "";
 
 	private String userType = "";
 

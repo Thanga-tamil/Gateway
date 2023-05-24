@@ -29,6 +29,8 @@ public class SanboxUserRegisterDto {
 	
 	private Map<String, Object> metaData;
 	
+	private String pushServerType = "";
+	
 	private String userType;
 
 }

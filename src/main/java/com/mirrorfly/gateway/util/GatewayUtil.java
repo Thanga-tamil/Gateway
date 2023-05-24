@@ -18,11 +18,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
-import com.mirrorfly.gateway.dto.SanboxUserRegisterDto;
 import com.mirrorfly.gateway.exception.BadDataException;
-import com.mirrorfly.gateway.exception.ForbiddenException;
-import com.mirrorfly.gateway.model.ChatUserDetails;
-import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 
 import inet.ipaddr.IPAddressString;
 import lombok.extern.slf4j.Slf4j;
@@ -30,17 +26,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class GatewayUtil {
-	
 
 	@Autowired
 	private ApplicationProperties applicationProperties;
-	
-	@Autowired
-	private ChatUsersDetailsRepo chatUsersDetailsRepo;
 
 	private GatewayUtil() {
 	}
-	
+
 	private static SecureRandom rnd = new SecureRandom();
 
 	public static PageRequest getPagination(Integer page, Integer size) {
@@ -67,9 +59,8 @@ public class GatewayUtil {
 		}
 		return sb.toString();
 	}
-	
-	public static String getMd5String(String input)
-	{
+
+	public static String getMd5String(String input) {
 		StringBuilder hashtext = new StringBuilder();
 		try {
 			MessageDigest md = MessageDigest.getInstance("MD5");
@@ -79,14 +70,13 @@ public class GatewayUtil {
 			while (hashtext.length() < 32) {
 				hashtext.append("0" + hashtext);
 			}
- 		}
- 		catch (NoSuchAlgorithmException e) {
- 			log.error("Error while create string to MD5");
+		} catch (NoSuchAlgorithmException e) {
+			log.error("Error while create string to MD5");
 			log.error(e.getMessage());
 		}
 		return hashtext.toString();
 	}
-	
+
 	public Boolean userIpAccessValidation(String remoteIP) {
 		if (StringUtils.isBlank(remoteIP)) {
 			log.error("Remote IP is null or Blank " + remoteIP);
@@ -102,7 +92,7 @@ public class GatewayUtil {
 		}
 		return false;
 	}
-	
+
 	public static Map<String, Object> convertJsonStringToMap(String jsonString) throws JsonProcessingException {
 		return new ObjectMapper().readValue(jsonString, new TypeReference<Map<String, Object>>() {
 		});
@@ -111,16 +101,16 @@ public class GatewayUtil {
 	public static String convertMapToJson(Map<String, Object> messageContent) throws JsonProcessingException {
 		return new ObjectMapper().writeValueAsString(messageContent);
 	}
-	
+
 	public static String convertMetaDataAsJson(Map<String, Object> metaData) {
 		String jsonMetadata = null;
 		if (metaData != null && metaData.size() > 0) {
 			try {
 				Map<String, Object> meta = new HashMap<>();
 				for (Map.Entry<String, Object> entry : metaData.entrySet()) {
-					if(entry.getValue() instanceof String) {
+					if (entry.getValue() instanceof String) {
 						meta.put(entry.getKey().trim(), entry.getValue().toString().trim());
-					}else {
+					} else {
 						meta.put(entry.getKey().trim(), entry.getValue());
 					}
 				}
@@ -131,18 +121,18 @@ public class GatewayUtil {
 		}
 		return jsonMetadata;
 	}
-	
+
 	public static void validateMetaData(Map<String, Object> meta, int maxLimit) {
 		if (meta != null && meta.size() > 0) {
 			if (meta.size() > maxLimit) {
-				throw new BadDataException(
-						"Metadata can have maximum of " + maxLimit + " fields");
+				throw new BadDataException("Metadata can have maximum of " + maxLimit + " fields");
 			} else {
 				for (Map.Entry<String, Object> entry : meta.entrySet()) {
 					if (entry.getKey() == null || entry.getKey().trim().length() == 0) {
 						throw new BadDataException("Metadata key can not be empty");
 					} else if (entry.getValue() == null || entry.getValue().toString().trim().length() == 0) {
-						throw new BadDataException("Metadata value for the key " + entry.getKey().trim() + " is required");
+						throw new BadDataException(
+								"Metadata value for the key " + entry.getKey().trim() + " is required");
 					}
 				}
 				// just to verify if given data can safely converted to json string
@@ -150,38 +140,10 @@ public class GatewayUtil {
 			}
 		}
 	}
-	
+
 	public static void validateUserType(String userType, List<String> userTypes) {
 		if (StringUtils.isNotBlank(userType) && !userTypes.contains(userType.trim().toLowerCase())) {
 			throw new BadDataException(GatewayConstants.USER_TYPE_NOT_VALID);
-		}
-	}
-	
-	public void dataValidating(SanboxUserRegisterDto registerDto) {
-		if (registerDto.getUserIdentifier() == null || registerDto.getUserIdentifier().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
-		}
-		if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
-		}
-		if (registerDto.getDeviceType() == null || registerDto.getDeviceType().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.DEVICE_TYPE_EMPTY);
-		}
-		if (!registerDto.getDeviceType().equalsIgnoreCase("android")
-				&& !registerDto.getDeviceType().equalsIgnoreCase("web")
-				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
-			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
-		}
-
-		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
-
-		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
-
-		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
-				.findByUsername(registerDto.getUserIdentifier());
-		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
-				&& Boolean.FALSE.equals(registerDto.getForceRegister())) {
-			throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 		}
 	}
 

@@ -207,6 +207,8 @@ public class GatewayConstants {
 	public static final String DEVICE_TYPE_EMPTY = "Device type should not be empty";
 
 	public static final String DEVICE_TYPE_NOT_VALID = "Invalid device type";
+	
+	public static final String PUSH_SERVER_TYPE_NOT_VALID = "Invalid push server type";
 
 	public static final String USER_NAME_EMPTY = "User name should not be empty";
 

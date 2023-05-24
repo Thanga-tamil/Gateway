@@ -63,14 +63,11 @@ public class SandboxUserService {
 
 	@Autowired
 	private VcardService vcardService;
-	
-	@Autowired
-	private GatewayUtil gatewayUtil;
-	
+
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) throws JsonProcessingException {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
-		gatewayUtil.dataValidating(registerDto);
+		registerService.inputDataValidation(registerDto);
 		Users users = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser != null) {
@@ -204,5 +201,5 @@ public class SandboxUserService {
 			throw new BadDataException(GatewayConstants.ERROR_IN_REGISTRATION);
 		}
 	}
-	
+
 }
