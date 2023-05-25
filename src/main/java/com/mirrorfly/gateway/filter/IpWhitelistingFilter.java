@@ -39,7 +39,7 @@ public class IpWhitelistingFilter implements WebFilter, Ordered {
 			for (Entry<String, List<String>> header : headers.entrySet()) {
 				log.info("Header Key ---> " + header.getKey() + " Value ---> " + header.getValue());
 			}
-			
+
 			InetSocketAddress address = request.getRemoteAddress();
 			String remoteIPAddress = "";
 			if (address != null && address.getAddress() != null) {

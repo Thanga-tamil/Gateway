@@ -1,7 +1,6 @@
 package com.mirrorfly.gateway.service;
 
 import java.net.URI;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,12 +20,10 @@ import com.mirrorfly.gateway.dto.SandboxRegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.ChatUser;
-import com.mirrorfly.gateway.model.ChatUserDetails;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
-import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
@@ -67,13 +64,10 @@ public class SandboxUserService {
 	@Autowired
 	private VcardService vcardService;
 
-	@Autowired
-	private ChatUsersDetailsRepo chatUsersDetailsRepo;
-	
 	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) throws JsonProcessingException {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
-		dataValidating(registerDto);
+		registerService.inputDataValidation(registerDto);
 		Users users = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser != null) {
@@ -182,32 +176,6 @@ public class SandboxUserService {
 		}
 	}
 
-	private void dataValidating(SanboxUserRegisterDto registerDto) {
-		if (registerDto.getUserIdentifier() == null || registerDto.getUserIdentifier().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
-		}
-		if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
-		}
-		if (registerDto.getDeviceType() == null || registerDto.getDeviceType().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.DEVICE_TYPE_EMPTY);
-		}
-		if (!registerDto.getDeviceType().equalsIgnoreCase("android")
-				&& !registerDto.getDeviceType().equalsIgnoreCase("web")
-				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
-			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
-		}
-		
-		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
-		
-		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
-				.findByUsername(registerDto.getUserIdentifier());
-		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
-				&& Boolean.FALSE.equals(registerDto.getForceRegister())) {
-			throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
-		}
-	}
-
 	private ChatUser registerUser(SanboxUserRegisterDto registerDto, String username) {
 		ChatUser chatUser = new ChatUser();
 		chatUser.setUsername(username);
@@ -219,7 +187,6 @@ public class SandboxUserService {
 		chatUser.setDeviceType(registerDto.getDeviceType());
 		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
 		chatUser.setMetaData(metadata);
-		
 		chatUserRepo.save(chatUser);
 		return chatUser;
 	}
@@ -234,5 +201,5 @@ public class SandboxUserService {
 			throw new BadDataException(GatewayConstants.ERROR_IN_REGISTRATION);
 		}
 	}
-	
+
 }
