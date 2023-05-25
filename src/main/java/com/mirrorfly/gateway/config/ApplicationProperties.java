@@ -1,5 +1,10 @@
 package com.mirrorfly.gateway.config;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -77,13 +82,36 @@ public class ApplicationProperties {
 	public String getWhiteListIps() {
 		return env.getProperty("white-list-ips");
 	}
-	
+
 	public int getMaximumSessions() {
 		return env.getProperty("user.maxSessions") != null ? Integer.parseInt(env.getProperty("user.maxSessions")) : 2;
 	}
-	
+
 	public int getMetaDataLimit() {
 		return env.getProperty("metadata.limit", Integer.class, 3);
 	}
-}
 
+	public List<String> getUserTypes() {
+		List<String> types = new ArrayList<>();
+		String[] userTypes = StringUtils.split(env.getProperty("user.types"), ",");
+
+		// looping through data manually to hanlde spaces
+		if (ArrayUtils.isNotEmpty(userTypes)) {
+			for (String userType : userTypes) {
+				if (StringUtils.isNotBlank(userType)) {
+					types.add(userType.trim().toLowerCase());
+				}
+			}
+		}
+
+		if (types.isEmpty()) {
+			types.add(getDefaultUserType());
+		}
+
+		return types;
+	}
+
+	public String getDefaultUserType() {
+		return env.getProperty("user.type.default", "u");
+	}
+}

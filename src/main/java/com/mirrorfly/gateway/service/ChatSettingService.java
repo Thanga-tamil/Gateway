@@ -14,9 +14,6 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 @Service
 public class ChatSettingService {
 
@@ -27,7 +24,6 @@ public class ChatSettingService {
 	private GatewayUtil gatewayUtil;
 
 	public Response<String> updateChatSetting(ChatSettingDataDto request, String remoteIPAddress) {
-		log.info("Remote IP ---> " + remoteIPAddress);
 		if (Boolean.FALSE.equals(gatewayUtil.userIpAccessValidation(remoteIPAddress))) {
 			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
 		}
@@ -93,6 +89,7 @@ public class ChatSettingService {
 		chatSettings.setLicenseKey(request.getLicenceKey());
 		chatSettings.setCreatedAt(currentTimestamp);
 		chatSettings.setUpdatedAt(currentTimestamp);
+		chatSettings.setLicense_expiry(request.getLicencekeyExpiryDate());
 		chatSettingsRepo.save(chatSettings);
 	}
 
@@ -110,6 +107,7 @@ public class ChatSettingService {
 		chatSettingValue.setGroupCall(request.getGroupCall());
 		chatSettingValue.setRecentchatSearch(request.getRecentchatSearch());
 		chatSettingValue.setUpdatedAt(currentTimestamp);
+		chatSettingValue.setLicense_expiry(request.getLicencekeyExpiryDate());
 		chatSettingsRepo.save(chatSettingValue);
 	}
 
