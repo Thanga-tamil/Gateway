@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.dto.LicenseAVResDto;
 import com.mirrorfly.gateway.dto.LicenseChatResDto;
@@ -80,6 +81,7 @@ public class LicenseService {
 		ChatSettings settings = getConfigService();
 
 		License license = licenseRepo.findByActivationKeyAndSdk(licenseReq.getActivationKey(), sdkType);
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		if (license == null) {
 			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
 		}
@@ -140,6 +142,7 @@ public class LicenseService {
 	@SwitchDataSource(value="[0]")
 	public Response<String> updateLicense(String userdomain, LicenseUpdateRequestDto request) {
 		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		LicenseLookup data = new LicenseLookup();
 		if (!existingKey.isEmpty() && existingKey.get(0) != null) {
 			data = existingKey.get(0);
