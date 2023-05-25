@@ -45,10 +45,16 @@ public class ChatUserDetails {
 	@Column(name = "password")
 	private String password;
 	
+	@Column(name = "push_server_type")
+	private String pushServerType;
+	
 	@Column(name = "last_logged_in_at")
 	private LocalDateTime lastLoggedInAt;
 	
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
+	
+	@Column(name = "user_type")
+	private String userType;
 
 }

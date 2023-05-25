@@ -1,6 +1,7 @@
 package com.mirrorfly.gateway.model;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 import javax.persistence.Column;
@@ -83,6 +84,9 @@ public class ChatSettings implements Serializable {
 
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
+	
+	@Column(name = "license_expiry")
+	private Timestamp license_expiry;
 
 	@Column(name = "sipcall_enabled")
 	private Boolean sipcallEnabled;
