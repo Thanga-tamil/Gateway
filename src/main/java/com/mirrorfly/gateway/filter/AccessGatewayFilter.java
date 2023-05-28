@@ -69,19 +69,16 @@ public class AccessGatewayFilter implements GlobalFilter {
 		if (header == null || header.isEmpty()) {
 			return unauthorized(exchange);
 		} else {
-			String username = tokenService.validateToken(header);
+			String userdomain = exchange.getRequest().getHeaders().getFirst(GatewayConstants.USER_DOMAIN);
+			
+			String username = tokenService.validateToken(userdomain, header);
 			if (username == null) {
 				return unauthorized(exchange);
 			}
-			InetSocketAddress address = request.getRemoteAddress();
-			String remoteIPAddress = "";
-			if (address != null && address.getAddress() != null) {
-				remoteIPAddress = address.getAddress().toString().replace("/", "");
-				log.info("Remote IP Address ------> " + remoteIPAddress);
-			}
+			
 			ServerHttpRequest.Builder builder = request.mutate();
 			builder.header("username", username);
-			builder.header(GatewayConstants.REMOTE_IP, remoteIPAddress);
+			builder.header(GatewayConstants.USER_DOMAIN, userdomain);
 			return chain.filter(exchange.mutate().request(builder.build()).build());
 		}
 	}
