@@ -182,7 +182,7 @@ public class LicenseService {
 			}
 			data.setLkey(licenseKey);
 			licenseLookupRepo.save(data);
-			queueService.sendLicenseDataPayload(new LicenseDataPayload(licenseKey));
+			queueService.sendLicenseDataPayload(new LicenseDataPayload(licenseKey, userdomain));
 			Users user = userRepo.findByUsername(licenseData.getApiUsername());
 			if (user == null) {
 				log.info("First Time Insert Api Username and Password.................... "

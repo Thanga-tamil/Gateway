@@ -24,6 +24,7 @@ import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.AdminUser;
+import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.ChatUserDetails;
 import com.mirrorfly.gateway.model.EmailToken;
 import com.mirrorfly.gateway.model.TokenDetail;
@@ -31,9 +32,11 @@ import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.queue.MailPayload;
 import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.AdminUserRepo;
+import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 import com.mirrorfly.gateway.repo.EmailTokenRepo;
 import com.mirrorfly.gateway.repo.SpoolRepo;
+import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
@@ -63,6 +66,18 @@ public class LoginService {
 
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
+	
+	@Autowired
+	private ChatUsersDetailsRepo chatUsersDetailsRepo;
+	
+	@Autowired
+	private ChatUserRepo chatUserRepo;  
+	
+	@Autowired
+	private UserRepo userRepo;
+	
+	@Autowired
+	private PasswordService passwordService;
 	
 	@Autowired
 	private DataStore dataStore;
@@ -130,8 +145,8 @@ public class LoginService {
 			AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 			Optional<ChatUser> chatUser = chatUserRepo.findById(username);
 			if (chatUser.isPresent()) {
-				chatUser.get().setDeviceToken("");
-				chatUser.get().setDevicetype("");
+				chatUser.get().setDeviceType("");
+				chatUser.get().setDeviceType("");
 				chatUserRepo.save(chatUser.get());
 				userRepo.updatePasswordByUsername(passwordService.generateRandomPassword(), username);
 			}

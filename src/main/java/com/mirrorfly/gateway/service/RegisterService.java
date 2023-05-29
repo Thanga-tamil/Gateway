@@ -87,6 +87,13 @@ public class RegisterService {
 
 	@Autowired
 	private VcardService vcardService;
+
+	@Autowired
+	private ChatUsersDetailsRepo chatUsersDetailsRepo;  
+	
+	@Autowired
+	private SpoolRepo spoolRepo;
+	
 	
 	@Autowired
 	private DataStore dataStore;
@@ -130,7 +137,7 @@ public class RegisterService {
 		RegisterResponseDto registerResponseDto = registerUser(userdomain, registerDto);
 		// get config details and return in the response
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-		registerResponseDto.setConfig(configService.getCongigData());
+		registerResponseDto.setConfig(configService.getConfigData(licenseKey));
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonString;
 		try {
@@ -242,7 +249,7 @@ public class RegisterService {
 		data.setUserIdentifier(registerDto.getUserIdentifier());
 		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		data.setForceRegister(registerDto.getForceRegister());
-		data.setPushServerType(registerDto.getPushServerType());
+		data.setUserType(registerDto.getPushServerType());
 		data.setUserType(registerDto.getUserType());
 		return updateChatUserDetails(data, chatUser);
 	}
@@ -267,8 +274,8 @@ public class RegisterService {
 			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)) {
 				pushServerType = "fcm";
 			} else {
-				if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
-					pushServerType = registerDto.getPushServerType();
+				if (registerDto.getUserType() != null && !registerDto.getUserType().trim().isEmpty()) {
+					pushServerType = registerDto.getUserType();
 				} else {
 					pushServerType = "apns";
 				}
@@ -354,7 +361,7 @@ public class RegisterService {
 		registerData.setUserIdentifier(registerDto.getUserIdentifier());
 		registerData.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		registerData.setForceRegister(registerDto.getForceRegister());
-		registerData.setPushServerType(registerDto.getPushServerType());
+		registerData.setUserType(registerDto.getPushServerType());
 		registerData.setMetaData(registerDto.getMetaData());
 		registerData.setUserType(registerDto.getUserType());
 		inputDataValidation(registerData);
@@ -381,9 +388,9 @@ public class RegisterService {
 				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
 		}
-		if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()
-				&& !registerDto.getPushServerType().equalsIgnoreCase("apns")
-				&& !registerDto.getPushServerType().equalsIgnoreCase("fcm")) {
+		if (registerDto.getUserType() != null && !registerDto.getUserType().trim().isEmpty()
+				&& !registerDto.getUserType().equalsIgnoreCase("apns")
+				&& !registerDto.getUserType().equalsIgnoreCase("fcm")) {
 			throw new BadDataException(GatewayConstants.PUSH_SERVER_TYPE_NOT_VALID);
 		}
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
