@@ -87,4 +87,8 @@ public class ApplicationProperties {
 		// should be several minutes less than database global wait_timeout
 		return env.getProperty("spring.datasource.hikari.maxLifetime", Long.class);
 	}
+	
+	public String getSandboxUrl() {
+		return env.getProperty("sandbox.domain");
+	}
 }
