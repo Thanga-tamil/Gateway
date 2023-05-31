@@ -1,6 +1,7 @@
-git package com.mirrorfly.gateway.service;
+package com.mirrorfly.gateway.service;
 
 import java.net.URI;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,7 @@ import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
+import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
@@ -65,6 +67,9 @@ public class SandboxUserService {
 
 	@Autowired
 	private VcardService vcardService;
+
+	@Autowired
+	private ChatUsersDetailsRepo chatUsersDetailsRepo;
 	
 	@SwitchDataSource(value="[0]")
 	public Response<String> registerNewUser(String userdomain, SanboxUserRegisterDto registerDto) throws JsonProcessingException {
@@ -135,7 +140,7 @@ public class SandboxUserService {
 			}
 			String username = registerDto.getUserIdentifier();
 			// Create new user
-			registerUser(userdomain, registerDto, username);
+			chatUser = registerUser(userdomain, registerDto, username);
 			registerResponseDto.setUsername(username);
 			registerResponseDto.setIsExisting(false);
 			users.setUsername(username);
@@ -144,7 +149,8 @@ public class SandboxUserService {
 			vcardService.updateVcard(vcardSearch, new Vcard());
 			registerResponseDto.setIsProfileUpdated(false);
 		}
-		registerResponseDto.setPassword(passwordService.generateRandomPassword());
+		String password = registerService.updateChatUserDetails(registerDto, chatUser);
+		registerResponseDto.setPassword(password);
 		registerResponseDto.setToken(tokenService.getToken(userdomain, registerResponseDto.getUsername(),
 				registerDto.getDeviceType(), registerDto.getDeviceType()));
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
@@ -218,7 +224,7 @@ public class SandboxUserService {
 	}
 
 	@SwitchDataSource(value = "[0]")
-	private void registerUser(String userdomain, SanboxUserRegisterDto registerDto, String username) {
+	private ChatUser registerUser(String userdomain, SanboxUserRegisterDto registerDto, String username) {
 		ChatUser chatUser = new ChatUser();
 		chatUser.setUsername(username);
 		chatUser.setMobileNumber(registerDto.getMobileNumber());
@@ -226,7 +232,7 @@ public class SandboxUserService {
 		chatUser.setLicenseKey(registerDto.getLicenseKey());
 		chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 		chatUser.setIsDeleteInprogrees(0);
-		chatUser.setDeviceType(registerDto.getDeviceType());
+		chatUser.setDevicetype(registerDto.getDeviceType());
 		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
 		chatUser.setMetaData(metadata);
 		chatUserRepo.save(chatUser);

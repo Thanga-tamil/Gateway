@@ -145,8 +145,8 @@ public class LoginService {
 			AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 			Optional<ChatUser> chatUser = chatUserRepo.findById(username);
 			if (chatUser.isPresent()) {
-				chatUser.get().setDeviceType("");
-				chatUser.get().setDeviceType("");
+				chatUser.get().setDevicetype(" ");
+				chatUser.get().setDevicetype("");
 				chatUserRepo.save(chatUser.get());
 				userRepo.updatePasswordByUsername(passwordService.generateRandomPassword(), username);
 			}
