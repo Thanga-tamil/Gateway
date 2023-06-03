@@ -33,6 +33,12 @@ public class ChatUser implements Serializable {
 	@Column(name = "status_msg")
 	private String statusMsg;
 
+	@Column(name = "device_token")
+	private String deviceToken;
+
+	@Column(name = "voip_device_token")
+	private String voipDeviceToken;
+
 	@Column(name = "country_code")
 	private String countryCode;
 
@@ -42,11 +48,20 @@ public class ChatUser implements Serializable {
 	@Column(name = "resource")
 	private String resource;
 
+	@Column(name = "mode")
+	private Integer mode;
+
 	@Column(name = "notification")
 	private String notification;
 
 	@Column(name = "image")
 	private String image;
+
+	@Column(name = "device_type")
+	private String devicetype;
+
+	@Column(name = "device_os_version")
+	private String deviceOsVersion;
 
 	@Column(name = "status")
 	private String status;
@@ -69,7 +84,5 @@ public class ChatUser implements Serializable {
 	@Column(columnDefinition = "JSON", name = "metadata")
 	private String metaData;
 	
-	@Column(name = "device_type")
-	private String deviceType;
 
 }

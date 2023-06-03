@@ -25,6 +25,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
+import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterRequestDto;
@@ -50,6 +52,9 @@ import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class RegisterService {
 
@@ -84,12 +89,18 @@ public class RegisterService {
 	private VcardService vcardService;
 
 	@Autowired
-	private ChatUsersDetailsRepo chatUsersDetailsRepo;
-
+	private ChatUsersDetailsRepo chatUsersDetailsRepo;  
+	
 	@Autowired
 	private SpoolRepo spoolRepo;
 	
-	public Response<RegisterInfoDto> getRegisterInfo() {
+	
+	@Autowired
+	private DataStore dataStore;
+	
+	@SwitchDataSource(value="[0]")
+	public Response<RegisterInfoDto> getRegisterInfo(String userdomain) {
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		ChatSettings settings = settingsRepo.findAll().get(0);
 		RegisterInfoDto info = new RegisterInfoDto();
 		info.setDomain(settings.getDomain());
@@ -101,10 +112,16 @@ public class RegisterService {
 		return response;
 	}
 
-	public Response<String> registerNewUser(RegisterRequestDto registerRequestDto) {
+	@SwitchDataSource(value="[0]")
+	public Response<String> registerNewUser(String userdomain, RegisterRequestDto registerRequestDto) {
+		Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
+    	String licenseKey = config!=null ? (String) config : null;
+    	if (licenseKey == null) {
+			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
+		}
+		
 		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(),
-				applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
-						+ applicationProperties.getLicenseKey());
+				licenseKey + licenseKey	+ licenseKey);
 		if (decyptedString.equals("")) {
 			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
 		}
@@ -114,11 +131,12 @@ public class RegisterService {
 			registerDto = decryptmapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
 					RegisterDto.class);
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
+			log.error("RegisterDto values are not readable ::: " + e.getMessage());
 			throw new BadDataException(GatewayConstants.INVALID_ERROR);
 		}
-		RegisterResponseDto registerResponseDto = registerUser(registerDto);
+		RegisterResponseDto registerResponseDto = registerUser(userdomain, registerDto);
 		// get config details and return in the response
-		String licenseKey = applicationProperties.getLicenseKey();
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		registerResponseDto.setConfig(configService.getConfigData(licenseKey));
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonString;
@@ -146,7 +164,9 @@ public class RegisterService {
 		lastRepo.save(last);
 	}
 
-	private RegisterResponseDto registerUser(RegisterDto registerDto) {
+	@SwitchDataSource(value = "[0]")
+	private RegisterResponseDto registerUser(String userdomain, RegisterDto registerDto) {
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
 		inputDataValidation(registerDto);
 		Users user = new Users();
@@ -170,7 +190,7 @@ public class RegisterService {
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 			chatUser.setLicenseKey(registerDto.getLicenseKey());
 			chatUser.setIsDeleteInprogrees(0);
-			chatUser.setDeviceType(registerDto.getDeviceType());
+			chatUser.setDevicetype(registerDto.getDeviceType());
 			// To insert the register login time
 			registerLogintime(registerDto.getUserIdentifier());
 			user.setUsername(registerDto.getUserIdentifier());
@@ -203,24 +223,16 @@ public class RegisterService {
 		chatUser.setMetaData(metadata);
 
 		chatUserRepo.save(chatUser);
-		String password = updateChatUserDetails(registerDto, chatUser);
-		registerResponseDto.setPassword(password);
-		String deviceIdprefix = "";
-		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-			deviceIdprefix = "-web";
-		} else {
-			deviceIdprefix = "-mobile";
-		}
-		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
-				? registerDto.getDeviceId()
-				: "MF-01" + deviceIdprefix;
-		registerResponseDto.setToken(tokenService.getToken(registerDto.getUserIdentifier(), deviceId, ""));
+		registerResponseDto.setPassword(passwordService.generateRandomPassword());
+		registerResponseDto.setToken(tokenService.getToken(userdomain, registerDto.getUserIdentifier(), registerDto.getDeviceType(),
+				registerDto.getDeviceType()));
 		registerResponseDto.setUsername(user.getUsername());
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
 			user.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		} else {
 			user.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		}
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain); //Again setup the DB based on the domain
 		userRepo.save(user);
 		return registerResponseDto;
 	}
@@ -237,7 +249,7 @@ public class RegisterService {
 		data.setUserIdentifier(registerDto.getUserIdentifier());
 		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		data.setForceRegister(registerDto.getForceRegister());
-		data.setPushServerType(registerDto.getPushServerType());
+		data.setUserType(registerDto.getPushServerType());
 		data.setUserType(registerDto.getUserType());
 		return updateChatUserDetails(data, chatUser);
 	}
@@ -262,8 +274,8 @@ public class RegisterService {
 			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)) {
 				pushServerType = "fcm";
 			} else {
-				if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
-					pushServerType = registerDto.getPushServerType();
+				if (registerDto.getUserType() != null && !registerDto.getUserType().trim().isEmpty()) {
+					pushServerType = registerDto.getUserType();
 				} else {
 					pushServerType = "apns";
 				}
@@ -349,7 +361,7 @@ public class RegisterService {
 		registerData.setUserIdentifier(registerDto.getUserIdentifier());
 		registerData.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		registerData.setForceRegister(registerDto.getForceRegister());
-		registerData.setPushServerType(registerDto.getPushServerType());
+		registerData.setUserType(registerDto.getPushServerType());
 		registerData.setMetaData(registerDto.getMetaData());
 		registerData.setUserType(registerDto.getUserType());
 		inputDataValidation(registerData);
@@ -376,9 +388,9 @@ public class RegisterService {
 				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
 		}
-		if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()
-				&& !registerDto.getPushServerType().equalsIgnoreCase("apns")
-				&& !registerDto.getPushServerType().equalsIgnoreCase("fcm")) {
+		if (registerDto.getUserType() != null && !registerDto.getUserType().trim().isEmpty()
+				&& !registerDto.getUserType().equalsIgnoreCase("apns")
+				&& !registerDto.getUserType().equalsIgnoreCase("fcm")) {
 			throw new BadDataException(GatewayConstants.PUSH_SERVER_TYPE_NOT_VALID);
 		}
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());

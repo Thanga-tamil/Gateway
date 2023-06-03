@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
+import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.dto.AdminLoginDto;
 import com.mirrorfly.gateway.dto.AdminLoginResponse;
 import com.mirrorfly.gateway.dto.LoginDetailsDto;
@@ -22,6 +24,7 @@ import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.AdminUser;
+import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.ChatUserDetails;
 import com.mirrorfly.gateway.model.EmailToken;
 import com.mirrorfly.gateway.model.TokenDetail;
@@ -29,9 +32,11 @@ import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.queue.MailPayload;
 import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.AdminUserRepo;
+import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 import com.mirrorfly.gateway.repo.EmailTokenRepo;
 import com.mirrorfly.gateway.repo.SpoolRepo;
+import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
@@ -61,20 +66,36 @@ public class LoginService {
 
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
-
+	
 	@Autowired
 	private ChatUsersDetailsRepo chatUsersDetailsRepo;
-
+	
 	@Autowired
-	private SpoolRepo spoolRepo;
-
-	public Response<LoginDetailsDto> login(LoginDto loginRequestDto) {
+	private ChatUserRepo chatUserRepo;  
+	
+	@Autowired
+	private UserRepo userRepo;
+	
+	@Autowired
+	private PasswordService passwordService;
+	
+	@Autowired
+	private DataStore dataStore;
+	
+    @SwitchDataSource(value="[0]")
+	public Response<LoginDetailsDto> login(String userdomain, LoginDto loginRequestDto) {
 		// If incoming requested in encrypted means, we need to decrypt the password
 		// field to find the original password
+    	AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+    	Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
+    	String licenseKey = config!=null ? (String) config : null;
+    	if (licenseKey == null) {
+			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
+		}
+    	
 		String password = "";
 		String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),
-				applicationProperties.getLicenseKey() + applicationProperties.getLicenseKey()
-						+ applicationProperties.getLicenseKey());
+				licenseKey + licenseKey	+ licenseKey);
 		LoginRequestDto login;
 		ObjectMapper mapper = new ObjectMapper();
 		try {
@@ -102,28 +123,32 @@ public class LoginService {
 
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
-		String deviceId = chatUserDetail.getDeviceId() != null && !chatUserDetail.getDeviceId().isEmpty()
-				? chatUserDetail.getDeviceId()
-				: "MF-01";
-		loginDetails.setToken(tokenService.getToken(chatUserDetail.getUsername(), deviceId, ""));
+		loginDetails.setToken(tokenService.getToken(userdomain, loginRequestDto.getUsername(), "", ""));
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
 	}
 
-	public Response<String> logout(String authorization) {
-		TokenDetail tokenDetail = tokenService.getTokenDetail(authorization);
-		tokenService.deleteToken(authorization);
-		if (tokenDetail != null) {
-			String deviceId = tokenDetail.getDevicetype() != null && !tokenDetail.getDevicetype().isEmpty()
-					? tokenDetail.getDevicetype()
-					: "MF-01";
-			ChatUserDetails chatUserDetail = chatUsersDetailsRepo.findByUsernameAndDeviceId(tokenDetail.getUsername(),
-					deviceId);
-			if (chatUserDetail != null) {
-				chatUsersDetailsRepo.delete(chatUserDetail);
-				spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(tokenDetail.getUsername(), deviceId);
+	private Boolean validatePasswordAgainstMd5(String password, String userpassword) {
+		// In DB we are having the Md5 string, so we are converting the password to Md5
+		// String
+		// and validating it against the DB
+		return password.equals(GatewayUtil.getMd5String(userpassword));
+	}
+
+	@SwitchDataSource(value="[0]")
+	public Response<String> logout(String userdomain, String authorization) {
+		String username = tokenService.getUserNameByToken(userdomain, authorization);
+		tokenService.deleteToken(userdomain, authorization);
+		if (username != null) {
+			AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+			Optional<ChatUser> chatUser = chatUserRepo.findById(username);
+			if (chatUser.isPresent()) {
+				chatUser.get().setDevicetype(" ");
+				chatUser.get().setDevicetype("");
+				chatUserRepo.save(chatUser.get());
+				userRepo.updatePasswordByUsername(passwordService.generateRandomPassword(), username);
 			}
 		}
 		Response<String> response = new Response<>();
@@ -133,7 +158,9 @@ public class LoginService {
 	}
 
 	@SuppressWarnings("unused")
-	public Response<AdminLoginResponse> adminLogin(AdminLoginDto login) {
+	@SwitchDataSource(value = "[0]")
+	public Response<AdminLoginResponse> adminLogin(String userdomain, AdminLoginDto login) {
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		AdminUser adminUser = null;
 		if (login.getUsername() != null) {
 			adminUser = adminUserRepo.findByUsername(login.getUsername());
@@ -157,7 +184,7 @@ public class LoginService {
 		Response<AdminLoginResponse> response = new Response<>();
 		AdminLoginResponse loginDetails = new AdminLoginResponse();
 		loginDetails.setImage(adminUser != null ? adminUser.getImage() : "");
-		loginDetails.setToken(tokenService.getToken(adminUser != null ? adminUser.getUsername() : "", "", ""));
+		loginDetails.setToken(tokenService.getToken(userdomain, adminUser != null ? adminUser.getUsername() : "", "", ""));
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
@@ -270,4 +297,12 @@ public class LoginService {
 		emailTokenRepo.save(validToken);
 	}
 
+	public Response<String> refreshInMemory() {
+		dataStore.reloadConnectionConfig();
+		Response<String> response = new Response<>();
+		response.setStatus(HttpStatus.OK.value());
+		response.setMessage(GatewayConstants.DOMAIN_CONFIG_RELOADED);
+		return response;
+	}
+	
 }
