@@ -1,7 +1,6 @@
 package com.mirrorfly.gateway.filter;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
