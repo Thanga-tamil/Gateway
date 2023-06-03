@@ -1,7 +1,6 @@
 package com.mirrorfly.gateway.service;
 
 import java.net.URI;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -70,9 +69,10 @@ public class SandboxUserService {
 
 	@Autowired
 	private ChatUsersDetailsRepo chatUsersDetailsRepo;
-	
-	@SwitchDataSource(value="[0]")
-	public Response<String> registerNewUser(String userdomain, SanboxUserRegisterDto registerDto) throws JsonProcessingException {
+
+	@SwitchDataSource(value = "[0]")
+	public Response<String> registerNewUser(String userdomain, SanboxUserRegisterDto registerDto)
+			throws JsonProcessingException {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
@@ -182,23 +182,6 @@ public class SandboxUserService {
 		Long count = chatUserRepo.getCountByLicenseKey(licenseKey);
 		if (count >= maxUserCount) {
 			throw new BadDataException(GatewayConstants.USER_COUNT_EXCEEDED);
-		}
-	}
-
-	private void dataValidating(SanboxUserRegisterDto registerDto) {
-		if (registerDto.getUserIdentifier() == null || registerDto.getUserIdentifier().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
-		}
-		if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
-		}
-		if (registerDto.getDeviceType() == null || registerDto.getDeviceType().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.DEVICE_TYPE_EMPTY);
-		}
-		if (!registerDto.getDeviceType().equalsIgnoreCase("android")
-				&& !registerDto.getDeviceType().equalsIgnoreCase("web")
-				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
-			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
 		}
 	}
 

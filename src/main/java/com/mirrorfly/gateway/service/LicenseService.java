@@ -26,7 +26,6 @@ import com.mirrorfly.gateway.dto.LicenseResDto;
 import com.mirrorfly.gateway.dto.LicenseUpdateRequestDto;
 import com.mirrorfly.gateway.dto.TurnDto;
 import com.mirrorfly.gateway.exception.BadDataException;
-import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
 import com.mirrorfly.gateway.model.ChatServerConfig;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.License;
@@ -43,7 +42,6 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.EnumSDKType;
 import com.mirrorfly.gateway.util.GatewayConstants;
-import com.mirrorfly.gateway.util.GatewayUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,11 +69,11 @@ public class LicenseService {
 
 	@Autowired
 	private UserRepo userRepo;
-	
+
 	@Autowired
 	private DataStore dataStore;
-	
-	@SwitchDataSource(value="[0]")
+
+	@SwitchDataSource(value = "[0]")
 	public Response<LicenseResDto> getLicense(String userdomain, LicenseReqDto licenseReq) {
 
 		Response<LicenseResDto> response = new Response<>();
@@ -141,7 +139,7 @@ public class LicenseService {
 		return chatSettingsRepo.findAll().get(0);
 	}
 
-	@SwitchDataSource(value="[0]")
+	@SwitchDataSource(value = "[0]")
 	public Response<String> updateLicense(String userdomain, LicenseUpdateRequestDto request) {
 		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
@@ -161,15 +159,15 @@ public class LicenseService {
 	}
 
 	private void decryptChatSettings(String licenseKey, String userdomain) {
-		
-    	Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
-    	String domainLicenseKey = config!=null ? (String) config : null;
-    	if (domainLicenseKey == null) {
+
+		Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
+		String domainLicenseKey = config != null ? (String) config : null;
+		if (domainLicenseKey == null) {
 			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
 		}
-		
+
 		String decyptedString = AESEncryption.decryptConfigStringForLlicenseKey(licenseKey,
-				domainLicenseKey + domainLicenseKey	+ domainLicenseKey);
+				domainLicenseKey + domainLicenseKey + domainLicenseKey);
 		LicenseDataDto licenseData;
 		ObjectMapper mapper = new ObjectMapper();
 		try {
