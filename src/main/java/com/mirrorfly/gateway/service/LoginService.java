@@ -27,6 +27,7 @@ import com.mirrorfly.gateway.model.AdminUser;
 import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.ChatUserDetails;
 import com.mirrorfly.gateway.model.EmailToken;
+import com.mirrorfly.gateway.model.TokenDetail;
 import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.queue.MailPayload;
 import com.mirrorfly.gateway.queue.QueueService;
@@ -34,6 +35,7 @@ import com.mirrorfly.gateway.repo.AdminUserRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 import com.mirrorfly.gateway.repo.EmailTokenRepo;
+import com.mirrorfly.gateway.repo.SpoolRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
@@ -41,9 +43,6 @@ import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 @Service
 public class LoginService {
 
@@ -67,36 +66,36 @@ public class LoginService {
 
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
-
+	
 	@Autowired
 	private ChatUsersDetailsRepo chatUsersDetailsRepo;
-
+	
 	@Autowired
-	private ChatUserRepo chatUserRepo;
-
+	private ChatUserRepo chatUserRepo;  
+	
 	@Autowired
 	private UserRepo userRepo;
-
+	
 	@Autowired
 	private PasswordService passwordService;
-
+	
 	@Autowired
 	private DataStore dataStore;
-
-	@SwitchDataSource(value = "[0]")
+	
+    @SwitchDataSource(value="[0]")
 	public Response<LoginDetailsDto> login(String userdomain, LoginDto loginRequestDto) {
 		// If incoming requested in encrypted means, we need to decrypt the password
 		// field to find the original password
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-		Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
-		String licenseKey = config != null ? (String) config : null;
-		if (licenseKey == null) {
+    	AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+    	Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
+    	String licenseKey = config!=null ? (String) config : null;
+    	if (licenseKey == null) {
 			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
 		}
-
+    	
 		String password = "";
 		String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),
-				licenseKey + licenseKey + licenseKey);
+				licenseKey + licenseKey	+ licenseKey);
 		LoginRequestDto login;
 		ObjectMapper mapper = new ObjectMapper();
 		try {
@@ -104,7 +103,6 @@ public class LoginService {
 					LoginRequestDto.class);
 			password = login.getPassword();
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
-			log.error("Unable to unserialize the password field " + e.getMessage());
 			password = loginRequestDto.getPassword();
 		}
 
@@ -132,7 +130,14 @@ public class LoginService {
 		return response;
 	}
 
-	@SwitchDataSource(value = "[0]")
+	private Boolean validatePasswordAgainstMd5(String password, String userpassword) {
+		// In DB we are having the Md5 string, so we are converting the password to Md5
+		// String
+		// and validating it against the DB
+		return password.equals(GatewayUtil.getMd5String(userpassword));
+	}
+
+	@SwitchDataSource(value="[0]")
 	public Response<String> logout(String userdomain, String authorization) {
 		String username = tokenService.getUserNameByToken(userdomain, authorization);
 		tokenService.deleteToken(userdomain, authorization);
@@ -179,8 +184,7 @@ public class LoginService {
 		Response<AdminLoginResponse> response = new Response<>();
 		AdminLoginResponse loginDetails = new AdminLoginResponse();
 		loginDetails.setImage(adminUser != null ? adminUser.getImage() : "");
-		loginDetails
-				.setToken(tokenService.getToken(userdomain, adminUser != null ? adminUser.getUsername() : "", "", ""));
+		loginDetails.setToken(tokenService.getToken(userdomain, adminUser != null ? adminUser.getUsername() : "", "", ""));
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
@@ -300,5 +304,5 @@ public class LoginService {
 		response.setMessage(GatewayConstants.DOMAIN_CONFIG_RELOADED);
 		return response;
 	}
-
+	
 }
