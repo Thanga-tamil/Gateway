@@ -22,12 +22,15 @@ public class RegisterDto {
 	private String licenseKey = "";
 
 	private String userIdentifier = "";
-	
+
 	private String deviceId = "";
+
+	private Boolean forceRegister = true;
+
+	private Map<String, Object> metaData;
 	
-    private Boolean forceRegister = true;
-    
-    private Map<String, Object> metaData = null;
-    
-    private String userType = "";
+	private String pushServerType = "";
+
+	private String userType = "";
+
 }
