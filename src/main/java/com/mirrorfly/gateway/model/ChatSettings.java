@@ -37,7 +37,7 @@ public class ChatSettings implements Serializable {
 	@Column(name = "admin_user")
 	private String adminUser;
 
-	@Column(name = "video_limit")
+	@Column(name = "videoLimit")
 	private Integer videoLimit;
 
 	@Column(name = "mail_login")

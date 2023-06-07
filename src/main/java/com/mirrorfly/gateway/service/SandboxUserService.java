@@ -1,7 +1,6 @@
 package com.mirrorfly.gateway.service;
 
 import java.net.URI;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,8 +13,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
-import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
-import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.dto.AddUserDto;
 import com.mirrorfly.gateway.dto.LicenseValidateResponseDto;
 import com.mirrorfly.gateway.dto.SanboxUserRegisterDto;
@@ -27,7 +24,6 @@ import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
-import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
@@ -68,12 +64,7 @@ public class SandboxUserService {
 	@Autowired
 	private VcardService vcardService;
 
-	@Autowired
-	private ChatUsersDetailsRepo chatUsersDetailsRepo;
-	
-	@SwitchDataSource(value="[0]")
-	public Response<String> registerNewUser(String userdomain, SanboxUserRegisterDto registerDto) throws JsonProcessingException {
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+	public Response<String> registerNewUser(SanboxUserRegisterDto registerDto) throws JsonProcessingException {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
 		registerService.inputDataValidation(registerDto);
@@ -89,12 +80,6 @@ public class SandboxUserService {
 			}
 			if (!chatUser.getLicenseKey().equalsIgnoreCase(registerDto.getLicenseKey())) {
 				throw new BadDataException(GatewayConstants.USER_USERIDENTIFIER_ALREADY_REGISTERED);
-			}
-			if (!registerDto.getDeviceType().equalsIgnoreCase("web")) {
-				if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().trim().equals("")) {
-					chatUserRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
-				}
-				updateUserMobileDetails(userdomain, registerDto, chatUser);
 			}
 			users = userRepo.findByUsername(chatUser.getUsername());
 			registerResponseDto.setUsername(chatUser.getUsername());
@@ -128,7 +113,7 @@ public class SandboxUserService {
 				if (result != null && result.getStatus() != null && result.getData() != null
 						&& result.getStatus() == 200) {
 					if (Boolean.TRUE.equals(result.getData().getIsFreemiumUser())) {
-						validateUserCount(userdomain, result.getData().getMaxUsersCount(), registerDto.getLicenseKey());
+						validateUserCount(result.getData().getMaxUsersCount(), registerDto.getLicenseKey());
 					}
 				} else {
 					log.error("Error in validating the license key => " + result);
@@ -140,7 +125,7 @@ public class SandboxUserService {
 			}
 			String username = registerDto.getUserIdentifier();
 			// Create new user
-			chatUser = registerUser(userdomain, registerDto, username);
+			chatUser = registerUser(registerDto, username);
 			registerResponseDto.setUsername(username);
 			registerResponseDto.setIsExisting(false);
 			users.setUsername(username);
@@ -151,14 +136,21 @@ public class SandboxUserService {
 		}
 		String password = registerService.updateChatUserDetails(registerDto, chatUser);
 		registerResponseDto.setPassword(password);
-		registerResponseDto.setToken(tokenService.getToken(userdomain, registerResponseDto.getUsername(),
-				registerDto.getDeviceType(), registerDto.getDeviceType()));
+		String deviceIdprefix = "";
+		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
+			deviceIdprefix = "-web";
+		} else {
+			deviceIdprefix = "-mobile";
+		}
+		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
+				? registerDto.getDeviceId()
+				: "MF-01" + deviceIdprefix;
+		registerResponseDto.setToken(tokenService.getToken(registerResponseDto.getUsername(), deviceId, ""));
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
 			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		} else {
 			users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		}
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		userRepo.save(users);
 		// get config details and return in the response
 		String licenseKey = registerDto.getLicenseKey();
@@ -177,54 +169,14 @@ public class SandboxUserService {
 		return response;
 	}
 
-	@SwitchDataSource(value = "[0]")
-	private void validateUserCount(String userdomain, Long maxUserCount, String licenseKey) {
+	private void validateUserCount(Long maxUserCount, String licenseKey) {
 		Long count = chatUserRepo.getCountByLicenseKey(licenseKey);
 		if (count >= maxUserCount) {
 			throw new BadDataException(GatewayConstants.USER_COUNT_EXCEEDED);
 		}
 	}
 
-	private void dataValidating(SanboxUserRegisterDto registerDto) {
-		if (registerDto.getUserIdentifier() == null || registerDto.getUserIdentifier().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
-		}
-		if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
-		}
-		if (registerDto.getDeviceType() == null || registerDto.getDeviceType().trim().isEmpty()) {
-			throw new BadDataException(GatewayConstants.DEVICE_TYPE_EMPTY);
-		}
-		if (!registerDto.getDeviceType().equalsIgnoreCase("android")
-				&& !registerDto.getDeviceType().equalsIgnoreCase("web")
-				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
-			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
-		}
-	}
-
-	@SwitchDataSource(value = "[0]")
-	private void updateUserMobileDetails(String userdomain, SanboxUserRegisterDto registerDto, ChatUser chatUser) {
-		if (registerDto.getDeviceType().equalsIgnoreCase("ios")) {
-			chatUser.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-			chatUser.setDeviceToken(registerDto.getDeviceToken());
-			if (registerDto.getDeviceOsVersion() != null && !registerDto.getDeviceOsVersion().equals("")) {
-				chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-			} else {
-				chatUser.setDeviceOsVersion("12.0");
-			}
-		} else if (registerDto.getDeviceType().equalsIgnoreCase("android")) {
-			chatUser.setDeviceToken(registerDto.getDeviceToken());
-			chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-		} else {
-			throw new BadDataException("Invaild device type");
-		}
-		chatUser.setDevicetype(registerDto.getDeviceType());
-		chatUser.setMode(registerDto.getMode());
-		chatUserRepo.save(chatUser);
-	}
-
-	@SwitchDataSource(value = "[0]")
-	private ChatUser registerUser(String userdomain, SanboxUserRegisterDto registerDto, String username) {
+	private ChatUser registerUser(SanboxUserRegisterDto registerDto, String username) {
 		ChatUser chatUser = new ChatUser();
 		chatUser.setUsername(username);
 		chatUser.setMobileNumber(registerDto.getMobileNumber());
@@ -232,7 +184,7 @@ public class SandboxUserService {
 		chatUser.setLicenseKey(registerDto.getLicenseKey());
 		chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 		chatUser.setIsDeleteInprogrees(0);
-		chatUser.setDevicetype(registerDto.getDeviceType());
+		chatUser.setDeviceType(registerDto.getDeviceType());
 		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
 		chatUser.setMetaData(metadata);
 		chatUserRepo.save(chatUser);

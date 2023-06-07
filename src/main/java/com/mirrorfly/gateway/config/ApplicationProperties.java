@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
-
 @Configuration
 public class ApplicationProperties {
 
@@ -87,38 +86,9 @@ public class ApplicationProperties {
 	public int getMaximumSessions() {
 		return env.getProperty("user.maxSessions") != null ? Integer.parseInt(env.getProperty("user.maxSessions")) : 2;
 	}
-	
+
 	public int getMetaDataLimit() {
 		return env.getProperty("metadata.limit", Integer.class, 3);
-	}
-
-		public String getConnectionString() {
-		return env.getProperty("spring.datasource.url");
-	}
-	
-	public String getDbUsername() {
-		return env.getProperty("spring.datasource.username");
-	}
-	
-
-	
-	public String getDbPassword() {
-		return env.getProperty("spring.datasource.password");
-	}
-
-	public int getMinimumConnections() {
-		return env.getProperty("spring.datasource.hikari.minimum-idle", Integer.class);
-	}
-	public int getMaximumConnections() {
-		return env.getProperty("spring.datasource.hikari.maximum-pool-size", Integer.class);
-	}
-	public long getConnectionIdleTimeout() {
-		return env.getProperty("spring.datasource.hikari.idleTimeout", Long.class);
-	}
-	public long getConnectionMaxLifeTime() {
-		// should be greater than spring.datasource.hikari.idleTimeout
-		// should be several minutes less than database global wait_timeout
-		return env.getProperty("spring.datasource.hikari.maxLifetime", Long.class);
 	}
 
 	public List<String> getUserTypes() {

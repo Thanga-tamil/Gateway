@@ -5,8 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
-import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.dto.ChatUserDto;
 import com.mirrorfly.gateway.dto.OtpResponseDto;
 import com.mirrorfly.gateway.dto.VerifyUserDto;
@@ -36,8 +34,7 @@ public class OtpService {
 
 	@Autowired
 	private ChatSettingsRepo chatSettingsRepo;
-	
-	@SwitchDataSource(value="[0]")
+
 	public Response<OtpResponseDto> requestOtp(String mobileNumber) {
 
 		if (mobileNumber == null) {
@@ -66,10 +63,8 @@ public class OtpService {
 		return response;
 	}
 
-	@SwitchDataSource(value="[0]")
-	public Response<VerifyUserResponse> verifyUser(String userdomain, VerifyUserDto userDto) {
+	public Response<VerifyUserResponse> verifyUser(VerifyUserDto userDto) {
 		Response<VerifyUserResponse> response = new Response<>();
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		VerifyUserResponse dto = new VerifyUserResponse();
 		ChatSettings settings = chatSettingsRepo.findAll().get(0);
 		ChatUserDto chatUser = chatUserRepo.findByMobileNumber(userDto.getMobileNumber(),settings.getIvProfile());

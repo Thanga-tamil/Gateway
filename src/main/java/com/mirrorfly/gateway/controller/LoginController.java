@@ -22,9 +22,6 @@ import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.LoginService;
 
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
 @RestController
 @RequestMapping("/api/v1")
 public class LoginController {
@@ -43,9 +40,8 @@ public class LoginController {
 	 */
 
 	@PostMapping("/login")
-	public @ResponseBody Response<LoginDetailsDto> login(@Validated @RequestBody LoginDto loginDto,
-			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain) {
-		return loginService.login(userdomain, loginDto);
+	public @ResponseBody Response<LoginDetailsDto> login(@Validated @RequestBody LoginDto loginDto) {
+		return loginService.login(loginDto);
 	}
 
 	/**
@@ -58,9 +54,8 @@ public class LoginController {
 	 */
 
 	@PostMapping("/admin/login")
-	public @ResponseBody Response<AdminLoginResponse> admin(@Validated @RequestBody AdminLoginDto login,
-			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain) {
-		return loginService.adminLogin(userdomain, login);
+	public @ResponseBody Response<AdminLoginResponse> admin(@Validated @RequestBody AdminLoginDto login) {
+		return loginService.adminLogin(login);
 	}
 
 	/**
@@ -107,15 +102,8 @@ public class LoginController {
 	}
 
 	@GetMapping("/logout")
-	public @ResponseBody Response<String> logout(@RequestHeader("Authorization") String authorization,
-			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain) {
-		return loginService.logout(userdomain, authorization);
-	}
-	
-	@ApiOperation(value = "API to reload inmemory data")
-	@GetMapping("/admin/inmemory/refresh")
-	public @ResponseBody Response<String> refreshInMemoryData() {
-		return loginService.refreshInMemory();
+	public @ResponseBody Response<String> logout(@RequestHeader("Authorization") String authorization) {
+		return loginService.logout(authorization);
 	}
 
 }
