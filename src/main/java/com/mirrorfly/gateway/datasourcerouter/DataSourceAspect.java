@@ -26,12 +26,8 @@ public class DataSourceAspect {
 
 	@Pointcut("@annotation(com.mirrorfly.gateway.datasourcerouter.SwitchDataSource)")
 	public void annotationPointCut() {
-		//default function
-	    // This method serves as a pointcut expression for the SwitchDataSource annotation.
-	    // It is empty because it is used as a placeholder for the pointcut.
-	    // The actual logic is implemented in the @Before and @After advice methods.
 	}
-	
+
 	@Before("annotationPointCut()")
 	public void before(JoinPoint joinPoint) {
 		Object[] args = joinPoint.getArgs();
