@@ -241,6 +241,8 @@ public class GatewayConstants {
 	public static final String DEVICE_WEB = "web";
 
 	public static final String USER_TYPE_NOT_VALID = "User type value is not valid";
+	
+	public static final String UNKNOWN_ERROR = "Unknown Error";
 
 	private GatewayConstants() {
 	}
