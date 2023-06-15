@@ -64,7 +64,7 @@ public class GatewayUtil {
 	{
 		StringBuilder hashtext = new StringBuilder();
 		try {
-			MessageDigest md = MessageDigest.getInstance("MD5");
+			MessageDigest md = MessageDigest.getInstance("MD5");//NOSONAR not used in secure contexts
 			byte[] messageDigest = md.digest(input.getBytes());
 			BigInteger no = new BigInteger(1, messageDigest);
 			hashtext.append(no.toString(16));
