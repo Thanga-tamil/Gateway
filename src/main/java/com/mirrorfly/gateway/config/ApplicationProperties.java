@@ -9,32 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
-
 @Configuration
 public class ApplicationProperties {
 
 	@Autowired
 	private Environment env;
-
-	public Long getTokenExpiryTime() {
-		return Long.parseLong(env.getProperty("token_Expiry_Time"));
-	}
-
-	public String getAWSSecretAccessKey() {
-		return env.getProperty("aws_secret_access_key");
-	}
-
-	public String getAWSAccessKey() {
-		return env.getProperty("aws_access_key_id");
-	}
-
-	public String getAWSS3Region() {
-		return env.getProperty("aws_s3_region");
-	}
-
-	public String getAWSS3BucketName() {
-		return env.getProperty("aws_s3_bucketname");
-	}
 
 	public String getFcmURL() {
 		return env.getProperty("fcm_url");
@@ -68,16 +47,8 @@ public class ApplicationProperties {
 		return env.getProperty("webportal.api_base_url");
 	}
 
-	public String getLicenseKey() {
-		return env.getProperty("licenseKey");
-	}
-
 	public String getLicenseDataQueue() {
 		return env.getProperty("queue.licensedata");
-	}
-
-	public String getXmppDomain() {
-		return env.getProperty("xmpp_domain");
 	}
 
 	public String getWhiteListIps() {
@@ -87,21 +58,19 @@ public class ApplicationProperties {
 	public int getMaximumSessions() {
 		return env.getProperty("user.maxSessions") != null ? Integer.parseInt(env.getProperty("user.maxSessions")) : 2;
 	}
-	
+
 	public int getMetaDataLimit() {
 		return env.getProperty("metadata.limit", Integer.class, 3);
 	}
 
-		public String getConnectionString() {
+	public String getConnectionString() {
 		return env.getProperty("spring.datasource.url");
 	}
-	
+
 	public String getDbUsername() {
 		return env.getProperty("spring.datasource.username");
 	}
-	
 
-	
 	public String getDbPassword() {
 		return env.getProperty("spring.datasource.password");
 	}
@@ -109,12 +78,15 @@ public class ApplicationProperties {
 	public int getMinimumConnections() {
 		return env.getProperty("spring.datasource.hikari.minimum-idle", Integer.class);
 	}
+
 	public int getMaximumConnections() {
 		return env.getProperty("spring.datasource.hikari.maximum-pool-size", Integer.class);
 	}
+
 	public long getConnectionIdleTimeout() {
 		return env.getProperty("spring.datasource.hikari.idleTimeout", Long.class);
 	}
+
 	public long getConnectionMaxLifeTime() {
 		// should be greater than spring.datasource.hikari.idleTimeout
 		// should be several minutes less than database global wait_timeout
@@ -144,7 +116,7 @@ public class ApplicationProperties {
 	public String getDefaultUserType() {
 		return env.getProperty("user.type.default", "U");
 	}
-	
+
 	public String getSandboxUrl() {
 		return env.getProperty("sandbox.domain");
 	}
