@@ -23,9 +23,8 @@ import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.model.ConnectionConfig;
-import com.zaxxer.hikari.HikariConfig;
+import com.mirrorfly.gateway.util.DataSourceUtil;
 import com.zaxxer.hikari.HikariDataSource;
 
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DynamicDatabaseRouter {
 
     @Autowired
-    private ApplicationProperties applicationProperties;
+    private DataSourceUtil dataSourceUtil;
     
     @Bean
     @Primary
@@ -63,45 +62,17 @@ public class DynamicDatabaseRouter {
     private Map<Object,Object> getTargetDataSources() {
     	Map<Object,Object> targetDataSourceMap = new HashMap<>();
     	
-    	HikariDataSource defaultDS = createDataSource(null);
+    	HikariDataSource defaultDS = dataSourceUtil.createDataSource(null);
     	log.info("Default DataSource is -----> "+defaultDS.getJdbcUrl());
     	targetDataSourceMap.put("default", defaultDS);
         List<ConnectionConfig> connectionConfigs = getConnectionConfigs(defaultDS);
         for (ConnectionConfig connectionConfig : connectionConfigs) {
-            HikariDataSource domainSpecificDS = createDataSource(connectionConfig);
+            HikariDataSource domainSpecificDS = dataSourceUtil.createDataSource(connectionConfig);
             targetDataSourceMap.put(connectionConfig.getCustomerDomain(), domainSpecificDS);
             log.info("[{}] DataSource is [{}] -----> ",connectionConfig.getCustomerDomain(), domainSpecificDS.getJdbcUrl());
 		}
         return targetDataSourceMap;
     }
-    
-	private HikariDataSource createDataSource(ConnectionConfig connectionConfig) {
-		final HikariConfig config = new HikariConfig();
-		if(connectionConfig == null) {
-			// default datasource
-			config.setPoolName("CP_Default");
-			config.setJdbcUrl(applicationProperties.getConnectionString());
-			config.setUsername(applicationProperties.getDbUsername());
-			config.setPassword(applicationProperties.getDbPassword());
-			config.setMinimumIdle(applicationProperties.getMinimumConnections());
-	        config.setMaximumPoolSize(applicationProperties.getMaximumConnections());
-		}else {
-			config.setPoolName("CP_"+connectionConfig.getCustomerDomain());
-			config.setJdbcUrl(connectionConfig.getConnectionString());
-			config.setUsername(connectionConfig.getDbUsername());
-			config.setPassword(connectionConfig.getDbPassword());
-	        config.setMinimumIdle(connectionConfig.getMinimumConnections());
-	        config.setMaximumPoolSize(connectionConfig.getMaximumConnections());
-		}
-		config.setIdleTimeout(applicationProperties.getConnectionIdleTimeout());
-		config.setMaxLifetime(applicationProperties.getConnectionMaxLifeTime());
-		// Performance Tips for MySql
-		config.addDataSourceProperty("cachePrepStmts", "true");
-		config.addDataSourceProperty("prepStmtCacheSize", "250");
-		config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-		config.addDataSourceProperty("useServerPrepStmts", "true");
-		return new HikariDataSource(config);
-	}
     
 	private List<ConnectionConfig> getConnectionConfigs(HikariDataSource defaultDS) {
 		Connection connection = null;

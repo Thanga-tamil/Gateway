@@ -142,6 +142,10 @@ public class ApplicationProperties {
 	}
 
 	public String getDefaultUserType() {
-		return env.getProperty("user.type.default", "u");
+		return env.getProperty("user.type.default", "U");
+	}
+	
+	public String getSandboxUrl() {
+		return env.getProperty("sandbox.domain");
 	}
 }
