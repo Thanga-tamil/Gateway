@@ -13,6 +13,7 @@ import com.mirrorfly.gateway.dto.LoginDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
 import com.mirrorfly.gateway.response.Response;
+import com.mirrorfly.gateway.response.StringResponse;
 import com.mirrorfly.gateway.service.AdminService;
 import com.mirrorfly.gateway.service.LoginService;
 
@@ -35,16 +36,15 @@ public class AdminController {
 	@ApiIgnore
 	@ApiOperation(value = "Refreshes the inmemory datasources (Only for admins)")
 	@GetMapping("/reload/connectionconfig")
-	public Response<String> reload() {
+	public StringResponse reload() {
 		return adminService.reloadConnectionConfig();
 	}
 	
 	@ApiOperation(value = "Refreshes the inmemory datasources (Only for contus)")
 	@GetMapping("/reload/connectionconfig/all")
-	public Mono<List<Response>> reloadAll(
+	public Mono<List<StringResponse>> reloadAll(
 			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain, @RequestParam(required = true) String username,
 			@RequestParam(required = true) String password) {
-		Response response = new Response();
 		
 		if(StringUtils.isBlank(username)) {
 			throw new BadDataException("username is required");
@@ -63,13 +63,13 @@ public class AdminController {
 			Response<LoginDetailsDto> login = loginService.login(userdomain, dto);
 			if(login !=null && login.getStatus() == 200) {
 				String token = login.getData()!=null ? login.getData().getToken() : "";
-				Mono<Response> gateway = Mono.justOrEmpty(reload());
-				Mono<Response> user = adminService.reloadAll("/api/v1/users/reload/connectionconfig", token);
-				Mono<Response> chat = adminService.reloadAll("/api/v1/chat/reload/connectionconfig", token);
-				Mono<Response> group = adminService.reloadAll("/api/v1/group/reload/connectionconfig", token);
-				Mono<Response> contact = adminService.reloadAll("/api/v1/contacts/reload/connectionconfig", token);
-				Mono<Response> media = adminService.reloadAll("/api/v1/media/reload/connectionconfig", token);
-				Mono<Response> moderation = adminService.reloadAll("/api/v1/moderation/reload/connectionconfig", token);
+				Mono<StringResponse> gateway = Mono.justOrEmpty(reload());
+				Mono<StringResponse> user = adminService.reloadAll("/api/v1/users/reload/connectionconfig", token);
+				Mono<StringResponse> chat = adminService.reloadAll("/api/v1/chat/reload/connectionconfig", token);
+				Mono<StringResponse> group = adminService.reloadAll("/api/v1/group/reload/connectionconfig", token);
+				Mono<StringResponse> contact = adminService.reloadAll("/api/v1/contacts/reload/connectionconfig", token);
+				Mono<StringResponse> media = adminService.reloadAll("/api/v1/media/reload/connectionconfig", token);
+				Mono<StringResponse> moderation = adminService.reloadAll("/api/v1/moderation/reload/connectionconfig", token);
 				
 				return Flux.merge(gateway, user, chat, group, contact, media, moderation).collectList();
 			}else {

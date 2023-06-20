@@ -17,7 +17,7 @@ import com.mirrorfly.gateway.model.ConnectionConfig;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.repo.ConnectionConfigRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
-import com.mirrorfly.gateway.response.Response;
+import com.mirrorfly.gateway.response.StringResponse;
 
 import reactor.core.publisher.Mono;
 
@@ -45,8 +45,8 @@ public class AdminService {
     	this.webClient = webClientBuilder.baseUrl(applicationProperties.getSandboxUrl()).build();
     }
 
-	public Response<String> reloadConnectionConfig() {
-		Response<String> response = new Response<>();
+	public StringResponse reloadConnectionConfig() {
+		StringResponse response = new StringResponse();
 		try {
 			List<ConnectionConfig> connectionConfigs = connectionConfigRepo.findAll();
 			dataStore.setConnectionConfig(connectionConfigs);
@@ -81,14 +81,14 @@ public class AdminService {
 		return result;
 	}
 	
-    public Mono<Response> reloadAll(String uri, String token) {
+    public Mono<StringResponse> reloadAll(String uri, String token) {
     	return this.webClient.get()
     		     .uri(uri)
     		     .accept(MediaType.APPLICATION_JSON)
     		     .header("Authorization", token)
     		     .exchangeToMono(response -> {
     		         if (response.statusCode().is2xxSuccessful()) {
-    		             return response.bodyToMono(Response.class);
+    		             return response.bodyToMono(StringResponse.class);
     		         }
     		         else {
     		             return response.createException().flatMap(Mono::error);

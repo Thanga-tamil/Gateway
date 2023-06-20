@@ -51,7 +51,7 @@ public class ChatSettingService {
 		chatSettings.setAudioLimit(singleChatSettingsValue.getAudioLimit());
 		chatSettings.setRecallTime(singleChatSettingsValue.getRecallTime());
 		chatSettings.setPrivateTime(singleChatSettingsValue.getPrivateTime());
-		chatSettings.setStatus(singleChatSettingsValue.getStatus().toString());
+		chatSettings.setStatus(singleChatSettingsValue.getStatus());
 		chatSettings.setFeedbackFrom(singleChatSettingsValue.getFeedbackFrom());
 		chatSettings.setFeedbackTo(singleChatSettingsValue.getFeedbackTo());
 		chatSettings.setXmppDomain(singleChatSettingsValue.getXmppDomain());
@@ -89,7 +89,7 @@ public class ChatSettingService {
 		chatSettings.setLicenseKey(request.getLicenceKey());
 		chatSettings.setCreatedAt(currentTimestamp);
 		chatSettings.setUpdatedAt(currentTimestamp);
-		chatSettings.setLicense_expiry(request.getLicencekeyExpiryDate());
+		chatSettings.setLicenseExpiry(request.getLicencekeyExpiryDate());
 		chatSettingsRepo.save(chatSettings);
 	}
 
@@ -107,7 +107,7 @@ public class ChatSettingService {
 		chatSettingValue.setGroupCall(request.getGroupCall());
 		chatSettingValue.setRecentchatSearch(request.getRecentchatSearch());
 		chatSettingValue.setUpdatedAt(currentTimestamp);
-		chatSettingValue.setLicense_expiry(request.getLicencekeyExpiryDate());
+		chatSettingValue.setLicenseExpiry(request.getLicencekeyExpiryDate());
 		chatSettingsRepo.save(chatSettingValue);
 	}
 
