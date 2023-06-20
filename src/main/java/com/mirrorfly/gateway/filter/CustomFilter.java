@@ -22,7 +22,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 public class CustomFilter implements WebFilter, Ordered {
-
+	
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
 		ServerHttpRequest.Builder builder = setHeaders(exchange.getRequest());
@@ -53,17 +53,18 @@ public class CustomFilter implements WebFilter, Ordered {
 	}
 	
 	private void test(ServerHttpRequest request){
-		log.info("<<<==================================>>>");
+		log.info(" <<<================================== ");
 		URL url = null;
 		try {
 			url = request.getURI().toURL();
 			log.info("url ------> " + url.toString());
-			log.info("url.getContent() ------> " + url.getContent());
 			log.info("url.getRef() ------> " + url.getRef());
 			log.info("url.getHost() ------> " + url.getHost());
 			log.info("url.getPort() ------> " + url.getPort());
 			log.info("url.getProtocol() ------> " + url.getProtocol());
+			log.info("url.getAuthority() ------> " + url.getAuthority());
 			log.info("request.getPath() ------> " + request.getPath());
+			log.info("request.contextPath() ------> " + request.getPath().contextPath().value());
 			log.info("request.getSslInfo() ------> " + request.getSslInfo());
 			
 			InetSocketAddress localAddress = request.getLocalAddress();
@@ -82,10 +83,11 @@ public class CustomFilter implements WebFilter, Ordered {
 				log.info("remoteAddress.getPort ------> " + remoteAddress.getPort());
 			}
 			
+			
 		} catch (IOException e) {
-			log.error("");
+			log.error(e.getMessage());
 		}
-		log.info("<<<==================================>>>");
+		log.info(" ==================================>>> ");
 	}
 
 }
