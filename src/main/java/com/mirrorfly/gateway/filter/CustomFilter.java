@@ -1,5 +1,7 @@
 package com.mirrorfly.gateway.filter;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -35,6 +37,7 @@ public class CustomFilter implements WebFilter, Ordered {
 	private ServerHttpRequest.Builder setHeaders(ServerHttpRequest request) {
 		URL url = null;
 		try {
+			test(request);
 			url = request.getURI().toURL();
 			String protocol = url.getProtocol();
 			String host = url.getHost();
@@ -47,6 +50,42 @@ public class CustomFilter implements WebFilter, Ordered {
 		} catch (MalformedURLException e) {
 			throw new BadDataException("Unable to identify the domain from request");
 		}
+	}
+	
+	private void test(ServerHttpRequest request){
+		log.info("<<<==================================>>>");
+		URL url = null;
+		try {
+			url = request.getURI().toURL();
+			log.info("url ------> " + url.toString());
+			log.info("url.getContent() ------> " + url.getContent());
+			log.info("url.getRef() ------> " + url.getRef());
+			log.info("url.getHost() ------> " + url.getHost());
+			log.info("url.getPort() ------> " + url.getPort());
+			log.info("url.getProtocol() ------> " + url.getProtocol());
+			log.info("request.getPath() ------> " + request.getPath());
+			log.info("request.getSslInfo() ------> " + request.getSslInfo());
+			
+			InetSocketAddress localAddress = request.getLocalAddress();
+			if(localAddress!=null) {
+				log.info("localAddress.getAddress ------> " + localAddress.getAddress());
+				log.info("localAddress.getHostName ------> " + localAddress.getHostName());
+				log.info("localAddress.getHostString ------> " + localAddress.getHostString());
+				log.info("localAddress.getPort ------> " + localAddress.getPort());
+			}
+			
+			InetSocketAddress remoteAddress = request.getRemoteAddress();
+			if(remoteAddress!=null) {
+				log.info("remoteAddress.getAddress ------> " + remoteAddress.getAddress());
+				log.info("remoteAddress.getHostName ------> " + remoteAddress.getHostName());
+				log.info("remoteAddress.getHostString ------> " + remoteAddress.getHostString());
+				log.info("remoteAddress.getPort ------> " + remoteAddress.getPort());
+			}
+			
+		} catch (IOException e) {
+			log.error("");
+		}
+		log.info("<<<==================================>>>");
 	}
 
 }
