@@ -87,13 +87,21 @@ public class AdminService {
     		     .accept(MediaType.APPLICATION_JSON)
     		     .header("Authorization", token)
     		     .exchangeToMono(response -> {
-    		         if (response.statusCode().is2xxSuccessful()) {
+    	             if (response.statusCode().isError()) {
+    	                 return response.createException().flatMap(Mono::error);
+    	             }else if (response.statusCode().is2xxSuccessful()) {
     		             return response.bodyToMono(StringResponse.class);
-    		         }
-    		         else {
+    		         }else {
     		             return response.createException().flatMap(Mono::error);
     		         }
     		     });
     }
+    
+	public StringResponse getErrorMessage(String service) {
+		StringResponse response = new StringResponse();
+		response.setStatus(HttpStatus.SC_EXPECTATION_FAILED);
+		response.setMessage("Could not reload "+service+" service inmemory data.");
+		return response;
+	}
 
 }

@@ -63,13 +63,13 @@ public class AdminController {
 			Response<LoginDetailsDto> login = loginService.login(userdomain, dto);
 			if(login !=null && login.getStatus() == 200) {
 				String token = login.getData()!=null ? login.getData().getToken() : "";
-				Mono<StringResponse> gateway = Mono.justOrEmpty(reload());
-				Mono<StringResponse> user = adminService.reloadAll("/api/v1/users/reload/connectionconfig", token);
-				Mono<StringResponse> chat = adminService.reloadAll("/api/v1/chat/reload/connectionconfig", token);
-				Mono<StringResponse> group = adminService.reloadAll("/api/v1/group/reload/connectionconfig", token);
-				Mono<StringResponse> contact = adminService.reloadAll("/api/v1/contacts/reload/connectionconfig", token);
-				Mono<StringResponse> media = adminService.reloadAll("/api/v1/media/reload/connectionconfig", token);
-				Mono<StringResponse> moderation = adminService.reloadAll("/api/v1/moderation/reload/connectionconfig", token);
+				Mono<StringResponse> gateway = Mono.justOrEmpty(reload()).onErrorReturn(adminService.getErrorMessage("gateway"));
+				Mono<StringResponse> user = adminService.reloadAll("/api/v1/users/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("user"));
+				Mono<StringResponse> chat = adminService.reloadAll("/api/v1/chat/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("chat api"));
+				Mono<StringResponse> group = adminService.reloadAll("/api/v1/group/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("group"));
+				Mono<StringResponse> contact = adminService.reloadAll("/api/v1/contacts/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("contacts"));
+				Mono<StringResponse> media = adminService.reloadAll("/api/v1/media/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("media"));
+				Mono<StringResponse> moderation = adminService.reloadAll("/api/v1/moderation/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("moderation"));
 				
 				return Flux.merge(gateway, user, chat, group, contact, media, moderation).collectList();
 			}else {

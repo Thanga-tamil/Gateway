@@ -3,6 +3,7 @@ package com.mirrorfly.gateway.filter;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.MDC;
 import org.springframework.core.Ordered;
@@ -38,9 +39,10 @@ public class CustomFilter implements WebFilter, Ordered {
 		try {
 			url = request.getURI().toURL();
 			log.info("url =======================>>>> " + url.toString());
+			String domain = getDomain(url.toString());
 			ServerHttpRequest.Builder builder = request.mutate();
-			String domain = getDomain(request);
 			if(StringUtils.isNotBlank(domain)) {
+				log.info("setting userdomain =======================>>>> " + domain);
 				builder.header(GatewayConstants.USER_DOMAIN, domain);
 				MDC.put(GatewayConstants.USER_DOMAIN, domain);
 			}
@@ -49,13 +51,14 @@ public class CustomFilter implements WebFilter, Ordered {
 			throw new BadDataException("Unable to identify the domain from request");
 		}
 	}
-
-	private String getDomain(ServerHttpRequest request) {
+	
+	private String getDomain(String url) {
 		String domain = null;
-		String origin = request.getHeaders().getOrigin();
-		if(StringUtils.isNotBlank(origin) && StringUtils.startsWithAny(origin, "http://", "https://")) {
-			log.info("setting userdomain =======================>>>> " + origin);
-			domain = origin;
+		if(StringUtils.isNotBlank(url)) {
+			String[] urlTokens = StringUtils.splitByWholeSeparator(url, "/");
+			if (ArrayUtils.isNotEmpty(urlTokens) && urlTokens.length > 1) {
+				domain = urlTokens[0] + "//" + urlTokens[1];
+			}
 		}
 		return domain;
 	}
