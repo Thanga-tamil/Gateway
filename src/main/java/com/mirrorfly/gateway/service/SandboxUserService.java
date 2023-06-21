@@ -26,7 +26,6 @@ import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
-import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
@@ -67,16 +66,13 @@ public class SandboxUserService {
 	@Autowired
 	private VcardService vcardService;
 
-	@Autowired
-	private ChatUsersDetailsRepo chatUsersDetailsRepo;
-
 	@SwitchDataSource(value = "[0]")
 	public Response<String> registerNewUser(String userdomain, SanboxUserRegisterDto registerDto)
 			throws JsonProcessingException {
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
-		registerService.inputDataValidation(registerDto);
+		registerService.inputDataValidation(userdomain, registerDto);
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		Users users = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser != null) {
@@ -149,7 +145,7 @@ public class SandboxUserService {
 			vcardService.updateVcard(vcardSearch, new Vcard());
 			registerResponseDto.setIsProfileUpdated(false);
 		}
-		String password = registerService.updateChatUserDetails(registerDto, chatUser);
+		String password = registerService.updateChatUserDetails(userdomain, registerDto, chatUser);
 		registerResponseDto.setPassword(password);
 		registerResponseDto.setToken(tokenService.getToken(userdomain, registerResponseDto.getUsername(),
 				registerDto.getDeviceType(), registerDto.getDeviceType()));

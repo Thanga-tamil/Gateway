@@ -24,9 +24,10 @@ public class ChatSettingController {
 
 	@PostMapping
 	public @ResponseBody Response<String> postChatSettingEncyptedData(
+			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain,
 			@ApiParam(hidden = true) @RequestHeader(value = "remoteip") String remoteIPAddress,
 			@Validated @RequestBody ChatSettingDataDto request) {
-		return chatSettingService.updateChatSetting(request, remoteIPAddress);
+		return chatSettingService.updateChatSetting(userdomain, request, remoteIPAddress);
 	}
 
 }

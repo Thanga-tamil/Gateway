@@ -55,10 +55,6 @@ public class ApplicationProperties {
 		return env.getProperty("white-list-ips");
 	}
 
-	public int getMaximumSessions() {
-		return env.getProperty("user.maxSessions") != null ? Integer.parseInt(env.getProperty("user.maxSessions")) : 2;
-	}
-
 	public int getMetaDataLimit() {
 		return env.getProperty("metadata.limit", Integer.class, 3);
 	}

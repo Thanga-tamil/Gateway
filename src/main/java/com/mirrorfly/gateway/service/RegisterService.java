@@ -168,7 +168,7 @@ public class RegisterService {
 	private RegisterResponseDto registerUser(String userdomain, RegisterDto registerDto) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
-		inputDataValidation(registerDto);
+		inputDataValidation(userdomain, registerDto);
 		Users user = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
@@ -237,7 +237,8 @@ public class RegisterService {
 		return registerResponseDto;
 	}
 
-	public String updateChatUserDetails(SanboxUserRegisterDto registerDto, ChatUser chatUser) {
+	@SwitchDataSource(value = "[0]")
+	public String updateChatUserDetails(String userdomain, SanboxUserRegisterDto registerDto, ChatUser chatUser) {
 		RegisterDto data = new RegisterDto();
 		data.setDeviceId(registerDto.getDeviceId());
 		data.setDeviceOsVersion(registerDto.getDeviceOsVersion());
@@ -249,12 +250,12 @@ public class RegisterService {
 		data.setUserIdentifier(registerDto.getUserIdentifier());
 		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		data.setForceRegister(registerDto.getForceRegister());
-		data.setUserType(registerDto.getPushServerType());
+		data.setPushServerType(registerDto.getPushServerType());
 		data.setUserType(registerDto.getUserType());
-		return updateChatUserDetails(data, chatUser);
+		return updateChatUserDetails(userdomain, data, chatUser);
 	}
 
-	public String updateChatUserDetails(RegisterDto registerDto, ChatUser chatUser) {
+	public String updateChatUserDetails(String userdomain, RegisterDto registerDto, ChatUser chatUser) {
 		String deviceIdprefix = "";
 		String pushServerType = "";
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
@@ -287,9 +288,10 @@ public class RegisterService {
 		ChatUserDetails user = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
 		String password = passwordService.generateRandomPassword();
 		if (user == null) {
+			int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "maxSessions");
 			List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 					.findByUsername(chatUser.getUsername());
-			if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()) {
+			if (existingChatUsersDetails.size() >= maxSessions) {
 				ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
 						registerDto.getDeviceType());
 				if (deletableRecord != null) {
@@ -349,7 +351,8 @@ public class RegisterService {
 		return existingChatUsersDetails.get(0);
 	}
 	
-	public void inputDataValidation(SanboxUserRegisterDto registerDto) {
+	@SwitchDataSource(value = "[0]")
+	public void inputDataValidation(String userdomain, SanboxUserRegisterDto registerDto) {
 		RegisterDto registerData = new RegisterDto();
 		registerData.setDeviceId(registerDto.getDeviceId());
 		registerData.setDeviceOsVersion(registerDto.getDeviceOsVersion());
@@ -361,13 +364,13 @@ public class RegisterService {
 		registerData.setUserIdentifier(registerDto.getUserIdentifier());
 		registerData.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 		registerData.setForceRegister(registerDto.getForceRegister());
-		registerData.setUserType(registerDto.getPushServerType());
+		registerData.setPushServerType(registerDto.getPushServerType());
 		registerData.setMetaData(registerDto.getMetaData());
 		registerData.setUserType(registerDto.getUserType());
-		inputDataValidation(registerData);
+		inputDataValidation(userdomain, registerData);
 	}
 
-	private void inputDataValidation(RegisterDto registerDto) {
+	private void inputDataValidation(String userdomain, RegisterDto registerDto) {
 		String userIdentifier = registerDto.getUserIdentifier();
 		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
@@ -388,17 +391,17 @@ public class RegisterService {
 				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
 		}
-		if (registerDto.getUserType() != null && !registerDto.getUserType().trim().isEmpty()
-				&& !registerDto.getUserType().equalsIgnoreCase("apns")
-				&& !registerDto.getUserType().equalsIgnoreCase("fcm")) {
+		if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()
+				&& !registerDto.getPushServerType().equalsIgnoreCase("apns")
+				&& !registerDto.getPushServerType().equalsIgnoreCase("fcm")) {
 			throw new BadDataException(GatewayConstants.PUSH_SERVER_TYPE_NOT_VALID);
 		}
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
 		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
+		int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "maxSessions");
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
-		if (existingChatUsersDetails.size() >= applicationProperties.getMaximumSessions()
-				&& Boolean.FALSE.equals(registerDto.getForceRegister())) {
+		if (existingChatUsersDetails.size() >= maxSessions && Boolean.FALSE.equals(registerDto.getForceRegister())) {
 			throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 		}
 	}

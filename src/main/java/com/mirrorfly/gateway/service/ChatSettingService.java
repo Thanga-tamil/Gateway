@@ -6,6 +6,7 @@ import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.dto.ChatSettingDataDto;
 import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
 import com.mirrorfly.gateway.model.ChatSettings;
@@ -23,7 +24,8 @@ public class ChatSettingService {
 	@Autowired
 	private GatewayUtil gatewayUtil;
 
-	public Response<String> updateChatSetting(ChatSettingDataDto request, String remoteIPAddress) {
+	@SwitchDataSource(value="[0]")
+	public Response<String> updateChatSetting(String userdomain, ChatSettingDataDto request, String remoteIPAddress) {
 		if (Boolean.FALSE.equals(gatewayUtil.userIpAccessValidation(remoteIPAddress))) {
 			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
 		}

@@ -29,5 +29,7 @@ public class RegisterDto {
     
     private Map<String, Object> metaData = null;
     
+	private String pushServerType = "";
+    
     private String userType = "";
 }
