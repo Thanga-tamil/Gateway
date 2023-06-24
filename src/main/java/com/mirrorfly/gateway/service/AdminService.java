@@ -8,14 +8,9 @@ import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
@@ -24,10 +19,9 @@ import com.mirrorfly.gateway.model.ConnectionConfig;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.repo.ConnectionConfigRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
-import com.mirrorfly.gateway.response.StringResponse;
-import com.mirrorfly.gateway.util.GatewayUtil;
 
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Service
@@ -48,12 +42,15 @@ public class AdminService {
     @Autowired
     private UserRepo userRepo;
     
-	@Autowired
-	private RestTemplate restTemplate;
+	private WebClient webClient;
+	
+    public AdminService(WebClient.Builder webClientBuilder, ApplicationProperties applicationProperties) {
+    	this.webClient = webClientBuilder.baseUrl(applicationProperties.getPreProdUrl()).build();
+    }
     
-    public StringResponse reloadConnectionConfig() {
+    public Map<String, Object> reloadConnectionConfig() {
 		log.info("Gateway service inmemory data reload requested....");
-		StringResponse response = new StringResponse();
+		Map<String, Object> response = new HashMap<>();
 		try {
 			AbstractRoutingDataSourceImpl.setDatabaseName("default");
 			List<ConnectionConfig> connectionConfigs = connectionConfigRepo.findAll();
@@ -64,14 +61,14 @@ public class AdminService {
 			autowireCapableBeanFactory.autowireBean(inMemoryDataSources);
 
 			inMemoryDataSources.refresh(connectionConfigs);
+			
+			response.put("status", HttpStatus.SC_OK);
+			response.put("message", "Gateway service inmemory data reloaded successfully");
 
-			response.setStatus(HttpStatus.SC_OK);
-			response.setMessage("Gateway service inmemory data reloaded successfully.");
 			log.info("Gateway service inmemory data reload request completed successfully");
 		} catch (Exception e) {
-			response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-			response.setMessage("Could not reload gateway service inmemory data");
 			log.error("Could not reload gateway service inmemory data");
+			return getErrorMessage("gateway");
 		}
 		return response;
 	}
@@ -91,23 +88,21 @@ public class AdminService {
 		return result;
 	}
 	
-    public Map<String, Object> reload(String uri, String token, String service) {
-		try {
-			String url = applicationProperties.getPreProdUrl() + uri;
-			HttpHeaders headers = new HttpHeaders();
-			headers.set(HttpHeaders.ACCEPT, MediaType.ALL_VALUE);
-			headers.set("Authorization", token);
-			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
-			HttpEntity<?> entity = new HttpEntity<>(headers);
-			ResponseEntity<String> exchange = restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
-			return GatewayUtil.convertJsonStringToMap(exchange.getBody());
-		}catch(Exception e) {
-			log.error(e.getMessage());			
-			return getErrorMessage(service);
-		}
+	@SuppressWarnings("rawtypes")
+	public Mono<Map> reloadAll(String uri, String token) {
+		return this.webClient.get().uri(uri).accept(MediaType.APPLICATION_JSON).header("Authorization", token)
+				.exchangeToMono(response -> {
+					if (response.statusCode().isError()) {
+						return response.createException().flatMap(Mono::error);
+					} else if (response.statusCode().is2xxSuccessful()) {
+						return response.bodyToMono(Map.class);
+					} else {
+						return response.createException().flatMap(Mono::error);
+					}
+				});
 	}
 	
-	public Map<String, Object> getErrorMessage(String service){
+    public Map<String, Object> getErrorMessage(String service){
 		Map<String, Object> response = new HashMap<>();
 		response.put("status", HttpStatus.SC_EXPECTATION_FAILED);
 		response.put("message", "Could not reload "+service+" service inmemory data");

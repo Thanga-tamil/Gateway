@@ -1,6 +1,5 @@
 package com.mirrorfly.gateway.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -15,13 +14,14 @@ import com.mirrorfly.gateway.dto.LoginDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
 import com.mirrorfly.gateway.response.Response;
-import com.mirrorfly.gateway.response.StringResponse;
 import com.mirrorfly.gateway.service.AdminService;
 import com.mirrorfly.gateway.service.LoginService;
 
 import io.micrometer.core.instrument.util.StringUtils;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import springfox.documentation.annotations.ApiIgnore;
 
 @RestController
@@ -36,13 +36,14 @@ public class AdminController {
 	@ApiIgnore
 	@ApiOperation(value = "Refreshes the inmemory datasources (Only for admins)")
 	@GetMapping("/reload/connectionconfig")
-	public StringResponse reload() {
+	public Map<String, Object> reload() {
 		return adminService.reloadConnectionConfig();
 	}
 	
+	@SuppressWarnings("rawtypes")
 	@ApiOperation(value = "Refreshes the inmemory datasources (Only for contus)")
 	@GetMapping("/reload/connectionconfig/all")
-	public List<Map<String, Object>> reloadAll(
+	public Mono<List<Map>> reloadAll(
 			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain, @RequestParam(required = true) String username,
 			@RequestParam(required = true) String password) {
 		
@@ -56,17 +57,21 @@ public class AdminController {
 		password = password.trim();
 		
 		if (adminService.isAdmin(userdomain, username)) {
-			List<Map<String, Object>> response = new ArrayList<>();
-			
 			LoginDto dto = new LoginDto();
 			dto.setUsername(username);
 			dto.setPassword(password);
 			Response<LoginDetailsDto> login = loginService.login(userdomain, dto);
 			if(login !=null && login.getStatus() == 200) {
 				String token = login.getData()!=null ? login.getData().getToken() : "";
-				response.add(adminService.reload("/api/v1/users/reload/connectionconfig?type=resttemplate1", token, "users1"));
-				response.add(adminService.reload("/api/v1/users/reload/connectionconfig?type=resttemplate2", token, "users2"));
-				return response;
+				Mono<Map<String, Object>> gateway = Mono.justOrEmpty(reload()).onErrorReturn(adminService.getErrorMessage("gateway"));
+				Mono<Map> user = adminService.reloadAll("/api/v1/users/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("user"));
+				Mono<Map> chat = adminService.reloadAll("/api/v1/chat/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("chat api"));
+				Mono<Map> group = adminService.reloadAll("/api/v1/group/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("group"));
+				Mono<Map> contact = adminService.reloadAll("/api/v1/contacts/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("contacts"));
+				Mono<Map> media = adminService.reloadAll("/api/v1/media/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("media"));
+				Mono<Map> moderation = adminService.reloadAll("/api/v1/moderation/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("moderation"));
+				
+				return Flux.merge(gateway, user, chat, group, contact, media, moderation).collectList();
 			}else {
 				throw new UserUnAuthorizedException("Unauthorized access");
 			}
