@@ -130,7 +130,7 @@ public class AdminService {
 		String url = applicationProperties.getSandboxUrl() + uri;
 		try {
 			
-			List<HttpMessageConverter<?>> messageConverters = new ArrayList<HttpMessageConverter<?>>();        
+			List<HttpMessageConverter<?>> messageConverters = new ArrayList<>();        
 			MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
 			converter.setSupportedMediaTypes(Collections.singletonList(MediaType.ALL));        
 			messageConverters.add(converter);
