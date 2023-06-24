@@ -41,9 +41,14 @@ public class DataStore {
 	public Map<String, ConnectionConfig> getConnectionConfig() {
 		return connectionConfig;
 	}
-
+	
 	public ConnectionConfig getConnectionConfigByDomain(String domain) {
-		return connectionConfig.get(domain);
+		ConnectionConfig config = connectionConfig.get(domain);
+		if(config == null) {
+		    log.info("Could not find ConnectionConfig data for domain "+domain+" in inmemory. Reloading connection_config table.");
+			reloadConnectionConfig();
+		}
+		return config;
 	}
 
 	public Object getConnectionConfigDataByDomainAndKey(String domain, String key) {

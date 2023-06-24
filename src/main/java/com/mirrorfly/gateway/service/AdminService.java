@@ -6,21 +6,33 @@ import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
+import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ConnectionConfig;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.repo.ConnectionConfigRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
+import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.response.StringResponse;
 
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Service
 public class AdminService {
 
@@ -41,11 +53,15 @@ public class AdminService {
     @Autowired
     private UserRepo userRepo;
     
+	@Autowired
+	private RestTemplate restTemplate;
+    
     public AdminService(WebClient.Builder webClientBuilder, ApplicationProperties applicationProperties) {
     	this.webClient = webClientBuilder.baseUrl(applicationProperties.getSandboxUrl()).build();
     }
 
 	public StringResponse reloadConnectionConfig() {
+		log.info("Gateway service inmemory data reload requested....");
 		StringResponse response = new StringResponse();
 		try {
 			List<ConnectionConfig> connectionConfigs = connectionConfigRepo.findAll();
@@ -59,9 +75,11 @@ public class AdminService {
 
 			response.setStatus(HttpStatus.SC_OK);
 			response.setMessage("Gateway service inmemory data reloaded successfully.");
+			log.info("Gateway service inmemory data reload request completed successfully");
 		} catch (Exception e) {
 			response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-			response.setMessage("Could not process your request. Try again later.");
+			response.setMessage("Could not reload gateway service inmemory data");
+			log.error("Could not reload gateway service inmemory data");
 		}
 		return response;
 	}
@@ -102,6 +120,31 @@ public class AdminService {
 		response.setStatus(HttpStatus.SC_EXPECTATION_FAILED);
 		response.setMessage("Could not reload "+service+" service inmemory data.");
 		return response;
+	}
+	
+	public void reload(String uri, String token) {
+		String url = applicationProperties.getSandboxUrl() + uri;
+		try {
+			HttpHeaders headers = new HttpHeaders();
+			headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+			headers.set("Authorization", token);
+			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
+			HttpEntity<?> entity = new HttpEntity<>(headers);
+			restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, Response.class);
+		} catch (HttpStatusCodeException e) {
+			handlingExceptionOfApiCall(e);
+		}
+	}
+	
+	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
+		String responseBody = e.getResponseBodyAsString();
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			Response<?> r = mapper.readValue(responseBody, Response.class);
+			throw new BadDataException(r.getMessage());
+		} catch (JsonProcessingException ex) {
+			throw new BadDataException("Error in inmemory refresh. Please try again later");
+		}
 	}
 
 }
