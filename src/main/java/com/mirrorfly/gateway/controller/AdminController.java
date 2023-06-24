@@ -42,7 +42,7 @@ public class AdminController {
 	
 	@ApiOperation(value = "Refreshes the inmemory datasources (Only for contus)")
 	@GetMapping("/reload/connectionconfig/all")
-	public Mono<List<StringResponse>> reloadAll(
+	public Mono<List<String>> reloadAll(
 			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain, @RequestParam(required = true) String username,
 			@RequestParam(required = true) String password) {
 		
@@ -63,17 +63,11 @@ public class AdminController {
 			Response<LoginDetailsDto> login = loginService.login(userdomain, dto);
 			if(login !=null && login.getStatus() == 200) {
 				String token = login.getData()!=null ? login.getData().getToken() : "";
-				Mono<StringResponse> gateway = Mono.justOrEmpty(reload()).onErrorReturn(adminService.getErrorMessage("gateway"));
-				Mono<StringResponse> user = adminService.reloadAll("/api/v1/users/reload/connectionconfig?type=webclient", token).onErrorReturn(adminService.getErrorMessage("user"));
-				Mono<StringResponse> chat = adminService.reloadAll("/api/v1/chat/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("chat api"));
-				Mono<StringResponse> group = adminService.reloadAll("/api/v1/group/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("group"));
-				Mono<StringResponse> contact = adminService.reloadAll("/api/v1/contacts/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("contacts"));
-				Mono<StringResponse> media = adminService.reloadAll("/api/v1/media/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("media"));
-				Mono<StringResponse> moderation = adminService.reloadAll("/api/v1/moderation/reload/connectionconfig", token).onErrorReturn(adminService.getErrorMessage("moderation"));
-				
-				adminService.reload("/api/v1/users/reload/connectionconfig?type=resttemplate", token);
-				
-				return Flux.merge(gateway, user, chat, group, contact, media, moderation).collectList();
+				Mono<String> user = adminService.reloadAll("/api/v1/users/reload/connectionconfig?type=webclient", token).onErrorReturn(adminService.getErrMessage("user1"));
+				adminService.reload("/api/v1/users/reload/connectionconfig?type=resttemplate1", token);
+				Mono<String> user2 = Mono.justOrEmpty(adminService.reload("/api/v1/users/reload/connectionconfig?type=resttemplate2", token)).onErrorReturn(adminService.getErrMessage("users2"));
+				return Flux.merge(user, user2).collectList();
+
 			}else {
 				throw new UserUnAuthorizedException("Unauthorized access");
 			}

@@ -1,8 +1,8 @@
 package com.mirrorfly.gateway.service;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +12,8 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -25,12 +23,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
-import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ConnectionConfig;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.repo.ConnectionConfigRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
-import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.response.StringResponse;
 
 import lombok.extern.slf4j.Slf4j;
@@ -103,7 +99,7 @@ public class AdminService {
 		return result;
 	}
 	
-    public Mono<StringResponse> reloadAll(String uri, String token) {
+    public Mono<String> reloadAll(String uri, String token) {
     	return this.webClient.get()
     		     .uri(uri)
     		     .accept(MediaType.APPLICATION_JSON)
@@ -112,7 +108,7 @@ public class AdminService {
     	             if (response.statusCode().isError()) {
     	                 return response.createException().flatMap(Mono::error);
     	             }else if (response.statusCode().is2xxSuccessful()) {
-    		             return response.bodyToMono(StringResponse.class);
+    		             return response.bodyToMono(String.class);
     		         }else {
     		             return response.createException().flatMap(Mono::error);
     		         }
@@ -126,36 +122,30 @@ public class AdminService {
 		return response;
 	}
 	
-	public void reload(String uri, String token) {
+	public String reload(String uri, String token) {
 		String url = applicationProperties.getSandboxUrl() + uri;
+		HttpHeaders headers = new HttpHeaders();
+		headers.set(HttpHeaders.ACCEPT, MediaType.ALL_VALUE);
+		headers.set("Authorization", token);
+		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
+		HttpEntity<?> entity = new HttpEntity<>(headers);
+		ResponseEntity<String> exchange = restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
+		return exchange.getBody();
+	}
+	
+	public String getErrMessage(String service){
+		Map<String, Object> response = new HashMap<>();
+		response.put("status", HttpStatus.SC_EXPECTATION_FAILED);
+		response.put("message", "Could not reload "+service+" service inmemory data");
 		try {
-			
-			List<HttpMessageConverter<?>> messageConverters = new ArrayList<>();        
-			MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
-			converter.setSupportedMediaTypes(Collections.singletonList(MediaType.ALL));        
-			messageConverters.add(converter);
-			restTemplate.setMessageConverters(messageConverters); 
-			
-			HttpHeaders headers = new HttpHeaders();
-			headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-			headers.set("Authorization", token);
-			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
-			HttpEntity<?> entity = new HttpEntity<>(headers);
-			restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, Response.class);
-		} catch (HttpStatusCodeException e) {
-			handlingExceptionOfApiCall(e);
+			return convertMapToJson(response);
+		}catch(Exception e) {
+			return "";
 		}
 	}
 	
-	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
-		String responseBody = e.getResponseBodyAsString();
-		ObjectMapper mapper = new ObjectMapper();
-		try {
-			Response<?> r = mapper.readValue(responseBody, Response.class);
-			throw new BadDataException(r.getMessage());
-		} catch (JsonProcessingException ex) {
-			throw new BadDataException("Error in inmemory refresh. Please try again later");
-		}
+	public String convertMapToJson(Map<String, Object> messageContent) throws JsonProcessingException {
+		return new ObjectMapper().writeValueAsString(messageContent);
 	}
 
 }
