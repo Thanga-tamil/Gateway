@@ -15,7 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,7 +29,6 @@ import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.response.StringResponse;
 
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Mono;
 
 @Slf4j
 @Service
@@ -48,22 +46,17 @@ public class AdminService {
 	@Autowired
 	private ApplicationProperties applicationProperties;
 	
-    private WebClient webClient;
-    
     @Autowired
     private UserRepo userRepo;
     
 	@Autowired
 	private RestTemplate restTemplate;
     
-    public AdminService(WebClient.Builder webClientBuilder, ApplicationProperties applicationProperties) {
-    	this.webClient = webClientBuilder.baseUrl(applicationProperties.getSandboxUrl()).build();
-    }
-
-	public StringResponse reloadConnectionConfig() {
+    public StringResponse reloadConnectionConfig() {
 		log.info("Gateway service inmemory data reload requested....");
 		StringResponse response = new StringResponse();
 		try {
+			AbstractRoutingDataSourceImpl.setDatabaseName("default");
 			List<ConnectionConfig> connectionConfigs = connectionConfigRepo.findAll();
 			dataStore.setConnectionConfig(connectionConfigs);
 
@@ -99,41 +92,23 @@ public class AdminService {
 		return result;
 	}
 	
-    public Mono<String> reloadAll(String uri, String token) {
-    	return this.webClient.get()
-    		     .uri(uri)
-    		     .accept(MediaType.APPLICATION_JSON)
-    		     .header("Authorization", token)
-    		     .exchangeToMono(response -> {
-    	             if (response.statusCode().isError()) {
-    	                 return response.createException().flatMap(Mono::error);
-    	             }else if (response.statusCode().is2xxSuccessful()) {
-    		             return response.bodyToMono(String.class);
-    		         }else {
-    		             return response.createException().flatMap(Mono::error);
-    		         }
-    		     });
-    }
-    
-	public StringResponse getErrorMessage(String service) {
-		StringResponse response = new StringResponse();
-		response.setStatus(HttpStatus.SC_EXPECTATION_FAILED);
-		response.setMessage("Could not reload "+service+" service inmemory data.");
-		return response;
+    public String reload(String uri, String token, String service) {
+		try {
+			String url = applicationProperties.getSandboxUrl() + uri;
+			HttpHeaders headers = new HttpHeaders();
+			headers.set(HttpHeaders.ACCEPT, MediaType.ALL_VALUE);
+			headers.set("Authorization", token);
+			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
+			HttpEntity<?> entity = new HttpEntity<>(headers);
+			ResponseEntity<String> exchange = restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
+			return exchange.getBody();
+		}catch(Exception e) {
+			log.error(e.getMessage());			
+			return getErrorMessage(service);
+		}
 	}
 	
-	public String reload(String uri, String token) {
-		String url = applicationProperties.getSandboxUrl() + uri;
-		HttpHeaders headers = new HttpHeaders();
-		headers.set(HttpHeaders.ACCEPT, MediaType.ALL_VALUE);
-		headers.set("Authorization", token);
-		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
-		HttpEntity<?> entity = new HttpEntity<>(headers);
-		ResponseEntity<String> exchange = restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
-		return exchange.getBody();
-	}
-	
-	public String getErrMessage(String service){
+	public String getErrorMessage(String service){
 		Map<String, Object> response = new HashMap<>();
 		response.put("status", HttpStatus.SC_EXPECTATION_FAILED);
 		response.put("message", "Could not reload "+service+" service inmemory data");

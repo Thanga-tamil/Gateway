@@ -1,5 +1,6 @@
 package com.mirrorfly.gateway.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +21,6 @@ import com.mirrorfly.gateway.service.LoginService;
 import io.micrometer.core.instrument.util.StringUtils;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import springfox.documentation.annotations.ApiIgnore;
 
 @RestController
@@ -42,7 +41,7 @@ public class AdminController {
 	
 	@ApiOperation(value = "Refreshes the inmemory datasources (Only for contus)")
 	@GetMapping("/reload/connectionconfig/all")
-	public Mono<List<String>> reloadAll(
+	public List<String> reloadAll(
 			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain, @RequestParam(required = true) String username,
 			@RequestParam(required = true) String password) {
 		
@@ -56,6 +55,7 @@ public class AdminController {
 		password = password.trim();
 		
 		if (adminService.isAdmin(userdomain, username)) {
+			List<String> response = new ArrayList<>();
 			
 			LoginDto dto = new LoginDto();
 			dto.setUsername(username);
@@ -63,11 +63,9 @@ public class AdminController {
 			Response<LoginDetailsDto> login = loginService.login(userdomain, dto);
 			if(login !=null && login.getStatus() == 200) {
 				String token = login.getData()!=null ? login.getData().getToken() : "";
-				Mono<String> user = adminService.reloadAll("/api/v1/users/reload/connectionconfig?type=webclient", token).onErrorReturn(adminService.getErrMessage("user1"));
-				adminService.reload("/api/v1/users/reload/connectionconfig?type=resttemplate1", token);
-				Mono<String> user2 = Mono.justOrEmpty(adminService.reload("/api/v1/users/reload/connectionconfig?type=resttemplate2", token)).onErrorReturn(adminService.getErrMessage("users2"));
-				return Flux.merge(user, user2).collectList();
-
+				response.add(adminService.reload("/api/v1/users/reload/connectionconfig?type=resttemplate1", token, "users1"));
+				response.add(adminService.reload("/api/v1/users/reload/connectionconfig?type=resttemplate2", token, "users2"));
+				return response;
 			}else {
 				throw new UserUnAuthorizedException("Unauthorized access");
 			}
