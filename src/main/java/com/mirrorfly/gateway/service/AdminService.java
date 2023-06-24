@@ -1,5 +1,7 @@
 package com.mirrorfly.gateway.service;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.http.HttpStatus;
@@ -10,6 +12,8 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
@@ -125,6 +129,13 @@ public class AdminService {
 	public void reload(String uri, String token) {
 		String url = applicationProperties.getSandboxUrl() + uri;
 		try {
+			
+			List<HttpMessageConverter<?>> messageConverters = new ArrayList<HttpMessageConverter<?>>();        
+			MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+			converter.setSupportedMediaTypes(Collections.singletonList(MediaType.ALL));        
+			messageConverters.add(converter);
+			restTemplate.setMessageConverters(messageConverters); 
+			
 			HttpHeaders headers = new HttpHeaders();
 			headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
 			headers.set("Authorization", token);
