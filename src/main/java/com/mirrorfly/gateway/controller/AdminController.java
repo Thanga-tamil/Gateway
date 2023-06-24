@@ -2,6 +2,7 @@ package com.mirrorfly.gateway.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,7 +42,7 @@ public class AdminController {
 	
 	@ApiOperation(value = "Refreshes the inmemory datasources (Only for contus)")
 	@GetMapping("/reload/connectionconfig/all")
-	public List<String> reloadAll(
+	public List<Map<String, Object>> reloadAll(
 			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain, @RequestParam(required = true) String username,
 			@RequestParam(required = true) String password) {
 		
@@ -55,7 +56,7 @@ public class AdminController {
 		password = password.trim();
 		
 		if (adminService.isAdmin(userdomain, username)) {
-			List<String> response = new ArrayList<>();
+			List<Map<String, Object>> response = new ArrayList<>();
 			
 			LoginDto dto = new LoginDto();
 			dto.setUsername(username);

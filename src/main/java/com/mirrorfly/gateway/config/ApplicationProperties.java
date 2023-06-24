@@ -116,4 +116,8 @@ public class ApplicationProperties {
 	public String getSandboxUrl() {
 		return env.getProperty("sandbox.domain");
 	}
+	
+	public String getPreProdUrl() {
+		return env.getProperty("preprod.url");
+	}
 }

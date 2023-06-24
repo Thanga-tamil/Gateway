@@ -17,8 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
@@ -27,6 +25,7 @@ import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.repo.ConnectionConfigRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.response.StringResponse;
+import com.mirrorfly.gateway.util.GatewayUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -92,35 +91,27 @@ public class AdminService {
 		return result;
 	}
 	
-    public String reload(String uri, String token, String service) {
+    public Map<String, Object> reload(String uri, String token, String service) {
 		try {
-			String url = applicationProperties.getSandboxUrl() + uri;
+			String url = applicationProperties.getPreProdUrl() + uri;
 			HttpHeaders headers = new HttpHeaders();
 			headers.set(HttpHeaders.ACCEPT, MediaType.ALL_VALUE);
 			headers.set("Authorization", token);
 			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
 			HttpEntity<?> entity = new HttpEntity<>(headers);
 			ResponseEntity<String> exchange = restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
-			return exchange.getBody();
+			return GatewayUtil.convertJsonStringToMap(exchange.getBody());
 		}catch(Exception e) {
 			log.error(e.getMessage());			
 			return getErrorMessage(service);
 		}
 	}
 	
-	public String getErrorMessage(String service){
+	public Map<String, Object> getErrorMessage(String service){
 		Map<String, Object> response = new HashMap<>();
 		response.put("status", HttpStatus.SC_EXPECTATION_FAILED);
 		response.put("message", "Could not reload "+service+" service inmemory data");
-		try {
-			return convertMapToJson(response);
-		}catch(Exception e) {
-			return "";
-		}
-	}
-	
-	public String convertMapToJson(Map<String, Object> messageContent) throws JsonProcessingException {
-		return new ObjectMapper().writeValueAsString(messageContent);
+		return response;
 	}
 
 }
