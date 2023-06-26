@@ -275,8 +275,8 @@ public class RegisterService {
 			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)) {
 				pushServerType = "fcm";
 			} else {
-				if (registerDto.getUserType() != null && !registerDto.getUserType().trim().isEmpty()) {
-					pushServerType = registerDto.getUserType();
+				if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
+					pushServerType = registerDto.getPushServerType();
 				} else {
 					pushServerType = "apns";
 				}
