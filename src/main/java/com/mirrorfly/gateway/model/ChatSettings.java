@@ -86,7 +86,7 @@ public class ChatSettings implements Serializable {
 	private LocalDateTime updatedAt;
 	
 	@Column(name = "license_expiry")
-	private Timestamp license_expiry;
+	private Timestamp licenseExpiry;
 
 	@Column(name = "sipcall_enabled")
 	private Boolean sipcallEnabled;
@@ -186,5 +186,8 @@ public class ChatSettings implements Serializable {
 	
 	@Column(name = "view_all_medias")
 	private Integer viewAllMedias = 1;
+	
+	@Column(name = "chat_history")
+	private Integer chatHistory = 1;
 
 }

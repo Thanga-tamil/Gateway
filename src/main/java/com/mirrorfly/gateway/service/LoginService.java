@@ -260,9 +260,11 @@ public class LoginService {
 			hashPassword = passwordValue.get();
 
 		/*** End ***/
-		adminUser.setHashedPassword(hashPassword);
-		adminUser.setSaltPassword(saltValue.isPresent() ? saltValue.get() : "");
-		adminUser.setUpdatedAt(LocalDateTime.now());
+		if(adminUser != null){
+			adminUser.setHashedPassword(hashPassword);
+			adminUser.setSaltPassword(saltValue.isPresent() ? saltValue.get() : "");
+			adminUser.setUpdatedAt(LocalDateTime.now());
+		}
 		adminUserRepo.save(adminUser);
 
 		validToken.setStatus(GatewayConstants.STATUS_EXPIRED);
