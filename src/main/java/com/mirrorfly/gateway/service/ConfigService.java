@@ -71,6 +71,7 @@ public class ConfigService {
 		config.setReport(settings.getReport() == 1);
 		config.setBlock(settings.getBlock() == 1);
 		config.setViewAllMedias(settings.getViewAllMedias() == 1);
+		config.setChatHistory(settings.getChatHistory() == 1);
 		getStunAndTurnServers(config);
 		return config;
 	}
