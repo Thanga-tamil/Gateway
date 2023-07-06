@@ -79,9 +79,9 @@ public class LicenseService {
 		Response<LicenseResDto> response = new Response<>();
 		String sdkType = licenseReq.getSdk();
 		ChatSettings settings = getConfigService();
-
-		License license = licenseRepo.findByActivationKeyAndSdk(licenseReq.getActivationKey(), sdkType);
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+		License license = licenseRepo.findByActivationKeyAndSdk(licenseReq.getActivationKey(), sdkType);
+		
 		if (license == null) {
 			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
 		}

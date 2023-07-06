@@ -6,7 +6,6 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.annotation.After;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
@@ -71,18 +70,6 @@ public class DataSourceAspect {
 			HikariDataSource activeDS = (HikariDataSource) AbstractRoutingDataSourceImpl.getActiveDataSource();
 			log.info("Default DataSource is [{}]", defaultDS.getJdbcUrl());
 			log.info("Active DataSource is [{}]", activeDS.getJdbcUrl());
-		}
-	}
-
-	@After("annotationPointCut()")
-	public void after(JoinPoint point) {
-		if (null != AbstractRoutingDataSourceImpl.getDatabaseName()) {
-
-			AbstractRoutingDataSourceImpl.removeDatabaseName();
-			AbstractRoutingDataSourceImpl.setDatabaseName("default");
-
-			log.info("Restore DataSource to [{}] in Method [{}]", AbstractRoutingDataSourceImpl.getDatabaseName(),
-					point.getSignature());
 		}
 	}
 

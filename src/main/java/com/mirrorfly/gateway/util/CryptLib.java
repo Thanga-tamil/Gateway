@@ -59,7 +59,9 @@ public class CryptLib {
 		/**
 		 * Initialize the cipher with transformation AES/CBC/PKCS5Padding
 		 */
+
 		cx = Cipher.getInstance("AES/CBC/PKCS5Padding"); //NOSONAR not used in secure contexts
+
 		/**
 		 * 256 bit key space
 		 */

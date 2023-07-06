@@ -104,7 +104,7 @@ public class LoginService {
 					LoginRequestDto.class);
 			password = login.getPassword();
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
-			log.error("Unable to unserialize the password field " + e.getMessage());
+			log.error("Unable to unserialize the password field " + e.getMessage()+", continuing assuming the password is plain");
 			password = loginRequestDto.getPassword();
 		}
 
@@ -283,12 +283,13 @@ public class LoginService {
 			hashPassword = passwordValue.get();
 
 		/*** End ***/
+
 		if(adminUser != null) {
 			adminUser.setHashedPassword(hashPassword);
 			adminUser.setSaltPassword(saltValue.isPresent() ? saltValue.get() : "");
 			adminUser.setUpdatedAt(LocalDateTime.now());
-			adminUserRepo.save(adminUser);
 		}
+		adminUserRepo.save(adminUser);
 
 		validToken.setStatus(GatewayConstants.STATUS_EXPIRED);
 		validToken.setConfirmedDateTime(LocalDateTime.now());

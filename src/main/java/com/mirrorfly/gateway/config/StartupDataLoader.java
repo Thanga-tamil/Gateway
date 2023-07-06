@@ -8,6 +8,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.model.ConnectionConfig;
 import com.mirrorfly.gateway.repo.ConnectionConfigRepo;
 import com.mirrorfly.gateway.service.DataStore;
@@ -24,6 +25,7 @@ public class StartupDataLoader implements ApplicationListener<ApplicationReadyEv
 
 	@Override
 	public void onApplicationEvent(ApplicationReadyEvent event) {
+		AbstractRoutingDataSourceImpl.setDatabaseName("default");
 		List<ConnectionConfig> connectionConfig = connectionConfigRepo.findAll();
 		dataStore.setConnectionConfig(connectionConfig);
 	}

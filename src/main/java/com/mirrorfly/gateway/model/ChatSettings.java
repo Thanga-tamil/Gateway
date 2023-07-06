@@ -186,5 +186,8 @@ public class ChatSettings implements Serializable {
 	
 	@Column(name = "view_all_medias")
 	private Integer viewAllMedias = 1;
+	
+	@Column(name = "chat_history")
+	private Integer chatHistory = 1;
 
 }
