@@ -95,7 +95,7 @@ public class GatewayUtil {
 				return true;
 			}
 			else {
-				log.info("Ip credential excepted range  10.244.0.0/24");
+				log.info("Ip credential excepted range "+applicationProperties.getWhiteListIps());
 				return false;
 			}
 		}
