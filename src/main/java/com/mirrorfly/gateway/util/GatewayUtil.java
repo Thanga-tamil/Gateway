@@ -82,15 +82,27 @@ public class GatewayUtil {
 			log.error("Remote IP is null or Blank " + remoteIP);
 			return false;
 		}
-		IPAddressString ipAddress = new IPAddressString(remoteIP);
-		String[] array = applicationProperties.getWhiteListIps().split(",");
-		for (String rangeIp : array) {
-			IPAddressString range = new IPAddressString(rangeIp);
-			if (range.contains(ipAddress)) {
+		try {
+			log.info("Ip credential received "+remoteIP);
+			String[] ip = applicationProperties.getWhiteListIps().split("\\.");
+			String[] suffixIp = ip[3].split("/");
+			int start = Integer.parseInt(suffixIp[0]);
+			int end = Integer.parseInt(suffixIp[1]);
+			int lastDigit = Integer.parseInt(remoteIP.substring(remoteIP.lastIndexOf(".") + 1));
+			log.info("White List Range Ip credential excepted "+remoteIP);
+			if(lastDigit>=start && lastDigit<=end) {
+				log.info("White List Range Ip credential "+remoteIP);
 				return true;
 			}
+			else {
+				log.info("Ip credential excepted range  10.244.0.0/24");
+				return false;
+			}
 		}
-		return false;
+		catch (Exception e)
+		{
+			throw new BadDataException("Please check your IP credential");
+		}
 	}
 
 	public static Map<String, Object> convertJsonStringToMap(String jsonString) throws JsonProcessingException {
