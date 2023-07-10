@@ -84,7 +84,18 @@ public class GatewayUtil {
 		}
 		try {
 			log.info("Ip credential received "+remoteIP);
-			String[] ip = applicationProperties.getWhiteListIps().split("\\.");
+			int lastDotIndex = remoteIP.lastIndexOf(".");
+			if (!(remoteIP.substring(0, lastDotIndex)).equals("10.244.0"))
+			{
+				return false;
+			}
+			String ips=applicationProperties.getWhiteListIpRange();
+			if(StringUtils.isBlank(ips))
+			{
+				log.error("WhiteListIPs not configured " + ips);
+				return false;
+			}
+			String[] ip = ips.split("\\.");
 			String[] suffixIp = ip[3].split("/");
 			int start = Integer.parseInt(suffixIp[0]);
 			int end = Integer.parseInt(suffixIp[1]);
@@ -95,7 +106,7 @@ public class GatewayUtil {
 				return true;
 			}
 			else {
-				log.info("Ip credential excepted range "+applicationProperties.getWhiteListIps());
+				log.info("Ip credential excepted range "+ips);
 				return false;
 			}
 		}
