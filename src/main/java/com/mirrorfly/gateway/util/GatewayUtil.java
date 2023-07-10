@@ -84,11 +84,7 @@ public class GatewayUtil {
 		}
 		try {
 			log.info("Ip credential received "+remoteIP);
-			int lastDotIndex = remoteIP.lastIndexOf(".");
-			if (!(remoteIP.substring(0, lastDotIndex)).equals("10.244.0"))
-			{
-				return false;
-			}
+
 			String ips=applicationProperties.getWhiteListIpRange();
 			if(StringUtils.isBlank(ips))
 			{
@@ -96,6 +92,12 @@ public class GatewayUtil {
 				return false;
 			}
 			String[] ip = ips.split("\\.");
+			String prefixIp = ip[0] + "." + ip[1] + "." + ip[2];
+			int lastDotIndex = remoteIP.lastIndexOf(".");
+			if (!(remoteIP.substring(0, lastDotIndex)).equals(prefixIp))
+			{
+				return false;
+			}
 			String[] suffixIp = ip[3].split("/");
 			int start = Integer.parseInt(suffixIp[0]);
 			int end = Integer.parseInt(suffixIp[1]);
