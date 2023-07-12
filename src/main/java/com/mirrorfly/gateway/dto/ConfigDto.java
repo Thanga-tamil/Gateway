@@ -100,5 +100,7 @@ public class ConfigDto {
 	private Boolean deleteMessage;
 	
 	private Boolean viewAllMedias;
+	
+	private Boolean chatHistory;
 
 }
