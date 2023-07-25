@@ -13,7 +13,6 @@ import org.springframework.security.web.server.authorization.AuthorizationContex
 
 import com.mirrorfly.gateway.util.GatewayUtil;
 
-import inet.ipaddr.IPAddressString;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
@@ -21,9 +20,6 @@ import reactor.core.publisher.Mono;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
-	@Autowired
-	private ApplicationProperties applicationProperties;
-	
 	@Autowired
 	private GatewayUtil gatewayUtil;
 
@@ -45,18 +41,6 @@ public class SecurityConfig {
 		
 		return authentication.map(a -> new AuthorizationDecision(a.isAuthenticated()))
 				.defaultIfEmpty(new AuthorizationDecision(gatewayUtil.userIpAccessValidation(ip)));
-	}
-
-	private Boolean validateIp(String ip) {
-		IPAddressString ipAddress = new IPAddressString(ip);
-		String[] array = applicationProperties.getWhiteListIps().split(",");
-		for (String rangeIp : array) {
-			IPAddressString range = new IPAddressString(rangeIp);
-			if (range.contains(ipAddress)) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 }
