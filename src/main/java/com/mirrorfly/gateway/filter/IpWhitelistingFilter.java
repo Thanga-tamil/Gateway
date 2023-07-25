@@ -51,6 +51,7 @@ public class IpWhitelistingFilter implements WebFilter, Ordered {
 			}
 			ServerHttpRequest.Builder builder = request.mutate();
 			builder.header(GatewayConstants.REMOTE_IP, remoteIPAddress);
+			log.info("Setting "+GatewayConstants.REMOTE_IP+" in header ------> " + remoteIPAddress);
 			return builder;
 		} catch (Exception e) {
 			log.error("Remote IP Address fetching error ---> " + e.getMessage());
