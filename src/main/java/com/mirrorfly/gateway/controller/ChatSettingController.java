@@ -1,16 +1,12 @@
 package com.mirrorfly.gateway.controller;
 
-import java.util.List;
-import java.util.Map.Entry;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,13 +28,13 @@ public class ChatSettingController {
 	@PostMapping
 	public @ResponseBody Response<String> postChatSettingEncyptedData(
 			@ApiParam(hidden = true) @RequestHeader(value = "remoteip") String remoteIPAddress,
-			@Validated @RequestBody ChatSettingDataDto request, ServerHttpRequest httpRequest) {
-		log.info("Protected API requested, will be validating the request before allowing it. URL "+ httpRequest.getURI() + " RemoteIP "+remoteIPAddress);
-		HttpHeaders headers = httpRequest.getHeaders();
-		for (Entry<String, List<String>> header : headers.entrySet()) {
-			log.info("Header Key ---> " + header.getKey() + " Value ---> " + header.getValue());
-		}
-		
+			@Validated @RequestBody ChatSettingDataDto request,
+			@ApiParam(hidden = true, required = false) @RequestParam(required = false) @RequestHeader(value = "X-Forwarded-For") String xForwarded,
+			@ApiParam(hidden = true, required = false) @RequestParam(required = false) @RequestHeader(value = "X-Real-IP") String xRealIp) {
+
+		log.info("userIpAccessValidation - Header Key X-Forwarded-For ---> " + xForwarded);
+		log.info("userIpAccessValidation - Header Key X-Real-IP ---> " + xRealIp);
+
 		return chatSettingService.updateChatSetting(request, remoteIPAddress);
 	}
 

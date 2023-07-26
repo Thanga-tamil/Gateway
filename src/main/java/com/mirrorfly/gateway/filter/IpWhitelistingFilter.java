@@ -41,6 +41,8 @@ public class IpWhitelistingFilter implements WebFilter, Ordered {
 				log.info("Remote IP Address ------> " + remoteIPAddress);
 				log.info("Host IP Address ------> " + address.getAddress().getHostAddress());
 			}
+			log.info("userIpAccessValidation - Header Key X-Forwarded-For ---> " + request.getHeaders().get("X-Forwarded-For"));
+			log.info("userIpAccessValidation - Header Key X-Real-IP ---> " + request.getHeaders().get("X-Real-IP"));
 			ServerHttpRequest.Builder builder = request.mutate();
 			builder.header(GatewayConstants.REMOTE_IP, remoteIPAddress);
 			log.info("Setting "+GatewayConstants.REMOTE_IP+" in header ------> " + remoteIPAddress);
