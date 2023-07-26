@@ -27,10 +27,11 @@ public class ChatSettingService {
 	private GatewayUtil gatewayUtil;
 
 	public Response<String> updateChatSetting(ChatSettingDataDto request, String remoteIPAddress) {
-		log.debug(" Inputs ChatSettingDataDto="+request + " remoteIPAddress ------> "+remoteIPAddress);
+		log.info("userIpAccessValidation - Inputs ChatSettingDataDto="+request + " remoteIPAddress ------> "+remoteIPAddress);
 		if (Boolean.FALSE.equals(gatewayUtil.userIpAccessValidation(remoteIPAddress))) {
 			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
 		}
+		log.info("userIpAccessValidation - ip address validation successs, hence allowing ip adresss ------> "+remoteIPAddress);
 		ChatSettings chatSettingValue = chatSettingsRepo.findByLicenseKey(request.getLicenceKey());
 		if (chatSettingValue != null) {
 			updateChatSettings(request, chatSettingValue);
