@@ -94,17 +94,19 @@ public class GatewayUtil {
             String prefixIp = ip[0] + "." + ip[1] + "." + ip[2];
             int lastDotIndex = remoteIP.lastIndexOf(".");
             if (!(remoteIP.substring(0, lastDotIndex)).equals(prefixIp)) {
+            	log.info("userIpAccessValidation - ip address validation failed, hence request will be dropped, ip adresss ------> "+remoteIP);
                 return false;
             }
             String[] suffixIp = ip[3].split("/");
             int start = Integer.parseInt(suffixIp[0]);
             int end = Integer.parseInt(suffixIp[1]);
             int lastDigit = Integer.parseInt(remoteIP.substring(remoteIP.lastIndexOf(".") + 1));
-            log.info("userIpAccessValidation - White List Range Ip credential excepted " + remoteIP);
+            
             if (lastDigit >= start && lastDigit <= end) {
-                log.info("userIpAccessValidation - White List Range Ip credential " + remoteIP);
+                log.info("userIpAccessValidation - ip address validation successs, hence allowing ip adresss ------> "+remoteIP);
                 return true;
             } else {
+            	log.info("userIpAccessValidation - ip address validation failed, hence request will be dropped, ip adresss ------> "+remoteIP);
                 return false;
             }
         } catch (Exception e) {
