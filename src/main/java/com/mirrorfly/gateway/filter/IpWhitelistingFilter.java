@@ -24,6 +24,8 @@ public class IpWhitelistingFilter implements WebFilter, Ordered {
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+		boolean isRunningInKubernetes = isRunningInKubernetes();
+		log.info("Is running in Kubernetes? " + isRunningInKubernetes);
 		ServerHttpRequest.Builder builder = setHeaders(exchange.getRequest());
 		return chain.filter(exchange.mutate().request(builder.build()).build());
 	}
@@ -49,11 +51,23 @@ public class IpWhitelistingFilter implements WebFilter, Ordered {
 			}
 			ServerHttpRequest.Builder builder = request.mutate();
 			builder.header(GatewayConstants.REMOTE_IP, remoteIPAddress);
+			log.info("Setting "+GatewayConstants.REMOTE_IP+" in header ------> " + remoteIPAddress);
 			return builder;
 		} catch (Exception e) {
 			log.error("Remote IP Address fetching error ---> " + e.getMessage());
 			throw new BadDataException("Unable to identify the remote ip from request");
 		}
 	}
+	
+    private boolean isRunningInKubernetes() {
+    	try {
+    		String kubernetesServiceHost = System.getenv("KUBERNETES_SERVICE_HOST");
+            String kubernetesServicePort = System.getenv("KUBERNETES_SERVICE_PORT");
+            return kubernetesServiceHost != null && kubernetesServicePort != null;
+    	}catch(Exception e) {
+    		log.error("Could not read environment variables, KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT "+e.getMessage());
+    		return false;
+    	}
+    }
 
 }
