@@ -1,7 +1,5 @@
 package com.mirrorfly.gateway.controller;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,9 +14,7 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.ChatSettingService;
 
 import io.swagger.annotations.ApiParam;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/v1/chatsetting")
 public class ChatSettingController {
@@ -29,8 +25,7 @@ public class ChatSettingController {
 	@PostMapping
 	public @ResponseBody Response<String> postChatSettingEncyptedData(
 			@ApiParam(hidden = true) @RequestHeader(value = "remoteip") String remoteIPAddress,
-			@Validated @RequestBody ChatSettingDataDto request, HttpServletRequest req) {
-		log.info("userIpAccessValidation - ------> Restricted API access requested from "+ req.getRequestURL()+"   remoteIP "+remoteIPAddress);
+			@Validated @RequestBody ChatSettingDataDto request) {
 		return chatSettingService.updateChatSetting(request, remoteIPAddress);
 	}
 
