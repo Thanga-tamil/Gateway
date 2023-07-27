@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.exception.BadDataException;
 
-import inet.ipaddr.IPAddressString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -79,36 +78,39 @@ public class GatewayUtil {
 
     public Boolean userIpAccessValidation(String remoteIP) {
         if (StringUtils.isBlank(remoteIP)) {
-            log.error("Remote IP is null or Blank " + remoteIP);
+            log.error("userIpAccessValidation - Remote IP is null or Blank " + remoteIP);
             return false;
         }
         try {
-            log.info("Ip credential received " + remoteIP);
+            log.info("userIpAccessValidation - Ip address received " + remoteIP);
 
             String ips = applicationProperties.getWhiteListIpRange();
             if (StringUtils.isBlank(ips)) {
-                log.error("WhiteListIPs not configured " + ips);
+                log.error("userIpAccessValidation - WhiteListIPs not configured " + ips);
                 return false;
             }
+            log.info("userIpAccessValidation - Allowed Ip range " + ips);
             String[] ip = ips.split("\\.");
             String prefixIp = ip[0] + "." + ip[1] + "." + ip[2];
             int lastDotIndex = remoteIP.lastIndexOf(".");
             if (!(remoteIP.substring(0, lastDotIndex)).equals(prefixIp)) {
+            	log.info("userIpAccessValidation - ip address validation failed, hence request will be dropped, ip adresss ------> "+remoteIP);
                 return false;
             }
             String[] suffixIp = ip[3].split("/");
             int start = Integer.parseInt(suffixIp[0]);
             int end = Integer.parseInt(suffixIp[1]);
             int lastDigit = Integer.parseInt(remoteIP.substring(remoteIP.lastIndexOf(".") + 1));
-            log.info("White List Range Ip credential excepted " + remoteIP);
+            
             if (lastDigit >= start && lastDigit <= end) {
-                log.info("White List Range Ip credential " + remoteIP);
+                log.info("userIpAccessValidation - ip address validation successs, hence allowing ip adresss ------> "+remoteIP);
                 return true;
             } else {
-                log.info("Ip credential excepted range " + ips);
+            	log.info("userIpAccessValidation - ip address validation failed, hence request will be dropped, ip adresss ------> "+remoteIP);
                 return false;
             }
         } catch (Exception e) {
+        	log.error("userIpAccessValidation - Error in verifying Ip whilte listing " + e.getMessage());
             throw new BadDataException("Please check your IP credential");
         }
     }
