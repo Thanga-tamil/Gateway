@@ -20,45 +20,44 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.exception.BadDataException;
 
-import inet.ipaddr.IPAddressString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
 public class GatewayUtil {
 
-	@Autowired
-	private ApplicationProperties applicationProperties;
+    @Autowired
+    private ApplicationProperties applicationProperties;
 
-	private GatewayUtil() {
-	}
+    private GatewayUtil() {
+    }
 
-	private static SecureRandom rnd = new SecureRandom();
+    private static SecureRandom rnd = new SecureRandom();
 
-	public static PageRequest getPagination(Integer page, Integer size) {
-		page = page != null ? page : 0;
-		size = size != null ? size : 10;
-		return PageRequest.of(page, size);
-	}
+    public static PageRequest getPagination(Integer page, Integer size) {
+        page = page != null ? page : 0;
+        size = size != null ? size : 10;
+        return PageRequest.of(page, size);
+    }
 
-	public static LocalDateTime getCurrentDateTime() {
-		return LocalDateTime.now();
-	}
+    public static LocalDateTime getCurrentDateTime() {
+        return LocalDateTime.now();
+    }
 
-	public static String getName(String firstName, String lastName) {
-		return firstName + " " + lastName;
-	}
+    public static String getName(String firstName, String lastName) {
+        return firstName + " " + lastName;
+    }
 
-	// function to generate a random string of length n
-	public static String getAlphaNumericString(int n) {
-		String alphaNumericString = "0123456789" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + System.currentTimeMillis()
-				+ "abcdefghijklmnopqrstuvxyz" + "0123456789";
-		StringBuilder sb = new StringBuilder(n);
-		for (int i = 0; i < n; i++) {
-			sb.append(alphaNumericString.charAt(rnd.nextInt(alphaNumericString.length())));
-		}
-		return sb.toString();
-	}
+    // function to generate a random string of length n
+    public static String getAlphaNumericString(int n) {
+        String alphaNumericString = "0123456789" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + System.currentTimeMillis()
+                + "abcdefghijklmnopqrstuvxyz" + "0123456789";
+        StringBuilder sb = new StringBuilder(n);
+        for (int i = 0; i < n; i++) {
+            sb.append(alphaNumericString.charAt(rnd.nextInt(alphaNumericString.length())));
+        }
+        return sb.toString();
+    }
 
 	public static String getMd5String(String input) {
 		StringBuilder hashtext = new StringBuilder();
@@ -79,74 +78,97 @@ public class GatewayUtil {
 		return hashtext.toString();
 	}
 
-	public Boolean userIpAccessValidation(String remoteIP) {
-		if (StringUtils.isBlank(remoteIP)) {
-			log.error("Remote IP is null or Blank " + remoteIP);
-			return false;
-		}
-		IPAddressString ipAddress = new IPAddressString(remoteIP);
-		String[] array = applicationProperties.getWhiteListIps().split(",");
-		for (String rangeIp : array) {
-			IPAddressString range = new IPAddressString(rangeIp);
-			if (range.contains(ipAddress)) {
-				return true;
-			}
-		}
-		return false;
-	}
+    public Boolean userIpAccessValidation(String remoteIP) {
+        if (StringUtils.isBlank(remoteIP)) {
+            log.error("userIpAccessValidation - Remote IP is null or Blank " + remoteIP);
+            return false;
+        }
+        try {
+            log.info("userIpAccessValidation - Ip address received " + remoteIP);
 
-	public static Map<String, Object> convertJsonStringToMap(String jsonString) throws JsonProcessingException {
-		return new ObjectMapper().readValue(jsonString, new TypeReference<Map<String, Object>>() {
-		});
-	}
+            String ips = applicationProperties.getWhiteListIpRange();
+            if (StringUtils.isBlank(ips)) {
+                log.error("userIpAccessValidation - WhiteListIPs not configured " + ips);
+                return false;
+            }
+            log.info("userIpAccessValidation - Allowed Ip range " + ips);
+            String[] ip = ips.split("\\.");
+            String prefixIp = ip[0] + "." + ip[1] + "." + ip[2];
+            int lastDotIndex = remoteIP.lastIndexOf(".");
+            if (!(remoteIP.substring(0, lastDotIndex)).equals(prefixIp)) {
+            	log.info("userIpAccessValidation - ip address validation failed, hence request will be dropped, ip adresss ------> "+remoteIP);
+                return false;
+            }
+            String[] suffixIp = ip[3].split("/");
+            int start = Integer.parseInt(suffixIp[0]);
+            int end = Integer.parseInt(suffixIp[1]);
+            int lastDigit = Integer.parseInt(remoteIP.substring(remoteIP.lastIndexOf(".") + 1));
+            
+            if (lastDigit >= start && lastDigit <= end) {
+                log.info("userIpAccessValidation - ip address validation successs, hence allowing ip adresss ------> "+remoteIP);
+                return true;
+            } else {
+            	log.info("userIpAccessValidation - ip address validation failed, hence request will be dropped, ip adresss ------> "+remoteIP);
+                return false;
+            }
+        } catch (Exception e) {
+        	log.error("userIpAccessValidation - Error in verifying Ip whilte listing " + e.getMessage());
+            throw new BadDataException("Please check your IP credential");
+        }
+    }
 
-	public static String convertMapToJson(Map<String, Object> messageContent) throws JsonProcessingException {
-		return new ObjectMapper().writeValueAsString(messageContent);
-	}
+    public static Map<String, Object> convertJsonStringToMap(String jsonString) throws JsonProcessingException {
+        return new ObjectMapper().readValue(jsonString, new TypeReference<Map<String, Object>>() {
+        });
+    }
 
-	public static String convertMetaDataAsJson(Map<String, Object> metaData) {
-		String jsonMetadata = null;
-		if (metaData != null && metaData.size() > 0) {
-			try {
-				Map<String, Object> meta = new HashMap<>();
-				for (Map.Entry<String, Object> entry : metaData.entrySet()) {
-					if (entry.getValue() instanceof String) {
-						meta.put(entry.getKey().trim(), entry.getValue().toString().trim());
-					} else {
-						meta.put(entry.getKey().trim(), entry.getValue());
-					}
-				}
-				jsonMetadata = convertMapToJson(meta);
-			} catch (JsonProcessingException e) {
-				throw new BadDataException("Json Parsing Error");
-			}
-		}
-		return jsonMetadata;
-	}
+    public static String convertMapToJson(Map<String, Object> messageContent) throws JsonProcessingException {
+        return new ObjectMapper().writeValueAsString(messageContent);
+    }
 
-	public static void validateMetaData(Map<String, Object> meta, int maxLimit) {
-		if (meta != null && meta.size() > 0) {
-			if (meta.size() > maxLimit) {
-				throw new BadDataException("Metadata can have maximum of " + maxLimit + " fields");
-			} else {
-				for (Map.Entry<String, Object> entry : meta.entrySet()) {
-					if (entry.getKey() == null || entry.getKey().trim().length() == 0) {
-						throw new BadDataException("Metadata key can not be empty");
-					} else if (entry.getValue() == null || entry.getValue().toString().trim().length() == 0) {
-						throw new BadDataException(
-								"Metadata value for the key " + entry.getKey().trim() + " is required");
-					}
-				}
-				// just to verify if given data can safely converted to json string
-				convertMetaDataAsJson(meta);
-			}
-		}
-	}
+    public static String convertMetaDataAsJson(Map<String, Object> metaData) {
+        String jsonMetadata = null;
+        if (metaData != null && metaData.size() > 0) {
+            try {
+                Map<String, Object> meta = new HashMap<>();
+                for (Map.Entry<String, Object> entry : metaData.entrySet()) {
+                    if (entry.getValue() instanceof String) {
+                        meta.put(entry.getKey().trim(), entry.getValue().toString().trim());
+                    } else {
+                        meta.put(entry.getKey().trim(), entry.getValue());
+                    }
+                }
+                jsonMetadata = convertMapToJson(meta);
+            } catch (JsonProcessingException e) {
+                throw new BadDataException("Json Parsing Error");
+            }
+        }
+        return jsonMetadata;
+    }
 
-	public static void validateUserType(String userType, List<String> userTypes) {
-		if (StringUtils.isNotBlank(userType) && !userTypes.contains(userType.trim().toLowerCase())) {
-			throw new BadDataException(GatewayConstants.USER_TYPE_NOT_VALID);
-		}
-	}
+    public static void validateMetaData(Map<String, Object> meta, int maxLimit) {
+        if (meta != null && meta.size() > 0) {
+            if (meta.size() > maxLimit) {
+                throw new BadDataException("Metadata can have maximum of " + maxLimit + " fields");
+            } else {
+                for (Map.Entry<String, Object> entry : meta.entrySet()) {
+                    if (entry.getKey() == null || entry.getKey().trim().length() == 0) {
+                        throw new BadDataException("Metadata key can not be empty");
+                    } else if (entry.getValue() == null || entry.getValue().toString().trim().length() == 0) {
+                        throw new BadDataException(
+                                "Metadata value for the key " + entry.getKey().trim() + " is required");
+                    }
+                }
+                // just to verify if given data can safely converted to json string
+                convertMetaDataAsJson(meta);
+            }
+        }
+    }
+
+    public static void validateUserType(String userType, List<String> userTypes) {
+        if (StringUtils.isNotBlank(userType) && !userTypes.contains(userType.trim().toLowerCase())) {
+            throw new BadDataException(GatewayConstants.USER_TYPE_NOT_VALID);
+        }
+    }
 
 }

@@ -26,6 +26,7 @@ import com.mirrorfly.gateway.dto.LicenseResDto;
 import com.mirrorfly.gateway.dto.LicenseUpdateRequestDto;
 import com.mirrorfly.gateway.dto.TurnDto;
 import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
 import com.mirrorfly.gateway.model.ChatServerConfig;
 import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.License;
@@ -42,6 +43,7 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.EnumSDKType;
 import com.mirrorfly.gateway.util.GatewayConstants;
+import com.mirrorfly.gateway.util.GatewayUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -72,6 +74,9 @@ public class LicenseService {
 
 	@Autowired
 	private DataStore dataStore;
+	
+	@Autowired
+	private GatewayUtil gatewayUtil;
 
 	@SwitchDataSource(value = "[0]")
 	public Response<LicenseResDto> getLicense(String userdomain, LicenseReqDto licenseReq) {
@@ -140,16 +145,13 @@ public class LicenseService {
 	}
 
 	@SwitchDataSource(value = "[0]")
-	public Response<String> updateLicense(String userdomain, LicenseUpdateRequestDto request) {
-		List<LicenseLookup> existingKey = licenseLookupRepo.findAll();
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-		LicenseLookup data = new LicenseLookup();
-		if (!existingKey.isEmpty() && existingKey.get(0) != null) {
-			data = existingKey.get(0);
+	public Response<String> updateLicense(String userdomain, LicenseUpdateRequestDto request, String remoteIPAddress) {
+		log.info("Incoming remoteIP ----> "+remoteIPAddress);
+		log.info("Allowed IPs range ----> "+applicationProperties.getWhiteListIpRange());
+		if (Boolean.FALSE.equals(gatewayUtil.userIpAccessValidation(remoteIPAddress))) {
+			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
 		}
-		data.setLkey(request.getLicenseKey());
-		licenseLookupRepo.save(data);
-		queueService.sendLicenseDataPayload(new LicenseDataPayload(request.getLicenseKey(), userdomain));
+		
 		decryptChatSettings(request.getLicenseKey(), userdomain);
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.SC_OK);

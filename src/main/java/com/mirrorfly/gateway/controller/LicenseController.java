@@ -34,7 +34,8 @@ public class LicenseController {
 	@PostMapping
 	public @ResponseBody Response<String> postLicenseEncyptedData(
 			@Validated @RequestBody LicenseUpdateRequestDto request,
-			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain) {
-		return licenseService.updateLicense(userdomain, request);
+			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain,
+			@ApiParam(hidden = true) @RequestHeader(value = "remoteip") String remoteIPAddress) {
+		return licenseService.updateLicense(userdomain, request, remoteIPAddress);
 	}
 }
