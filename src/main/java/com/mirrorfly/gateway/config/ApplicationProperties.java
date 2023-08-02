@@ -79,10 +79,9 @@ public class ApplicationProperties {
 		return env.getProperty("xmpp_domain");
 	}
 
-	public String getWhiteListIps() {
-		return env.getProperty("white-list-ips");
+	public String getWhiteListIpRange() {
+		return env.getProperty("white-list-ip-range");
 	}
-
 	public int getMaximumSessions() {
 		return env.getProperty("user.maxSessions") != null ? Integer.parseInt(env.getProperty("user.maxSessions")) : 2;
 	}
