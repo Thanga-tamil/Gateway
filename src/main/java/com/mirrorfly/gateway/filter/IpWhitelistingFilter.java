@@ -1,11 +1,8 @@
 package com.mirrorfly.gateway.filter;
 
 import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.Map.Entry;
 
 import org.springframework.core.Ordered;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -24,6 +21,8 @@ public class IpWhitelistingFilter implements WebFilter, Ordered {
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+		boolean isRunningInKubernetes = isRunningInKubernetes();
+		log.info("Is running in Kubernetes? " + isRunningInKubernetes);
 		ServerHttpRequest.Builder builder = setHeaders(exchange.getRequest());
 		return chain.filter(exchange.mutate().request(builder.build()).build());
 	}
@@ -35,11 +34,6 @@ public class IpWhitelistingFilter implements WebFilter, Ordered {
 
 	private ServerHttpRequest.Builder setHeaders(ServerHttpRequest request) {
 		try {
-			HttpHeaders headers = request.getHeaders();
-			for (Entry<String, List<String>> header : headers.entrySet()) {
-				log.info("Header Key ---> " + header.getKey() + " Value ---> " + header.getValue());
-			}
-
 			InetSocketAddress address = request.getRemoteAddress();
 			String remoteIPAddress = "";
 			if (address != null && address.getAddress() != null) {
@@ -47,13 +41,27 @@ public class IpWhitelistingFilter implements WebFilter, Ordered {
 				log.info("Remote IP Address ------> " + remoteIPAddress);
 				log.info("Host IP Address ------> " + address.getAddress().getHostAddress());
 			}
+			log.info("userIpAccessValidation - Header Key X-Forwarded-For ---> " + request.getHeaders().get("X-Forwarded-For"));
+			log.info("userIpAccessValidation - Header Key X-Real-IP ---> " + request.getHeaders().get("X-Real-IP"));
 			ServerHttpRequest.Builder builder = request.mutate();
 			builder.header(GatewayConstants.REMOTE_IP, remoteIPAddress);
+			log.info("Setting "+GatewayConstants.REMOTE_IP+" in header ------> " + remoteIPAddress);
 			return builder;
 		} catch (Exception e) {
 			log.error("Remote IP Address fetching error ---> " + e.getMessage());
 			throw new BadDataException("Unable to identify the remote ip from request");
 		}
 	}
+	
+    private boolean isRunningInKubernetes() {
+    	try {
+    		String kubernetesServiceHost = System.getenv("KUBERNETES_SERVICE_HOST");
+            String kubernetesServicePort = System.getenv("KUBERNETES_SERVICE_PORT");
+            return kubernetesServiceHost != null && kubernetesServicePort != null;
+    	}catch(Exception e) {
+    		log.error("Could not read environment variables, KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT "+e.getMessage());
+    		return false;
+    	}
+    }
 
 }
