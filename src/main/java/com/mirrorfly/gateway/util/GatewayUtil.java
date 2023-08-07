@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -59,22 +59,24 @@ public class GatewayUtil {
         return sb.toString();
     }
 
-    public static String getMd5String(String input) {
-        StringBuilder hashtext = new StringBuilder();
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");//NOSONAR not used in secure contexts
-            byte[] messageDigest = md.digest(input.getBytes());
-            BigInteger no = new BigInteger(1, messageDigest);
-            hashtext.append(no.toString(16));
-            while (hashtext.length() < 32) {
-                hashtext.append("0" + hashtext);
-            }
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Error while create string to MD5");
-            log.error(e.getMessage());
-        }
-        return hashtext.toString();
-    }
+	public static String getMd5String(String input) {
+		StringBuilder hashtext = new StringBuilder();
+		try {
+
+			MessageDigest md = MessageDigest.getInstance("MD5"); //NOSONAR not used in secure contexts
+
+			byte[] messageDigest = md.digest(input.getBytes());
+			BigInteger no = new BigInteger(1, messageDigest);
+			hashtext.append(no.toString(16));
+			while (hashtext.length() < 32) {
+				hashtext.append("0" + hashtext);
+			}
+		} catch (NoSuchAlgorithmException e) {
+			log.error("Error while create string to MD5");
+			log.error(e.getMessage());
+		}
+		return hashtext.toString();
+	}
 
     public Boolean userIpAccessValidation(String remoteIP) {
         if (StringUtils.isBlank(remoteIP)) {

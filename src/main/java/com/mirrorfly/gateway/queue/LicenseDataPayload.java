@@ -9,4 +9,6 @@ public class LicenseDataPayload {
 	
 	private String data;
 	
+	private String userDomain;
+	
 }
