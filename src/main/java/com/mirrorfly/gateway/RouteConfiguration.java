@@ -1,6 +1,6 @@
 package com.mirrorfly.gateway;
 
-import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.client.discovery.ReactiveDiscoveryClient;
 import org.springframework.cloud.gateway.discovery.DiscoveryClientRouteDefinitionLocator;
 import org.springframework.cloud.gateway.discovery.DiscoveryLocatorProperties;
 import org.springframework.context.annotation.Bean;
@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 @Configuration
 public class RouteConfiguration {
 
-	private static final String ALLOWED_HEADERS = "x-requested-with, authorization, Content-Type, Authorization, credential, X-XSRF-TOKEN,token,username,client";
+	private static final String ALLOWED_HEADERS = "x-requested-with, authorization, Content-Type, Authorization, credential, X-XSRF-TOKEN,token,username,client,userdomain";
 
 	private static final String ALLOWED_METHODS = "*";
 
@@ -31,7 +31,7 @@ public class RouteConfiguration {
 	private static final String MAX_AGE = "18000L";
 
 	@Bean
-	DiscoveryClientRouteDefinitionLocator discoveryRoutes(DiscoveryClient dc, DiscoveryLocatorProperties dlp) {
+	DiscoveryClientRouteDefinitionLocator discoveryRoutes(ReactiveDiscoveryClient dc, DiscoveryLocatorProperties dlp) {
 		return new DiscoveryClientRouteDefinitionLocator(dc, dlp);
 	}
 

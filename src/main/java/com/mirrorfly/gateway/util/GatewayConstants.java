@@ -207,7 +207,7 @@ public class GatewayConstants {
 	public static final String DEVICE_TYPE_EMPTY = "Device type should not be empty";
 
 	public static final String DEVICE_TYPE_NOT_VALID = "Invalid device type";
-	
+
 	public static final String PUSH_SERVER_TYPE_NOT_VALID = "Invalid push server type";
 
 	public static final String USER_NAME_EMPTY = "User name should not be empty";
@@ -226,9 +226,11 @@ public class GatewayConstants {
 
 	public static final String ERROR_IN_REGISTRATION = "Error in registration. Please try again later.";
 
-	public static final String USER_REGISTRATION_MAX_SESSIONS_REACHED = "You have reached maximum sessions allowed.";
-
 	public static final String USER_DOMAIN = "userdomain";
+
+	public static final String DOMAIN_CONFIG_RELOADED = "User domain specific configurations reloaded successfully";
+
+	public static final String USER_REGISTRATION_MAX_SESSIONS_REACHED = "You have reached maximum sessions allowed.";
 
 	public static final String REMOTE_IP = "remoteip";
 
@@ -239,7 +241,7 @@ public class GatewayConstants {
 	public static final String DEVICE_WEB = "web";
 
 	public static final String USER_TYPE_NOT_VALID = "User type value is not valid";
-
+	
 	private GatewayConstants() {
 	}
 }
