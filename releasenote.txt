@@ -2,8 +2,9 @@ Release Date: 11-Jul-2022
 Release Version: 5.5.3
 Build Number: -
 
-This build contains the following improvement
+This build contains the following improvement:
 
+1.SaaS
  
 Tasks:
       Verify User changes-> https://apptha.atlassian.net/browse/CONTUIMSER-30550

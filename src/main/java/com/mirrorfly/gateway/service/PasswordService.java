@@ -12,6 +12,9 @@ import org.passay.PasswordValidator;
 import org.passay.RuleResult;
 import org.springframework.stereotype.Component;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Component
 public class PasswordService {
 
@@ -19,7 +22,9 @@ public class PasswordService {
 		List<CharacterRule> rules = Arrays.asList(new CharacterRule(EnglishCharacterData.UpperCase, 1),
 				new CharacterRule(EnglishCharacterData.LowerCase, 1), new CharacterRule(EnglishCharacterData.Digit, 1));
 		PasswordGenerator generator = new PasswordGenerator();
- 		return generator.generatePassword(15, rules);
+		String password = generator.generatePassword(15, rules);
+		log.info("-------------------> Password="+password);
+ 		return password;
 	}
 
 	public String generateOtp() {
