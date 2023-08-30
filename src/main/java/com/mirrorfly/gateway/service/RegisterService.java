@@ -125,7 +125,6 @@ public class RegisterService {
 			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
 		}
 		ObjectMapper decryptmapper = new ObjectMapper();
-		decryptmapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		RegisterDto registerDto;
 		try {
 			registerDto = decryptmapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
