@@ -23,6 +23,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
@@ -89,16 +90,15 @@ public class RegisterService {
 	private VcardService vcardService;
 
 	@Autowired
-	private ChatUsersDetailsRepo chatUsersDetailsRepo;  
-	
+	private ChatUsersDetailsRepo chatUsersDetailsRepo;
+
 	@Autowired
 	private SpoolRepo spoolRepo;
-	
-	
+
 	@Autowired
 	private DataStore dataStore;
-	
-	@SwitchDataSource(value="[0]")
+
+	@SwitchDataSource(value = "[0]")
 	public Response<RegisterInfoDto> getRegisterInfo(String userdomain) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		ChatSettings settings = settingsRepo.findAll().get(0);
@@ -112,20 +112,20 @@ public class RegisterService {
 		return response;
 	}
 
-	@SwitchDataSource(value="[0]")
+	@SwitchDataSource(value = "[0]")
 	public Response<String> registerNewUser(String userdomain, RegisterRequestDto registerRequestDto) {
 		Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
-    	String licenseKey = config!=null ? (String) config : null;
-    	if (licenseKey == null) {
+		String licenseKey = config != null ? (String) config : null;
+		if (licenseKey == null) {
 			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
 		}
-		
 		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(),
-				licenseKey + licenseKey	+ licenseKey);
+				licenseKey + licenseKey + licenseKey);
 		if (decyptedString.equals("")) {
 			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
 		}
 		ObjectMapper decryptmapper = new ObjectMapper();
+		decryptmapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		RegisterDto registerDto;
 		try {
 			registerDto = decryptmapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
@@ -223,19 +223,20 @@ public class RegisterService {
 		chatUser.setMetaData(metadata);
 
 		chatUserRepo.save(chatUser);
-		
+
 		String password = updateChatUserDetails(userdomain, registerDto, chatUser);
 		registerResponseDto.setPassword(password);
-		
+
 		String deviceIdprefix = "";
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
 			deviceIdprefix = "-web";
 		} else {
 			deviceIdprefix = "-mobile";
 		}
-		
-		String deviceId = StringUtils.isNotBlank(registerDto.getDeviceId())	? registerDto.getDeviceId() : "MF-01" + deviceIdprefix;
-		
+
+		String deviceId = StringUtils.isNotBlank(registerDto.getDeviceId()) ? registerDto.getDeviceId()
+				: "MF-01" + deviceIdprefix;
+
 		registerResponseDto.setToken(tokenService.getToken(userdomain, registerDto.getUserIdentifier(), deviceId, ""));
 		registerResponseDto.setUsername(user.getUsername());
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
@@ -243,7 +244,7 @@ public class RegisterService {
 		} else {
 			user.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		}
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain); //Again setup the DB based on the domain
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain); // Again setup the DB based on the domain
 		userRepo.save(user);
 		return registerResponseDto;
 	}
@@ -324,7 +325,7 @@ public class RegisterService {
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 			user.setPushServerType(pushServerType);
 			user.setUserType(applicationProperties.getDefaultUserType());
-			if(StringUtils.isNotBlank(registerDto.getUserType())) {
+			if (StringUtils.isNotBlank(registerDto.getUserType())) {
 				user.setUserType(registerDto.getUserType().trim());
 			}
 			chatUsersDetailsRepo.save(user);
@@ -338,7 +339,7 @@ public class RegisterService {
 			user.setPassword(GatewayUtil.getMd5String(password));
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 			user.setPushServerType(pushServerType);
-			if(StringUtils.isNotBlank(registerDto.getUserType())) {
+			if (StringUtils.isNotBlank(registerDto.getUserType())) {
 				user.setUserType(registerDto.getUserType().trim());
 			}
 			chatUsersDetailsRepo.save(user);
@@ -361,7 +362,7 @@ public class RegisterService {
 		Collections.sort(existingChatUsersDetails, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
 		return existingChatUsersDetails.get(0);
 	}
-	
+
 	@SwitchDataSource(value = "[0]")
 	public void inputDataValidation(String userdomain, SanboxUserRegisterDto registerDto) {
 		RegisterDto registerData = new RegisterDto();
