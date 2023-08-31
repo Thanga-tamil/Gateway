@@ -22,7 +22,7 @@ public class Last implements Serializable {
 	private Integer status;
 
 	@Column(name = "seconds")
-	private String seconds;
+	private Long seconds;
 
 	@Column(name = "presence")
 	private Integer presence;
