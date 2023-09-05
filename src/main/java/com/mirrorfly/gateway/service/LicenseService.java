@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -208,19 +209,41 @@ public class LicenseService {
 	}
 
 	private void updateChatSettings(LicenseDataDto licenseData) {
-		ChatSettings settings = getConfigService();
-		if (settings == null) {
-			settings = new ChatSettings();
+		try {
+			ChatSettings settings = chatSettingsRepo.findBySingleChatSettingData();
+			if (settings == null) {
+				settings = new ChatSettings();
+				settings.setDomain("");
+				settings.setAdminUser(licenseData.getApiUsername());
+				settings.setMailLogin("NO");
+				settings.setVideoLimit(40);
+				settings.setAudioLimit(40);
+				settings.setRecallTime(60);
+				settings.setPrivateTime(1);
+				settings.setStatus("1");
+				settings.setFeedbackFrom("mirrorfly.com");
+				settings.setFeedbackTo("mirrorfly");
+				settings.setFileSizeLimit(2000);
+				settings.setPinExpireDays(31);
+				settings.setPinTimeOut(32);
+				settings.setCreatedAt(LocalDateTime.now());
+			}
+			settings.setXmppDomain(licenseData.getXmppDomain());
+			settings.setXmppHost(licenseData.getXmppDomain());
+			settings.setSignalServerDomain(licenseData.getSignalUrl());
+			settings.setCallRoutingServer(licenseData.getJanusUrl());
+			if (licenseData != null && licenseData.getPort() != null) {
+				settings.setXmppPort(Integer.parseInt(licenseData.getPort()));
+			}
+			settings.setXmppPortWeb(licenseData.getPortWeb());
+			settings.setIv(licenseData.getIv());
+			settings.setIvProfile(licenseData.getIvProfile());
+			settings.setUpdatedAt(LocalDateTime.now());
+			chatSettingsRepo.save(settings);
+		} catch (Exception e) {
+			log.error("Error occured while updating the chat setting details : " + e.getMessage());
+			e.printStackTrace();
 		}
-		settings.setXmppDomain(licenseData.getXmppDomain());
-		settings.setXmppHost(licenseData.getXmppDomain());
-		settings.setSignalServerDomain(licenseData.getSignalUrl());
-		settings.setCallRoutingServer(licenseData.getJanusUrl());
-		settings.setXmppPort(Integer.parseInt(licenseData.getPort()));
-		settings.setXmppPortWeb(licenseData.getPortWeb());
-		settings.setIv(licenseData.getIv());
-		settings.setIvProfile(licenseData.getIvProfile());
-		chatSettingsRepo.save(settings);
 	}
-
+	
 }
