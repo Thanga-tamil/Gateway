@@ -146,8 +146,7 @@ public class LicenseService {
 
 	@SwitchDataSource(value = "[0]")
 	public Response<String> updateLicense(String userdomain, LicenseUpdateRequestDto request, String remoteIPAddress) {
-		log.info("Incoming remoteIP ----> "+remoteIPAddress);
-		log.info("Allowed IPs range ----> "+applicationProperties.getWhiteListIpRange());
+
 		if (Boolean.FALSE.equals(gatewayUtil.userIpAccessValidation(remoteIPAddress))) {
 			throw new UserUnAuthorizedException(GatewayConstants.UNAUTHORIZED);
 		}
