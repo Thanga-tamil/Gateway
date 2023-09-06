@@ -208,19 +208,25 @@ public class LicenseService {
 	}
 
 	private void updateChatSettings(LicenseDataDto licenseData) {
-		ChatSettings settings = getConfigService();
-		if (settings == null) {
-			settings = new ChatSettings();
+		try {
+			ChatSettings settings = getConfigService();
+			if (settings == null) {
+				settings = new ChatSettings();
+			}
+			settings.setXmppDomain(licenseData.getXmppDomain());
+			settings.setXmppHost(licenseData.getXmppDomain());
+			settings.setSignalServerDomain(licenseData.getSignalUrl());
+			settings.setCallRoutingServer(licenseData.getJanusUrl());
+			if (licenseData.getPort() != null) {
+				settings.setXmppPort(Integer.parseInt(licenseData.getPort()));
+			}
+			settings.setXmppPortWeb(licenseData.getPortWeb());
+			settings.setIv(licenseData.getIv());
+			settings.setIvProfile(licenseData.getIvProfile());
+			chatSettingsRepo.save(settings);
+		} catch (Exception e) {
+			log.error("Error occured while updating the chat setting details : " + e.getMessage());
 		}
-		settings.setXmppDomain(licenseData.getXmppDomain());
-		settings.setXmppHost(licenseData.getXmppDomain());
-		settings.setSignalServerDomain(licenseData.getSignalUrl());
-		settings.setCallRoutingServer(licenseData.getJanusUrl());
-		settings.setXmppPort(Integer.parseInt(licenseData.getPort()));
-		settings.setXmppPortWeb(licenseData.getPortWeb());
-		settings.setIv(licenseData.getIv());
-		settings.setIvProfile(licenseData.getIvProfile());
-		chatSettingsRepo.save(settings);
 	}
 
 }
