@@ -51,14 +51,6 @@ public class ApplicationProperties {
 		return env.getProperty("queue.licensedata");
 	}
 
-	public String getWhiteListIpRange() {
-		return env.getProperty("white-list-ip-range");
-	}
-
-	public int getMaximumSessions() {
-		return env.getProperty("user.maxSessions") != null ? Integer.parseInt(env.getProperty("user.maxSessions")) : 2;
-	}
-
 	public int getMetaDataLimit() {
 		return env.getProperty("metadata.limit", Integer.class, 3);
 	}
@@ -123,5 +115,13 @@ public class ApplicationProperties {
 	
 	public String getPreProdUrl() {
 		return env.getProperty("preprod.url");
+	}
+	
+	public String getWhiteListIpStartRange() {
+		return env.getProperty("white-list-ip-range-start");
+	}
+	
+	public String getWhiteListIpEndRange() {
+		return env.getProperty("white-list-ip-range-end");
 	}
 }

@@ -20,6 +20,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.exception.BadDataException;
 
+import inet.ipaddr.IPAddress;
+import inet.ipaddr.IPAddressSeqRange;
+import inet.ipaddr.IPAddressString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -78,45 +81,6 @@ public class GatewayUtil {
 		return hashtext.toString();
 	}
 
-    public Boolean userIpAccessValidation(String remoteIP) {
-        if (StringUtils.isBlank(remoteIP)) {
-            log.error("userIpAccessValidation - Remote IP is null or Blank " + remoteIP);
-            return false;
-        }
-        try {
-            log.info("userIpAccessValidation - Ip address received " + remoteIP);
-
-            String ips = applicationProperties.getWhiteListIpRange();
-            if (StringUtils.isBlank(ips)) {
-                log.error("userIpAccessValidation - WhiteListIPs not configured " + ips);
-                return false;
-            }
-            log.info("userIpAccessValidation - Allowed Ip range " + ips);
-            String[] ip = ips.split("\\.");
-            String prefixIp = ip[0] + "." + ip[1] + "." + ip[2];
-            int lastDotIndex = remoteIP.lastIndexOf(".");
-            if (!(remoteIP.substring(0, lastDotIndex)).equals(prefixIp)) {
-            	log.info("userIpAccessValidation - ip address validation failed, hence request will be dropped, ip adresss ------> "+remoteIP);
-                return false;
-            }
-            String[] suffixIp = ip[3].split("/");
-            int start = Integer.parseInt(suffixIp[0]);
-            int end = Integer.parseInt(suffixIp[1]);
-            int lastDigit = Integer.parseInt(remoteIP.substring(remoteIP.lastIndexOf(".") + 1));
-            
-            if (lastDigit >= start && lastDigit <= end) {
-                log.info("userIpAccessValidation - ip address validation successs, hence allowing ip adresss ------> "+remoteIP);
-                return true;
-            } else {
-            	log.info("userIpAccessValidation - ip address validation failed, hence request will be dropped, ip adresss ------> "+remoteIP);
-                return false;
-            }
-        } catch (Exception e) {
-        	log.error("userIpAccessValidation - Error in verifying Ip whilte listing " + e.getMessage());
-            throw new BadDataException("Please check your IP credential");
-        }
-    }
-
     public static Map<String, Object> convertJsonStringToMap(String jsonString) throws JsonProcessingException {
         return new ObjectMapper().readValue(jsonString, new TypeReference<Map<String, Object>>() {
         });
@@ -171,4 +135,47 @@ public class GatewayUtil {
         }
     }
 
+	public Boolean userIpAccessValidation(String remoteIP) {
+		if (StringUtils.isBlank(remoteIP)) {
+			log.error("userIpAccessValidation - Remote IP is null or Blank " + remoteIP);
+			return false;
+		}
+
+		try {
+			log.debug("userIpAccessValidation - Ip address received " + remoteIP);
+
+			String startRange = applicationProperties.getWhiteListIpStartRange();
+			String endRange = applicationProperties.getWhiteListIpEndRange();
+			if (StringUtils.isBlank(startRange) || StringUtils.isBlank(endRange)) {
+				log.error("userIpAccessValidation - WhiteListIP ranges missing startRange " + startRange + "  endRange "
+						+ endRange);
+				return false;
+			}
+
+			log.debug(
+					"userIpAccessValidation - Allowed Ip ranges  startRange " + startRange + "  endRange " + endRange);
+
+			IPAddress startIPAddress = new IPAddressString(startRange).getAddress();
+			IPAddress endIPAddress = new IPAddressString(endRange).getAddress();
+			IPAddressSeqRange ipRange = startIPAddress.spanWithRange(endIPAddress);
+			IPAddress inputIPAddress = new IPAddressString(remoteIP).toAddress();
+			
+			if (ipRange.contains(inputIPAddress)) {
+				log.debug("userIpAccessValidation - ip address validation successs, hence allowing ip adresss ------> "
+						+ remoteIP);
+				return true;
+			} else {
+				log.error(
+						"userIpAccessValidation - ip address validation failed, hence request will be dropped,  startRange ------> "
+								+ startRange + "  endRange ------> " + endRange + "  incoming ip adresss ------> "
+								+ remoteIP);
+				return false;
+			}
+
+		} catch (Exception e) {
+			log.error("userIpAccessValidation - Error in verifying Ip white listing " + e.getMessage());
+			return false;
+		}
+	}
+    
 }
