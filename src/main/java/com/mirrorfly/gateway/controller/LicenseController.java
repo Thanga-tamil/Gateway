@@ -26,14 +26,16 @@ public class LicenseController {
 	private LicenseService licenseService;
 
 	@GetMapping
-	public @ResponseBody Response<LicenseResDto> getLicense(LicenseReqDto license) {
-		return licenseService.getLicense(license);
+	public @ResponseBody Response<LicenseResDto> getLicense(LicenseReqDto license,
+			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain) {
+		return licenseService.getLicense(userdomain, license);
 	}
 	
 	@PostMapping
 	public @ResponseBody Response<String> postLicenseEncyptedData(
-			@ApiParam(hidden = true) @RequestHeader(value = "remoteip") String remoteIPAddress,
-			@Validated @RequestBody LicenseUpdateRequestDto request) {
-		return licenseService.updateLicense(request, remoteIPAddress);
+			@Validated @RequestBody LicenseUpdateRequestDto request,
+			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain,
+			@ApiParam(hidden = true) @RequestHeader(value = "remoteip") String remoteIPAddress) {
+		return licenseService.updateLicense(userdomain, request, remoteIPAddress);
 	}
 }
