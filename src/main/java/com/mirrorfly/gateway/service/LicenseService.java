@@ -29,6 +29,7 @@ import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.UserUnAuthorizedException;
 import com.mirrorfly.gateway.model.ChatServerConfig;
 import com.mirrorfly.gateway.model.ChatSettings;
+import com.mirrorfly.gateway.model.ChatUserDetails;
 import com.mirrorfly.gateway.model.License;
 import com.mirrorfly.gateway.model.LicenseLookup;
 import com.mirrorfly.gateway.model.Users;
@@ -36,6 +37,7 @@ import com.mirrorfly.gateway.queue.LicenseDataPayload;
 import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.ChatServerConfigRepo;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
+import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 import com.mirrorfly.gateway.repo.LicenseLookupRepo;
 import com.mirrorfly.gateway.repo.LicenseRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
@@ -77,6 +79,9 @@ public class LicenseService {
 	
 	@Autowired
 	private GatewayUtil gatewayUtil;
+	
+	@Autowired
+	private ChatUsersDetailsRepo chatUsersDetailsRepo;
 
 	@SwitchDataSource(value = "[0]")
 	public Response<LicenseResDto> getLicense(String userdomain, LicenseReqDto licenseReq) {
@@ -200,6 +205,7 @@ public class LicenseService {
 				}
 			}
 			updateChatSettings(licenseData);
+			updateChatUserDetails(licenseData);
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
 			log.error("Unable to unserialize the license details " + e.getMessage());
 			throw new BadDataException("Error occured while updating the license details.");
@@ -225,6 +231,21 @@ public class LicenseService {
 			chatSettingsRepo.save(settings);
 		} catch (Exception e) {
 			log.error("Error occured while updating the chat setting details : " + e.getMessage());
+		}
+	}
+	
+	private void updateChatUserDetails(LicenseDataDto licenseData) {
+		if (licenseData.getApiUsername() != null && licenseData.getApiPassword() != null) {
+			ChatUserDetails chatUserDetails = chatUsersDetailsRepo
+					.findByUsernameAndPassword(licenseData.getApiUsername(), licenseData.getApiPassword());
+			if (chatUserDetails == null) {
+				chatUserDetails = new ChatUserDetails();
+			}
+			chatUserDetails.setUsername(licenseData.getApiUsername());
+			chatUserDetails.setPassword(licenseData.getApiPassword());
+			chatUserDetails.setUserType(applicationProperties.getDefaultUserType());
+			chatUserDetails.setPushServerType("");
+			chatUsersDetailsRepo.save(chatUserDetails);
 		}
 	}
 
