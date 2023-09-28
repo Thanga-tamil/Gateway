@@ -1,20 +1,19 @@
 package com.mirrorfly.gateway.model;
 
 import java.io.Serializable;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
 import lombok.Data;
 
 @Data
 @Entity
 @Table(name = "connection_config")
 public class ConnectionConfig implements Serializable {
+
 	private static final long serialVersionUID = 1L;
 
 	@Id
@@ -22,23 +21,20 @@ public class ConnectionConfig implements Serializable {
 	@Column(name = "id")
 	private int id;
 
-	@Column(name = "customer_domain")
-	private String customerDomain;
+	@Column(name = "mysql", columnDefinition = "JSON")
+	private String mysql;
 
-	@Column(name = "connection_string")
-	private String connectionString;
+	@Column(name = "api_domain")
+	private String apiDomain;
 
-	@Column(name = "db_username")
-	private String dbUsername;
+	@Column(name = "xmpp_domain")
+	private String xmppDomain;
 
-	@Column(name = "db_password")
-	private String dbPassword;
+	@Column(name = "signal_domain")
+	private String signalDomain;
 
-	@Column(name = "minimum_connections")
-	private int minimumConnections;
-
-	@Column(name = "maximum_connections")
-	private int maximumConnections;
+	@Column(name = "xmpp_config", columnDefinition = "JSON")
+	private String xmppConfig;
 
 	@Column(name = "license_key")
 	private String licenseKey;
@@ -46,37 +42,19 @@ public class ConnectionConfig implements Serializable {
 	@Column(name = "storage")
 	private String storage;
 
-	@Column(name = "xmpp_domain")
-	private String xmppDomain;
-
-	@Column(columnDefinition = "JSON", name = "aws_details")
+	@Column(name = "aws_details", columnDefinition = "JSON")
 	private String awsDetails;
 
-	@Column(columnDefinition = "JSON", name = "oci_details")
+	@Column(name = "oci_details", columnDefinition = "JSON")
 	private String ociDetails;
 
-	@Column(name = "max_sessions")
-	private int maxSessions;
+	@Column(name = "android_push_details", columnDefinition = "json")
+	private String androidPushDetails;
 
-	@Column(columnDefinition = "JSON", name = "xmpp_config")
-	private String xmppConfig;
+	@Column(name = "ios_push_details", columnDefinition = "json")
+	private String iosPushDetails;
 
-	@Column(name = "apns_certificate_url")
-	private String apnsCertificateUrl;
-
-	@Column(name = "apns_certificate_password")
-	private String apnsCertificatePassword;
-
-	@Column(name = "voip_certificate_url")
-	private String voipCertificateUrl;
-
-	@Column(name = "voip_certificate_password")
-	private String voipCertificatePassword;
-
-	@Column(name = "ios_bundle_id")
-	private String iosBundleId;
-
-	@Column(name = "firebase_key")
-	private String firebaseKey;
+	@Column(name = "user_max_sessions")
+	private int userMaxSessions;
 
 }
