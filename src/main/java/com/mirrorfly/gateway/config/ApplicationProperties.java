@@ -20,15 +20,15 @@ public class ApplicationProperties {
 	}
 
 	public String getRedisHost() {
-		return env.getProperty("spring.redis.host");
+		return env.getProperty("spring.data.redis.host");
 	}
 
 	public String getRedisPassword() {
-		return env.getProperty("spring.redis.password");
+		return env.getProperty("spring.data.redis.password");
 	}
 
 	public String getRedisPort() {
-		return env.getProperty("spring.redis.port");
+		return env.getProperty("spring.data.redis.port");
 	}
 
 	public String getApiBaseUrl() {
