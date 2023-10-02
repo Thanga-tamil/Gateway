@@ -1,6 +1,7 @@
 package com.mirrorfly.gateway.service;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -118,7 +119,6 @@ public class RegisterService {
 		if (licenseKey == null) {
 			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
 		}
-
 		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(),
 				licenseKey + licenseKey + licenseKey);
 		if (decyptedString.equals("")) {
@@ -157,7 +157,7 @@ public class RegisterService {
 		last.setStatus(0);
 		LocalDateTime date = LocalDateTime.now();
 		ZoneOffset zone = ZoneOffset.of("Z");
-		last.setSeconds(Long.toString(date.toEpochSecond(zone)));
+		last.setSeconds(BigInteger.valueOf(date.toEpochSecond(zone)));
 		last.setPresence(0);
 		last.setState("Stream reset by peer");
 		lastRepo.save(last);
