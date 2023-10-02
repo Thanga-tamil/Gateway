@@ -59,9 +59,8 @@ public class DataSourceUtil {
 
 	private Integer parseIntegerOrDefault(Object value, Integer defaultValue) {
 		try {
-			return StringUtils.isNotBlank(Optional.ofNullable(value).map(Object::toString).orElse(null))
-					? Integer.parseInt(value.toString())
-					: defaultValue;
+			return Optional.ofNullable(value).map(Object::toString).filter(StringUtils::isNotBlank)
+					.map(Integer::parseInt).orElse(defaultValue);
 		} catch (NumberFormatException e) {
 			log.error("NumberFormatException: {}", e.getMessage());
 			return defaultValue;
