@@ -5,7 +5,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +19,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.exception.CommonException;
 
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressSeqRange;
@@ -82,9 +82,14 @@ public class GatewayUtil {
 		return hashtext.toString();
 	}
 
-	public static Map<String, Object> convertJsonStringToMap(String jsonString) throws JsonProcessingException {
-		return new ObjectMapper().readValue(jsonString, new TypeReference<Map<String, Object>>() {
-		});
+	public static Map<String, Object> convertJsonStringToMap(String jsonString) {
+		try {
+			return new ObjectMapper().readValue(jsonString, new TypeReference<Map<String, Object>>() {
+			});
+		} catch (JsonProcessingException e) {
+			log.error("Causing Exception While Converting String data as JSON" + e.getLocalizedMessage());
+			throw new CommonException(e.getMessage());
+		}
 	}
 
 	public static String convertMapToJson(Map<String, Object> messageContent) throws JsonProcessingException {
@@ -172,17 +177,6 @@ public class GatewayUtil {
 		} catch (Exception e) {
 			log.error("userIpAccessValidation - Error in verifying Ip white listing " + e.getMessage());
 			return false;
-		}
-	}
-
-	public static Map<String, Object> getMapData(String data) {
-		try {
-			ObjectMapper objectMapper = new ObjectMapper();
-			return objectMapper.readValue(data, new TypeReference<Map<String, Object>>() {
-			});
-		} catch (Exception e) {
-			log.error("Causing exception while converting json String as Map of data --> " + e.getLocalizedMessage());
-			return Collections.emptyMap();
 		}
 	}
 
