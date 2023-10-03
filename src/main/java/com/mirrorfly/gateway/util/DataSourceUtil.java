@@ -50,10 +50,15 @@ public class DataSourceUtil {
 	}
 
 	private String requireNonEmptyValue(Object value) {
-		if (StringUtils.isNotBlank(value.toString())) {
-			return value.toString();
-		} else {
-			throw new IllegalArgumentException("Missing Datasouce values");
+		try {
+			if (StringUtils.isNotBlank(value.toString())) {
+				return value.toString();
+			} else {
+				throw new IllegalArgumentException("Missing datasource values");
+			}
+		} catch (Exception e) {
+			log.error("Unable to create database connection :::" + e.getMessage());
+			throw new IllegalArgumentException("Unable to create database connection ::: " + e.getMessage());
 		}
 	}
 
