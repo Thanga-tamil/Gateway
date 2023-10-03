@@ -92,7 +92,7 @@ public class AbstractRoutingDataSourceImpl extends AbstractRoutingDataSource {
 
 	private boolean isConfigurationSame(HikariDataSource dataSource, ConnectionConfig configuration) {
 		Map<String, Object> mysql = GatewayUtil.convertJsonStringToMap(configuration.getMysql());
-		return Objects.equals(dataSource.getJdbcUrl(), mysql.get("url"))
+		return Objects.equals(dataSource.getJdbcUrl(), mysql.get("connection_string"))
 				&& Objects.equals(dataSource.getUsername(), mysql.get("username"))
 				&& Objects.equals(dataSource.getPassword(), mysql.get("password"))
 				&& Objects.equals(dataSource.getMinimumIdle(), mysql.get("minimum_connections"))
