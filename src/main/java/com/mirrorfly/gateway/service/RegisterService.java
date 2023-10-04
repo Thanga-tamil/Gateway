@@ -215,9 +215,7 @@ public class RegisterService {
 				registerResponseDto.setIsProfileUpdated(true);
 			}
 			registerResponseDto.setIsExisting(true);
-
 		}
-
 		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
 		chatUser.setMetaData(metadata);
 
@@ -232,7 +230,6 @@ public class RegisterService {
 		} else {
 			deviceIdprefix = "-mobile";
 		}
-
 		String deviceId = StringUtils.isNotBlank(registerDto.getDeviceId()) ? registerDto.getDeviceId()
 				: "MF-01" + deviceIdprefix;
 
@@ -299,7 +296,7 @@ public class RegisterService {
 		ChatUserDetails user = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
 		String password = passwordService.generateRandomPassword();
 		if (user == null) {
-			int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "maxSessions");
+			int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "userMaxSessions");
 			List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 					.findByUsername(chatUser.getUsername());
 			if (existingChatUsersDetails.size() >= maxSessions) {
@@ -409,7 +406,7 @@ public class RegisterService {
 		}
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
 		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
-		int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "maxSessions");
+		int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "userMaxSessions");
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
 		if (existingChatUsersDetails.size() >= maxSessions && Boolean.FALSE.equals(registerDto.getForceRegister())) {
