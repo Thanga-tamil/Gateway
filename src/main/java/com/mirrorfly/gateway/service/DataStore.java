@@ -27,7 +27,7 @@ public class DataStore {
 
 	public void setConnectionConfig(List<ConnectionConfig> config) {
 		connectionConfig = new ConcurrentHashMap<>();
-		config.forEach(data -> connectionConfig.put(data.getCustomerDomain(), data));
+		config.forEach(data -> connectionConfig.put(data.getApiDomain(), data));
 		log.info("ConnectionConfig loaded into inmemory. Size is : " + connectionConfig.size() + ", Current data is "
 				+ connectionConfig);
 	}
@@ -35,7 +35,7 @@ public class DataStore {
 	public void reloadConnectionConfig() {
 		AbstractRoutingDataSourceImpl.setDatabaseName("default");
 		connectionConfig = new ConcurrentHashMap<>();
-		connectionConfigRepo.findAll().forEach(config -> connectionConfig.put(config.getCustomerDomain(), config));
+		connectionConfigRepo.findAll().forEach(config -> connectionConfig.put(config.getApiDomain(), config));
 		log.info("ConnectionConfig inmemory refreshed. Size is : " + connectionConfig.size() + ", Current data is "
 				+ connectionConfig);
 	}
@@ -43,15 +43,17 @@ public class DataStore {
 	public Map<String, ConnectionConfig> getConnectionConfig() {
 		return connectionConfig;
 	}
-	
+
 	public ConnectionConfig getConnectionConfigByDomain(String domain) {
 		ConnectionConfig config = connectionConfig.get(domain);
-		if(config == null) {
-			log.info("Could not find ConnectionConfig data for domain "+domain+" in inmemory. Reloading connection_config table.");
+		if (config == null) {
+			log.info("Could not find ConnectionConfig data for domain " + domain
+					+ " in inmemory. Reloading connection_config table.");
 			reloadConnectionConfig();
 			config = connectionConfig.get(domain);
 		}
-		// setting back the active datasource name to whatever it was before calling this method
+		// setting back the active datasource name to whatever it was before calling
+		// this method
 		AbstractRoutingDataSourceImpl.setDatabaseName(domain);
 		return config;
 	}

@@ -14,6 +14,7 @@ import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
 
 import com.mirrorfly.gateway.model.ConnectionConfig;
 import com.mirrorfly.gateway.util.DataSourceUtil;
+import com.mirrorfly.gateway.util.GatewayUtil;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class AbstractRoutingDataSourceImpl extends AbstractRoutingDataSource {
@@ -75,26 +76,27 @@ public class AbstractRoutingDataSourceImpl extends AbstractRoutingDataSource {
 
 	public void refresh(List<ConnectionConfig> connectionConfigs) {
 		for (ConnectionConfig config : connectionConfigs) {
-			if (allDataSources.containsKey(config.getCustomerDomain())) {
-				HikariDataSource ds = (HikariDataSource) allDataSources.get(config.getCustomerDomain());
+			if (allDataSources.containsKey(config.getApiDomain())) {
+				HikariDataSource ds = (HikariDataSource) allDataSources.get(config.getApiDomain());
 				// Reload only if any of connection params has changed
 				if (!isConfigurationSame(ds, config)) {
 					ds.close();
-					allDataSources.put(config.getCustomerDomain(), dataSourceUtil.createDataSource(config));
+					allDataSources.put(config.getApiDomain(), dataSourceUtil.createDataSource(config));
 				}
 			} else {
 				// New data source, just create and store it.
-				allDataSources.put(config.getCustomerDomain(), dataSourceUtil.createDataSource(config));
+				allDataSources.put(config.getApiDomain(), dataSourceUtil.createDataSource(config));
 			}
 		}
 	}
 
 	private boolean isConfigurationSame(HikariDataSource dataSource, ConnectionConfig configuration) {
-		return Objects.equals(dataSource.getJdbcUrl(), configuration.getConnectionString())
-				&& Objects.equals(dataSource.getUsername(), configuration.getDbUsername())
-				&& Objects.equals(dataSource.getPassword(), configuration.getDbPassword())
-				&& Objects.equals(dataSource.getMinimumIdle(), configuration.getMinimumConnections())
-				&& Objects.equals(dataSource.getMaximumPoolSize(), configuration.getMaximumConnections());
+		Map<String, Object> mysql = GatewayUtil.convertJsonStringToMap(configuration.getMysql());
+		return Objects.equals(dataSource.getJdbcUrl(), mysql.get("connection_string"))
+				&& Objects.equals(dataSource.getUsername(), mysql.get("username"))
+				&& Objects.equals(dataSource.getPassword(), mysql.get("password"))
+				&& Objects.equals(dataSource.getMinimumIdle(), mysql.get("minimum_connections"))
+				&& Objects.equals(dataSource.getMaximumPoolSize(), mysql.get("maximum_connections"));
 	}
 
 	@Override

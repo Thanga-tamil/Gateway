@@ -1,6 +1,7 @@
 package com.mirrorfly.gateway.model;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,7 +23,7 @@ public class Last implements Serializable {
 	private Integer status;
 
 	@Column(name = "seconds")
-	private String seconds;
+	private BigInteger seconds;
 
 	@Column(name = "presence")
 	private Integer presence;

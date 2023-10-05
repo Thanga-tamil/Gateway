@@ -68,21 +68,21 @@ public class ApplicationProperties {
 	}
 
 	public int getMinimumConnections() {
-		return env.getProperty("spring.datasource.hikari.minimum-idle", Integer.class);
+		return env.getProperty("spring.datasource.hikari.minimum-idle", Integer.class, 5);
 	}
 
 	public int getMaximumConnections() {
-		return env.getProperty("spring.datasource.hikari.maximum-pool-size", Integer.class);
+		return env.getProperty("spring.datasource.hikari.maximum-pool-size", Integer.class, 10);
 	}
 
 	public long getConnectionIdleTimeout() {
-		return env.getProperty("spring.datasource.hikari.idleTimeout", Long.class);
+		return env.getProperty("spring.datasource.hikari.idleTimeout", Long.class, 100000l);
 	}
 
 	public long getConnectionMaxLifeTime() {
 		// should be greater than spring.datasource.hikari.idleTimeout
 		// should be several minutes less than database global wait_timeout
-		return env.getProperty("spring.datasource.hikari.maxLifetime", Long.class);
+		return env.getProperty("spring.datasource.hikari.maxLifetime", Long.class, 200000l);
 	}
 
 	public List<String> getUserTypes() {
