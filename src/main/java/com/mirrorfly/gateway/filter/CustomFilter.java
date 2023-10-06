@@ -41,11 +41,11 @@ public class CustomFilter implements WebFilter, Ordered {
 			String domain = getDomain(url.toString());
 			ServerHttpRequest.Builder builder = request.mutate();
 			if(StringUtils.isNotBlank(domain)) {
-				log.info("setting userdomain =======================>>>> " + domain);
+				log.debug("setting userdomain =======================>>>> " + domain);
 				builder.header(GatewayConstants.USER_DOMAIN, domain);
 				MDC.put(GatewayConstants.USER_DOMAIN, domain);
 			}
-			log.info("url =======================>>>> " + url.toString());
+			log.info("Method ==> "+request.getMethod().name()+ " url ==> " + url.toString());
 			return builder;
 		} catch (MalformedURLException e) {
 			throw new BadDataException("Unable to identify the domain from request");
