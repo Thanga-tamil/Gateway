@@ -10,7 +10,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.reactive.CorsUtils;
+import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
@@ -55,6 +58,24 @@ public class RouteConfiguration {
 			}
 			return chain.filter(ctx);
 		};
+	}
+
+	@Bean
+	public CorsFilter corsFilters() {
+		final UrlBasedCorsConfigurationSource urlBasedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
+		final CorsConfiguration corsConfig = new CorsConfiguration();
+		corsConfig.setAllowCredentials(true);
+		corsConfig.addAllowedOrigin("*");
+		corsConfig.addAllowedHeader("*");
+		corsConfig.addAllowedMethod("OPTIONS");
+		corsConfig.addAllowedMethod("HEAD");
+		corsConfig.addAllowedMethod("GET");
+		corsConfig.addAllowedMethod("PUT");
+		corsConfig.addAllowedMethod("POST");
+		corsConfig.addAllowedMethod("DELETE");
+		corsConfig.addAllowedMethod("PATCH");
+		urlBasedCorsConfigurationSource.registerCorsConfiguration("/**", corsConfig);
+		return new CorsFilter(urlBasedCorsConfigurationSource);
 	}
 
 }

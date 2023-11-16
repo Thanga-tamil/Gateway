@@ -5,10 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
-import javax.validation.ValidationException;
-
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.hibernate.exception.JDBCConnectionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +23,9 @@ import org.springframework.web.bind.support.WebExchangeBindException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.mirrorfly.gateway.response.Response;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -41,36 +41,31 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(JDBCConnectionException.class)
 	public Response<String> jdbcConnectionException(final JDBCConnectionException e) {
-		LOGGER.error(e.getLocalizedMessage());
-		printErrorStack(e.getStackTrace());
+		printErrorStack(e);
 		return setStatusAndMessage(HttpStatus.NOT_FOUND.value(), e.getMessage());
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	public Response<String> httpMessageNotReadableException(final HttpMessageNotReadableException e) {
-		LOGGER.error(e.getLocalizedMessage());
-		printErrorStack(e.getStackTrace());
+		printErrorStack(e);
 		return setStatusAndMessage(HttpStatus.NOT_FOUND.value(), e.getMessage());
 	}
 
 	@ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
 	public Response<String> httpMediaTypeNotAcceptableException(final HttpMediaTypeNotAcceptableException e) {
-		LOGGER.error(e.getLocalizedMessage());
-		printErrorStack(e.getStackTrace());
+		printErrorStack(e);
 		return setStatusAndMessage(HttpStatus.NOT_FOUND.value(), e.getMessage());
 	}
 
 	@ExceptionHandler(MismatchedInputException.class)
 	public Response<String> mismatchedInputException(final MismatchedInputException e) {
-		LOGGER.error(e.getLocalizedMessage());
-		printErrorStack(e.getStackTrace());
+		printErrorStack(e);
 		return setStatusAndMessage(HttpStatus.BAD_REQUEST.value(), e.getMessage());
 	}
 
 	@ExceptionHandler(NotFoundException.class)
 	public Response<String> notFoundException(final NotFoundException e) {
-		LOGGER.error(e.getLocalizedMessage());
-		printErrorStack(e.getStackTrace());
+		printErrorStack(e);
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage());
 	}
 
@@ -126,8 +121,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(value = CommonException.class)
 	public Response<String> commonException(CommonException ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		printErrorStack(ex);
 		return setStatusAndMessage(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
 	}
 
@@ -140,8 +134,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(value = FileNotFoundException.class)
 	public Response<String> fileNotFoundException(FileNotFoundException ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		printErrorStack(ex);
 		return setStatusAndMessage(HttpStatus.NOT_FOUND.value(), ex.getMessage());
 	}
 
@@ -154,8 +147,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(value = ArrayIndexOutOfBoundsException.class)
 	public Response<String> arrayIndexOutOfBoundsException(ArrayIndexOutOfBoundsException ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		printErrorStack(ex);
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
 
@@ -170,8 +162,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(value = ClassCastException.class)
 	public Response<String> classCastException(ClassCastException ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		printErrorStack(ex);
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
 
@@ -186,8 +177,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(value = IllegalArgumentException.class)
 	public Response<String> illegalArgumentException(IllegalArgumentException ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		printErrorStack(ex);
 		return setStatusAndMessage(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
 	}
 
@@ -201,8 +191,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(value = NullPointerException.class)
 	public Response<String> nullPointerException(NullPointerException ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		printErrorStack(ex);
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
 
@@ -217,8 +206,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(value = NumberFormatException.class)
 	public Response<String> numberFormatException(NumberFormatException ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		printErrorStack(ex);
 		return setStatusAndMessage(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
 	}
 
@@ -232,8 +220,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(value = AssertionError.class)
 	public Response<String> assertionError(AssertionError ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		ExceptionUtils.printRootCauseStackTrace(ex);
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
 
@@ -248,8 +235,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(value = ExceptionInInitializerError.class)
 	public Response<String> exceptionInInitializerError(ExceptionInInitializerError ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		ExceptionUtils.printRootCauseStackTrace(ex);
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
 
@@ -262,8 +248,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(value = StackOverflowError.class)
 	public Response<String> stackOverflowError(StackOverflowError ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		ExceptionUtils.printRootCauseStackTrace(ex);
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
 
@@ -276,8 +261,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(value = NoClassDefFoundError.class)
 	public Response<String> noClassDefFoundError(NoClassDefFoundError ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		ExceptionUtils.printRootCauseStackTrace(ex);
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
 
@@ -290,8 +274,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(value = RuntimeException.class)
 	public Response<String> resourceNotFoundException(RuntimeException ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		printErrorStack(ex);
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
 
@@ -315,8 +298,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(value = WebExchangeBindException.class)
 	public Response<String> webExchangeBindException(WebExchangeBindException ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		printErrorStack(ex);
 		return setStatusAndMessage(HttpStatus.BAD_REQUEST.value(), ex.getFieldError().getDefaultMessage());
 	}
 
@@ -331,8 +313,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(value = Exception.class)
 	public Response<String> exception(Exception ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		printErrorStack(ex);
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
 
@@ -345,8 +326,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(value = ValidationException.class)
 	public Response<String> validationException(ValidationException ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		printErrorStack(ex);
 		return setStatusAndMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
 	}
 
@@ -359,8 +339,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(value = UserUnAuthorizedException.class)
 	public Response<String> userUnAuthorizedException(UserUnAuthorizedException ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		printErrorStack(ex);
 		return setStatusAndMessage(HttpStatus.UNAUTHORIZED.value(), ex.getMessage());
 	}
 
@@ -373,8 +352,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(value = ForbiddenException.class)
 	public Response<String> forbiddenException(ForbiddenException ex) {
-		LOGGER.error(ex.getLocalizedMessage());
-		printErrorStack(ex.getStackTrace());
+		printErrorStack(ex);
 		return setStatusAndMessage(HttpStatus.FORBIDDEN.value(), ex.getMessage());
 	}
 	
@@ -384,18 +362,20 @@ public class GlobalExceptionHandler {
 		return setStatusAndMessage(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
 	}
 	
-	private void printErrorStack(StackTraceElement[] ste) {
+	private void printErrorStack(Exception ex) {
 		StringBuilder error = new StringBuilder();
 		try {
+			StackTraceElement[] ste = ex.getStackTrace();
 			if (ste != null && ste.length > 0) {
 				for (int i = 0; i < ste.length; i++) {
 					error.append(ste[i].toString()).append(" ").append(System.lineSeparator()).append(" ");
 				}
-				log.error("Exception details ::: " + error.toString());
+				log.error("Exception details ::: " + ex.getMessage() + "  " + error.toString());
 			}
 		} catch (Exception e) {
 			log.error("Could not print custom error stack");
 		}
+		error.setLength(0);
 	}
 	
 	private Response<String> setStatusAndMessage(int status, String message) {

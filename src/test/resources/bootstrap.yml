@@ -33,8 +33,8 @@ spring:
       enabled: false
       config.enabled: false
            
-    
-  redis:
+  data:  
+   redis:
      host: 192.168.0.83
      port: 6379
      password: 5KsFPBu7X
