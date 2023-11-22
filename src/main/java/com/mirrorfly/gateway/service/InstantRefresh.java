@@ -64,7 +64,7 @@ public class InstantRefresh {
 				config.setXmppConfig(rs.getString("xmpp_config"));
 				config.setAndroidPushDetails(rs.getString("android_push_details"));
 				config.setIosPushDetails(rs.getString("ios_push_details"));
-				config.setUserMaxSessions(rs.getInt("user_max_session"));
+				config.setUserMaxSessions(rs.getInt("user_max_sessions"));
 				list.add(config);
 			}
 		} catch (SQLException e) {
