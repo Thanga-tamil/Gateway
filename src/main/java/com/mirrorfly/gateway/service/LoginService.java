@@ -24,17 +24,16 @@ import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.AdminUser;
-import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.ChatUserDetails;
 import com.mirrorfly.gateway.model.EmailToken;
+import com.mirrorfly.gateway.model.TokenDetail;
 import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.queue.MailPayload;
 import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.AdminUserRepo;
-import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 import com.mirrorfly.gateway.repo.EmailTokenRepo;
-import com.mirrorfly.gateway.repo.UserRepo;
+import com.mirrorfly.gateway.repo.SpoolRepo;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
@@ -72,16 +71,10 @@ public class LoginService {
 	private ChatUsersDetailsRepo chatUsersDetailsRepo;
 
 	@Autowired
-	private ChatUserRepo chatUserRepo;
-
-	@Autowired
-	private UserRepo userRepo;
-
-	@Autowired
-	private PasswordService passwordService;
-
-	@Autowired
 	private DataStore dataStore;
+	
+	@Autowired
+	private SpoolRepo spoolRepo;
 
 	@SwitchDataSource(value = "[0]")
 	public Response<LoginDetailsDto> login(String userdomain, LoginDto loginRequestDto) {
@@ -125,7 +118,10 @@ public class LoginService {
 
 		Response<LoginDetailsDto> response = new Response<>();
 		LoginDetailsDto loginDetails = new LoginDetailsDto();
-		loginDetails.setToken(tokenService.getToken(userdomain, loginRequestDto.getUsername(), "", ""));
+		String deviceId = chatUserDetail.getDeviceId() != null && !chatUserDetail.getDeviceId().isEmpty()
+				? chatUserDetail.getDeviceId()
+				: "MF-01";
+		loginDetails.setToken(tokenService.getToken(userdomain, chatUserDetail.getUsername(), deviceId, ""));
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
@@ -134,18 +130,20 @@ public class LoginService {
 
 	@SwitchDataSource(value = "[0]")
 	public Response<String> logout(String userdomain, String authorization) {
-		String username = tokenService.getUserNameByToken(userdomain, authorization);
+		TokenDetail tokenDetail = tokenService.getTokenDetail(userdomain, authorization);
 		tokenService.deleteToken(userdomain, authorization);
-		if (username != null) {
-			AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-			Optional<ChatUser> chatUser = chatUserRepo.findById(username);
-			if (chatUser.isPresent()) {
-				chatUser.get().setDevicetype(" ");
-				chatUser.get().setDevicetype("");
-				chatUserRepo.save(chatUser.get());
-				userRepo.updatePasswordByUsername(passwordService.generateRandomPassword(), username);
+		if (tokenDetail != null) {
+			String deviceId = tokenDetail.getDevicetype() != null && !tokenDetail.getDevicetype().isEmpty()
+					? tokenDetail.getDevicetype()
+					: "MF-01";
+			ChatUserDetails chatUserDetail = chatUsersDetailsRepo.findByUsernameAndDeviceId(tokenDetail.getUsername(),
+					deviceId);
+			if (chatUserDetail != null) {
+				chatUsersDetailsRepo.delete(chatUserDetail);
+				spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(tokenDetail.getUsername(), deviceId);
 			}
 		}
+
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.OK.value());
 		response.setMessage(GatewayConstants.LOG_OUT);
