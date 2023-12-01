@@ -82,7 +82,7 @@
     <factorypathentry kind="VARJAR" id="M2_REPO/org/springframework/security/spring-security-core/5.5.5/spring-security-core-5.5.5.jar" enabled="true" runInBatchMode="false"/>
     <factorypathentry kind="VARJAR" id="M2_REPO/org/springframework/security/spring-security-web/5.5.5/spring-security-web-5.5.5.jar" enabled="true" runInBatchMode="false"/>
     <factorypathentry kind="VARJAR" id="M2_REPO/org/springframework/spring-web/5.3.16/spring-web-5.3.16.jar" enabled="true" runInBatchMode="false"/>
-    <factorypathentry kind="VARJAR" id="M2_REPO/com/github/seancfoley/ipaddress/5.3.1/ipaddress-5.3.1.jar" enabled="true" runInBatchMode="false"/>
+    <factorypathentry kind="VARJAR" id="M2_REPO/com/github/seancfoley/ipaddress/5.4.0/ipaddress-5.4.0.jar" enabled="true" runInBatchMode="false"/>
     <factorypathentry kind="VARJAR" id="M2_REPO/org/springframework/cloud/spring-cloud-starter-gateway/3.0.3/spring-cloud-starter-gateway-3.0.3.jar" enabled="true" runInBatchMode="false"/>
     <factorypathentry kind="VARJAR" id="M2_REPO/org/springframework/cloud/spring-cloud-starter/3.0.3/spring-cloud-starter-3.0.3.jar" enabled="true" runInBatchMode="false"/>
     <factorypathentry kind="VARJAR" id="M2_REPO/org/springframework/cloud/spring-cloud-context/3.0.3/spring-cloud-context-3.0.3.jar" enabled="true" runInBatchMode="false"/>
