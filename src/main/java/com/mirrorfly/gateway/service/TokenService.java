@@ -112,7 +112,8 @@ public class TokenService {
 			tokenRepo.delete(token);
 	}
 	
-	public TokenDetail getTokenDetail(String token) {
+	@SwitchDataSource(value="[0]")
+	public TokenDetail getTokenDetail(String userdomain, String token) {
 		return tokenRepo.findTop1ByTokenOrderByIdDesc(token);
 	}
 
