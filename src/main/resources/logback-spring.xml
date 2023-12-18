@@ -11,7 +11,9 @@
 						"logger": "%logger",
 						"thread": "%thread",
 						"message": "%message",
-						"traceId": "%mdc"
+						"traceId": "%mdc",
+						"userdomain": "%X{userdomain}",
+						"exception": "%ex{full}"
 						}
 					</pattern>
 				</pattern>

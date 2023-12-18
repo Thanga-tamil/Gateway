@@ -35,45 +35,45 @@ import lombok.extern.slf4j.Slf4j;
 @EnableTransactionManagement
 public class DynamicDatabaseRouter {
 
-    @Autowired
-    private DataSourceUtil dataSourceUtil;
-    
-    @Bean
-    @Primary
-    @Scope("singleton")
-    public AbstractRoutingDataSourceImpl dataSource() {
-        Map<Object, Object> targetDataSources = getTargetDataSources();
-        return new AbstractRoutingDataSourceImpl((DataSource)targetDataSources.get("default"), targetDataSources);
-    }
+	@Autowired
+	private DataSourceUtil dataSourceUtil;
 
-    @Bean(name = "entityManager")
-    @Scope("singleton")
-    public LocalContainerEntityManagerFactoryBean entityManagerFactoryBean(EntityManagerFactoryBuilder builder) {
-        return builder.dataSource(dataSource()).packages("com.mirrorfly.gateway").build();
-    }
+	@Bean
+	@Primary
+	@Scope("singleton")
+	public AbstractRoutingDataSourceImpl dataSource() {
+		Map<Object, Object> targetDataSources = getTargetDataSources();
+		return new AbstractRoutingDataSourceImpl((DataSource) targetDataSources.get("default"), targetDataSources);
+	}
 
-    @Bean(name = "transcationManager")
-    @Scope("singleton")
-    public JpaTransactionManager transactionManager(
-            @Autowired @Qualifier("entityManager") LocalContainerEntityManagerFactoryBean entityManagerFactoryBean) {
-        return new JpaTransactionManager(entityManagerFactoryBean.getObject());
-    }
-    
-    private Map<Object,Object> getTargetDataSources() {
-    	Map<Object,Object> targetDataSourceMap = new HashMap<>();
-    	
-    	HikariDataSource defaultDS = dataSourceUtil.createDataSource(null);
-    	log.info("Default DataSource is -----> "+defaultDS.getJdbcUrl());
-    	targetDataSourceMap.put("default", defaultDS);
-        List<ConnectionConfig> connectionConfigs = getConnectionConfigs(defaultDS);
-        for (ConnectionConfig connectionConfig : connectionConfigs) {
-            HikariDataSource domainSpecificDS = dataSourceUtil.createDataSource(connectionConfig);
-            targetDataSourceMap.put(connectionConfig.getCustomerDomain(), domainSpecificDS);
-            log.info("[{}] DataSource is [{}] -----> ",connectionConfig.getCustomerDomain(), domainSpecificDS.getJdbcUrl());
+	@Bean(name = "entityManager")
+	@Scope("singleton")
+	public LocalContainerEntityManagerFactoryBean entityManagerFactoryBean(EntityManagerFactoryBuilder builder) {
+		return builder.dataSource(dataSource()).packages("com.mirrorfly.gateway").build();
+	}
+
+	@Bean(name = "transcationManager")
+	@Scope("singleton")
+	public JpaTransactionManager transactionManager(
+			@Autowired @Qualifier("entityManager") LocalContainerEntityManagerFactoryBean entityManagerFactoryBean) {
+		return new JpaTransactionManager(entityManagerFactoryBean.getObject());
+	}
+
+	private Map<Object, Object> getTargetDataSources() {
+		Map<Object, Object> targetDataSourceMap = new HashMap<>();
+
+		HikariDataSource defaultDS = dataSourceUtil.createDataSource(null);
+		log.info("Default DataSource is -----> " + defaultDS.getJdbcUrl());
+		targetDataSourceMap.put("default", defaultDS);
+		List<ConnectionConfig> connectionConfigs = getConnectionConfigs(defaultDS);
+		for (ConnectionConfig connectionConfig : connectionConfigs) {
+			HikariDataSource domainSpecificDS = dataSourceUtil.createDataSource(connectionConfig);
+			targetDataSourceMap.put(connectionConfig.getApiDomain(), domainSpecificDS);
+			log.info("[{}] DataSource is [{}] -----> ", connectionConfig.getApiDomain(), domainSpecificDS.getJdbcUrl());
 		}
-        return targetDataSourceMap;
-    }
-    
+		return targetDataSourceMap;
+	}
+
 	private List<ConnectionConfig> getConnectionConfigs(HikariDataSource defaultDS) {
 		Connection connection = null;
 		PreparedStatement ps = null;
@@ -85,25 +85,22 @@ public class DynamicDatabaseRouter {
 
 			ps = connection.prepareStatement(sql);
 			rs = ps.executeQuery();
-			while(rs.next()) {
+			while (rs.next()) {
 				ConnectionConfig config = new ConnectionConfig();
 				config.setId(rs.getInt("id"));
-				config.setCustomerDomain(rs.getString("customer_domain"));
-				config.setConnectionString(rs.getString("connection_string"));
-				config.setDbUsername(rs.getString("db_username"));
-				config.setDbPassword(rs.getString("db_password"));
-				config.setMinimumConnections(rs.getInt("minimum_connections"));
-				config.setMaximumConnections(rs.getInt("maximum_connections"));
+				config.setApiDomain(rs.getString("api_domain"));
+				config.setMysql(rs.getString("mysql"));
 				list.add(config);
 			}
 		} catch (SQLException e) {
-			log.error("SQLException occured while fetching configured connection details from connection_config ::: " + e);
+			log.error("SQLException occured while fetching configured connection details from connection_config ::: "
+					+ e);
 		} finally {
 			releaseResources(connection, ps, rs);
 		}
 		return list;
 	}
-	
+
 	private void releaseResources(Connection con, PreparedStatement ps, ResultSet rs) {
 		try {
 			if (rs != null) {
