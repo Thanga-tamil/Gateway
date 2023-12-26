@@ -1,6 +1,7 @@
 package com.mirrorfly.gateway.service;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -89,16 +90,15 @@ public class RegisterService {
 	private VcardService vcardService;
 
 	@Autowired
-	private ChatUsersDetailsRepo chatUsersDetailsRepo;  
-	
+	private ChatUsersDetailsRepo chatUsersDetailsRepo;
+
 	@Autowired
 	private SpoolRepo spoolRepo;
-	
-	
+
 	@Autowired
 	private DataStore dataStore;
-	
-	@SwitchDataSource(value="[0]")
+
+	@SwitchDataSource(value = "[0]")
 	public Response<RegisterInfoDto> getRegisterInfo(String userdomain) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		ChatSettings settings = settingsRepo.findAll().get(0);
@@ -112,16 +112,15 @@ public class RegisterService {
 		return response;
 	}
 
-	@SwitchDataSource(value="[0]")
+	@SwitchDataSource(value = "[0]")
 	public Response<String> registerNewUser(String userdomain, RegisterRequestDto registerRequestDto) {
 		Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
-    	String licenseKey = config!=null ? (String) config : null;
-    	if (licenseKey == null) {
+		String licenseKey = config != null ? (String) config : null;
+		if (licenseKey == null) {
 			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
 		}
-		
 		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(),
-				licenseKey + licenseKey	+ licenseKey);
+				licenseKey + licenseKey + licenseKey);
 		if (decyptedString.equals("")) {
 			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
 		}
@@ -158,7 +157,7 @@ public class RegisterService {
 		last.setStatus(0);
 		LocalDateTime date = LocalDateTime.now();
 		ZoneOffset zone = ZoneOffset.of("Z");
-		last.setSeconds(Long.toString(date.toEpochSecond(zone)));
+		last.setSeconds(BigInteger.valueOf(date.toEpochSecond(zone)));
 		last.setPresence(0);
 		last.setState("Stream reset by peer");
 		lastRepo.save(last);
@@ -216,26 +215,24 @@ public class RegisterService {
 				registerResponseDto.setIsProfileUpdated(true);
 			}
 			registerResponseDto.setIsExisting(true);
-
 		}
-
 		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
 		chatUser.setMetaData(metadata);
 
 		chatUserRepo.save(chatUser);
-		
+
 		String password = updateChatUserDetails(userdomain, registerDto, chatUser);
 		registerResponseDto.setPassword(password);
-		
+
 		String deviceIdprefix = "";
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
 			deviceIdprefix = "-web";
 		} else {
 			deviceIdprefix = "-mobile";
 		}
-		
-		String deviceId = StringUtils.isNotBlank(registerDto.getDeviceId())	? registerDto.getDeviceId() : "MF-01" + deviceIdprefix;
-		
+		String deviceId = StringUtils.isNotBlank(registerDto.getDeviceId()) ? registerDto.getDeviceId()
+				: "MF-01" + deviceIdprefix;
+
 		registerResponseDto.setToken(tokenService.getToken(userdomain, registerDto.getUserIdentifier(), deviceId, ""));
 		registerResponseDto.setUsername(user.getUsername());
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
@@ -243,7 +240,7 @@ public class RegisterService {
 		} else {
 			user.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		}
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain); //Again setup the DB based on the domain
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain); // Again setup the DB based on the domain
 		userRepo.save(user);
 		return registerResponseDto;
 	}
@@ -299,7 +296,7 @@ public class RegisterService {
 		ChatUserDetails user = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
 		String password = passwordService.generateRandomPassword();
 		if (user == null) {
-			int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "maxSessions");
+			int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "userMaxSessions");
 			List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 					.findByUsername(chatUser.getUsername());
 			if (existingChatUsersDetails.size() >= maxSessions) {
@@ -324,7 +321,7 @@ public class RegisterService {
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 			user.setPushServerType(pushServerType);
 			user.setUserType(applicationProperties.getDefaultUserType());
-			if(StringUtils.isNotBlank(registerDto.getUserType())) {
+			if (StringUtils.isNotBlank(registerDto.getUserType())) {
 				user.setUserType(registerDto.getUserType().trim());
 			}
 			chatUsersDetailsRepo.save(user);
@@ -338,7 +335,7 @@ public class RegisterService {
 			user.setPassword(GatewayUtil.getMd5String(password));
 			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
 			user.setPushServerType(pushServerType);
-			if(StringUtils.isNotBlank(registerDto.getUserType())) {
+			if (StringUtils.isNotBlank(registerDto.getUserType())) {
 				user.setUserType(registerDto.getUserType().trim());
 			}
 			chatUsersDetailsRepo.save(user);
@@ -361,7 +358,7 @@ public class RegisterService {
 		Collections.sort(existingChatUsersDetails, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
 		return existingChatUsersDetails.get(0);
 	}
-	
+
 	@SwitchDataSource(value = "[0]")
 	public void inputDataValidation(String userdomain, SanboxUserRegisterDto registerDto) {
 		RegisterDto registerData = new RegisterDto();
@@ -409,7 +406,7 @@ public class RegisterService {
 		}
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
 		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
-		int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "maxSessions");
+		int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "userMaxSessions");
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
 		if (existingChatUsersDetails.size() >= maxSessions && Boolean.FALSE.equals(registerDto.getForceRegister())) {

@@ -1,11 +1,12 @@
 package com.mirrorfly.gateway.model;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 import lombok.Data;
 
@@ -22,7 +23,7 @@ public class Last implements Serializable {
 	private Integer status;
 
 	@Column(name = "seconds")
-	private String seconds;
+	private BigInteger seconds;
 
 	@Column(name = "presence")
 	private Integer presence;

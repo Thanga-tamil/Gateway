@@ -10,15 +10,15 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.5.10</version>
+		<version>3.1.2</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<java.version>1.8</java.version>
-		<spring-cloud.version>2020.0.3</spring-cloud.version>
+		<java.version>17</java.version>
+		<spring-cloud.version>2022.0.4</spring-cloud.version>
 		<project.http.version>1.23.0</project.http.version>
 		<spring-boot-admin.version>2.0.3</spring-boot-admin.version>
 		<jackson.version>2.11.0</jackson.version>
@@ -45,12 +45,12 @@
 		<dependency>
 			<groupId>org.springframework.plugin</groupId>
 			<artifactId>spring-plugin-core</artifactId>
-			<version>2.0.0.RELEASE</version>
+			<version>3.0.0</version>
 		</dependency>
 
 		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>javax.servlet-api</artifactId>
+			<groupId>jakarta.servlet</groupId>
+			<artifactId>jakarta.servlet-api</artifactId>
 		</dependency>
 
 		<dependency>
@@ -69,8 +69,8 @@
 		</dependency>
 
 		<dependency>
-			<groupId>mysql</groupId>
-			<artifactId>mysql-connector-java</artifactId>
+			<groupId>com.mysql</groupId>
+			<artifactId>mysql-connector-j</artifactId>
 		</dependency>
 
 		<dependency>
@@ -100,13 +100,14 @@
 		<dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.20</version>
+            <version>1.18.28</version>
+			<optional>true</optional>
         </dependency>
 
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>27.0.1-jre</version>
+			<version>32.0.0-jre</version>
 		</dependency>
 
 		<dependency>
@@ -131,12 +132,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.springframework.plugin</groupId>
-			<artifactId>spring-plugin-core</artifactId>
-			<version>2.0.0.RELEASE</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-amqp</artifactId>
 		</dependency>
@@ -144,7 +139,6 @@
 		<dependency>
 			<groupId>org.yaml</groupId>
 			<artifactId>snakeyaml</artifactId>
-			<version>1.31</version>
 		</dependency>
 
 		<dependency>
@@ -180,6 +174,7 @@
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
+			<version>2.1.210</version>
 		</dependency>
 		
 		<dependency>
