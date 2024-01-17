@@ -191,6 +191,6 @@ public class ChatSettings implements Serializable {
 	private Integer chatHistory = 1;
 
 	@Column(name = "call_reconnection_time_out")
-	private Integer callReconnectionTimeOut;
+	private Integer callReconnectionTimeOut = 60;
 
 }
