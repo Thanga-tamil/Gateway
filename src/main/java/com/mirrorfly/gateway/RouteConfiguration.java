@@ -60,8 +60,7 @@ public class RouteConfiguration {
 		};
 	}
 
-
-		@Bean
+	@Bean
 	public CorsFilter corsFilters() {
 		final UrlBasedCorsConfigurationSource urlBasedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
 		final CorsConfiguration corsConfig = new CorsConfiguration();
@@ -78,7 +77,5 @@ public class RouteConfiguration {
 		urlBasedCorsConfigurationSource.registerCorsConfiguration("/**", corsConfig);
 		return new CorsFilter(urlBasedCorsConfigurationSource);
 	}
-
-
 
 }
