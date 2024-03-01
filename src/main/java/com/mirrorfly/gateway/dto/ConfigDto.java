@@ -84,23 +84,25 @@ public class ConfigDto {
 	private Boolean groupCall;
 
 	private Boolean recentchatSearch;
-	
+
 	private Boolean starMessage;
-	
+
 	private Boolean clearChat;
-	
+
 	private Boolean deleteChat;
-	
+
 	private Boolean translation;
-	
+
 	private Boolean block;
-	
+
 	private Boolean report;
-	
+
 	private Boolean deleteMessage;
-	
+
 	private Boolean viewAllMedias;
-	
+
 	private Boolean chatHistory;
+
+	private Integer callReconnectionTimeOut;
 
 }

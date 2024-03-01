@@ -147,7 +147,7 @@ public class SandboxUserService {
 		}
 		String password = registerService.updateChatUserDetails(userdomain, registerDto, chatUser);
 		registerResponseDto.setPassword(password);
-		
+
 		String deviceIdprefix = "";
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
 			deviceIdprefix = "-web";
@@ -157,9 +157,9 @@ public class SandboxUserService {
 		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
 				? registerDto.getDeviceId()
 				: "MF-01" + deviceIdprefix;
-		
-		registerResponseDto.setToken(tokenService.getToken(userdomain, registerResponseDto.getUsername(),
-				deviceId, ""));
+
+		registerResponseDto
+				.setToken(tokenService.getToken(userdomain, registerResponseDto.getUsername(), deviceId, ""));
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
 			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		} else {
