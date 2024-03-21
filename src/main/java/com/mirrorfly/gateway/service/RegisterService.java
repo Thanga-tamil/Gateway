@@ -190,6 +190,7 @@ public class RegisterService {
 			chatUser.setLicenseKey(registerDto.getLicenseKey());
 			chatUser.setIsDeleteInprogrees(0);
 			chatUser.setDevicetype(registerDto.getDeviceType());
+			chatUser.setDeviceToken(registerDto.getDeviceToken());
 			// To insert the register login time
 			registerLogintime(registerDto.getUserIdentifier());
 			user.setUsername(registerDto.getUserIdentifier());
@@ -266,30 +267,30 @@ public class RegisterService {
 	public String updateChatUserDetails(String userdomain, RegisterDto registerDto, ChatUser chatUser) {
 		String deviceIdprefix = "";
 		String pushServerType = "";
-		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
+		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
 			deviceIdprefix = "-web";
-		} else {
+		else
 			deviceIdprefix = "-mobile";
-			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().isEmpty()) {
-				chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
-			}
-			if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().isEmpty()) {
-				chatUsersDetailsRepo.updateVoipDeviceTokenAsEmpty(registerDto.getVoipDeviceToken());
-			}
-			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
-					&& (registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))) {
-				registerDto.setDeviceOsVersion("12.0");
-			}
-			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)) {
-				pushServerType = "fcm";
+		if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().isEmpty()) {
+			chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
+		}
+		if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().isEmpty()) {
+			chatUsersDetailsRepo.updateVoipDeviceTokenAsEmpty(registerDto.getVoipDeviceToken());
+		}
+		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
+				&& (registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))) {
+			registerDto.setDeviceOsVersion("12.0");
+		}
+		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)) {
+			pushServerType = "fcm";
+		} else if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)) {
+			if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
+				pushServerType = registerDto.getPushServerType();
 			} else {
-				if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
-					pushServerType = registerDto.getPushServerType();
-				} else {
-					pushServerType = "apns";
-				}
+				pushServerType = "apns";
 			}
 		}
+
 		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
 				? registerDto.getDeviceId()
 				: "MF-01" + deviceIdprefix;

@@ -86,12 +86,10 @@ public class SandboxUserService {
 			if (!chatUser.getLicenseKey().equalsIgnoreCase(registerDto.getLicenseKey())) {
 				throw new BadDataException(GatewayConstants.USER_USERIDENTIFIER_ALREADY_REGISTERED);
 			}
-			if (!registerDto.getDeviceType().equalsIgnoreCase("web")) {
-				if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().trim().equals("")) {
-					chatUserRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
-				}
-				updateUserMobileDetails(userdomain, registerDto, chatUser);
+			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().trim().equals("")) {
+				chatUserRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
 			}
+			updateUserMobileDetails(userdomain, registerDto, chatUser);
 			users = userRepo.findByUsername(chatUser.getUsername());
 			registerResponseDto.setUsername(chatUser.getUsername());
 			registerResponseDto.setIsExisting(true);
@@ -205,6 +203,8 @@ public class SandboxUserService {
 		} else if (registerDto.getDeviceType().equalsIgnoreCase("android")) {
 			chatUser.setDeviceToken(registerDto.getDeviceToken());
 			chatUser.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+		} else if (registerDto.getDeviceType().equalsIgnoreCase("web")) {
+			chatUser.setDeviceToken(registerDto.getDeviceToken());
 		} else {
 			throw new BadDataException("Invaild device type");
 		}
@@ -223,6 +223,7 @@ public class SandboxUserService {
 		chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 		chatUser.setIsDeleteInprogrees(0);
 		chatUser.setDevicetype(registerDto.getDeviceType());
+		chatUser.setDeviceToken(registerDto.getDeviceToken());
 		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
 		chatUser.setMetaData(metadata);
 		chatUserRepo.save(chatUser);
