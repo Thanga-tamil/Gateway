@@ -269,26 +269,27 @@ public class RegisterService {
 		String pushServerType = "";
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
 			deviceIdprefix = "-web";
-		else
+		else {
 			deviceIdprefix = "-mobile";
+			if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().isEmpty()) {
+				chatUsersDetailsRepo.updateVoipDeviceTokenAsEmpty(registerDto.getVoipDeviceToken());
+			}
+			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
+					&& (registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))) {
+				registerDto.setDeviceOsVersion("12.0");
+			}
+			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)) {
+				pushServerType = "fcm";
+			} else if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)) {
+				if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
+					pushServerType = registerDto.getPushServerType();
+				} else {
+					pushServerType = "apns";
+				}
+			}
+		}
 		if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().isEmpty()) {
 			chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
-		}
-		if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().isEmpty()) {
-			chatUsersDetailsRepo.updateVoipDeviceTokenAsEmpty(registerDto.getVoipDeviceToken());
-		}
-		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
-				&& (registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))) {
-			registerDto.setDeviceOsVersion("12.0");
-		}
-		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)) {
-			pushServerType = "fcm";
-		} else if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)) {
-			if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
-				pushServerType = registerDto.getPushServerType();
-			} else {
-				pushServerType = "apns";
-			}
 		}
 
 		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
