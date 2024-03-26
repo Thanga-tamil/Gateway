@@ -1,5 +1,5 @@
 # Start with a base image containing Java runtime
-FROM 23-ea-14-jdk-slim-bullseye
+FROM openjdk:23-ea-14-jdk-slim-bullseye
 
 RUN apt-get update
 RUN apt-get install libgnutls30:amd64 systemd -y
