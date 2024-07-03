@@ -193,4 +193,7 @@ public class ChatSettings implements Serializable {
 	@Column(name = "call_reconnection_time_out")
 	private Integer callReconnectionTimeOut = 60;
 
+	@Column(name = "chat_summary_ai_interval")
+	private Integer chatSummaryAiInterval = 14400;
+
 }

@@ -73,6 +73,7 @@ public class ConfigService {
 		config.setViewAllMedias(settings.getViewAllMedias() == 1);
 		config.setChatHistory(settings.getChatHistory() == 1);
 		config.setCallReconnectionTimeOut(settings.getCallReconnectionTimeOut());
+		config.setChatSummaryAiInterval(settings.getChatSummaryAiInterval());
 		getStunAndTurnServers(config);
 		return config;
 	}
