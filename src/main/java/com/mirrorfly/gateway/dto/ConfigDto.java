@@ -105,4 +105,6 @@ public class ConfigDto {
 
 	private Integer callReconnectionTimeOut;
 
+	private Integer chatSummaryAiInterval;
+
 }
