@@ -20,6 +20,8 @@ public class GatewayConstants {
 
 	public static final String USER = "User";
 
+	public static final String LICENSEKEY = "licenseKey";
+
 	public static final String USER_NAME_HEADER = "username";
 
 	public static final String NOT_AVAILABLE = "No Records Found";
@@ -74,7 +76,11 @@ public class GatewayConstants {
 
 	public static final String EMAIL_REGEX = "^([_a-zA-Z0-9-!#$%&+]+(\\.[_a-zA-Z0-9-!#$%&+]+)*@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*(\\.[a-zA-Z]{2,6}))?$";
 
+	public static final String ALPHA_NUMERIC = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
 	public static final String OTP_SENT_SUCCESS = "OTP has been sent successfully";
+
+	public static final String OTP_VERIFIED_SUCCESS = "OTP has been verified sucessfully";
 
 	public static final String INVALID_OTP = "Invalid OTP";
 

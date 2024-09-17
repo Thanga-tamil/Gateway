@@ -2,10 +2,12 @@ package com.mirrorfly.gateway.token;
 
 import java.security.SecureRandom;
 import java.util.Date;
+import java.util.UUID;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.mirrorfly.gateway.model.TokenDetail;
+import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
 /**
@@ -44,6 +46,19 @@ public class GenerateToken {
 
 	public static String generateOtpToken() {
 		return String.valueOf(RANDOM.nextInt(999999 - 100000) + 100000); // 6-digit OTP
+	}
+
+	public static String generateRandomUsername(int length) {
+		StringBuilder username = new StringBuilder();
+		// Generate random alphanumeric characters
+		for (int i = 0; i < length - 4; i++) { // Leave space for a UUID fragment for uniqueness
+			int index = RANDOM.nextInt(GatewayConstants.ALPHA_NUMERIC.length());
+			username.append(GatewayConstants.ALPHA_NUMERIC.charAt(index));
+		}
+		// Add a portion of a UUID to ensure uniqueness
+		String uuidFragment = UUID.randomUUID().toString().substring(0, 4); // Using a 4-character fragment from UUID
+		username.append(uuidFragment);
+		return username.toString();
 	}
 
 }

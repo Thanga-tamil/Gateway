@@ -13,21 +13,22 @@ import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.MailAuthService;
 
 @RestController
-@RequestMapping("/api/v1/mail")
+@RequestMapping("api/v1/mail")
 public class MailAuthController {
 
 	@Autowired
 	private MailAuthService mailAuthService;
 
-	@PostMapping("/send-otp")
+	@PostMapping("send-otp")
 	public Response<Object> sendMailOtp(@RequestHeader(value = "userdomain") String userdomain,
 			@RequestBody Map<String, String> request) {
 		return mailAuthService.sendOtpViaMail(userdomain, request.get("email"));
 	}
 
+	@PostMapping("verify-otp")
 	public Response<Object> verifyMailOtp(@RequestHeader(value = "userdomain") String userdomain,
 			@RequestBody Map<String, String> request) {
-		return null;
+		return mailAuthService.validateEmailOtp(userdomain, request.get("email"), request.get("otp"));
 	}
 
 }
