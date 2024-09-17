@@ -72,11 +72,17 @@ public class GatewayConstants {
 
 	public static final String UNAUTHORIZED = "User UnAuthorized";
 
+	public static final String EMAIL_REGEX = "^([_a-zA-Z0-9-!#$%&+]+(\\.[_a-zA-Z0-9-!#$%&+]+)*@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*(\\.[a-zA-Z]{2,6}))?$";
+
+	public static final String OTP_SENT_SUCCESS = "OTP has been sent successfully";
+
 	public static final String INVALID_OTP = "Invalid OTP";
 
 	public static final String FORGOT_PASS_SUCCESS = "Reset Password Email Sent Successfully";
 
 	public static final String EMAIL_NOT_VALID = "Email Not Valid";
+
+	public static final String EMAIL_INVALID = "Invalid email Address";
 
 	public static final String USER_INACTIVE = "User Not Active , Contact Admin for More Details";
 
@@ -241,7 +247,7 @@ public class GatewayConstants {
 	public static final String DEVICE_WEB = "web";
 
 	public static final String USER_TYPE_NOT_VALID = "User type value is not valid";
-	
+
 	private GatewayConstants() {
 	}
 }
