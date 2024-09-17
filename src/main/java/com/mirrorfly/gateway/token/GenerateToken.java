@@ -1,7 +1,7 @@
 package com.mirrorfly.gateway.token;
 
+import java.security.SecureRandom;
 import java.util.Date;
-import java.util.Random;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -15,7 +15,7 @@ import com.mirrorfly.gateway.util.GatewayUtil;
 
 public class GenerateToken {
 
-	private static final Random RANDOM = new Random();
+	private static final SecureRandom RANDOM = new SecureRandom();
 
 	private GenerateToken() {
 	}
