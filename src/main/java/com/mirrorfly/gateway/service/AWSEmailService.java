@@ -15,6 +15,7 @@ import com.amazonaws.services.simpleemail.model.SendEmailRequest;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
 
 import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.util.GatewayConstants;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,7 +39,7 @@ public class AWSEmailService {
 		// Generate HTML content from template
 		String htmlContent = templateEngine.process("otp_email_template", context);
 		// Sending email using AWS SES
-		if (sendAWSSES(recipientEmail, "Your SafeTalk OTP", htmlContent))
+		if (sendAWSSES(recipientEmail, GatewayConstants.EMAIL_OTP_SUBJECT, htmlContent))
 			log.info("OTP Email successfully sent to: {}", recipientEmail);
 		else
 			log.error("Failed to send OTP email to: {}", recipientEmail);

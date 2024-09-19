@@ -78,6 +78,8 @@ public class GatewayConstants {
 
 	public static final String ALPHA_NUMERIC = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
+	public static final String EMAIL_OTP_SUBJECT = "Verify Your Email for SafeTalk – Your OTP Inside!";
+
 	public static final String OTP_SENT_SUCCESS = "OTP has been sent successfully";
 
 	public static final String OTP_VERIFIED_SUCCESS = "OTP has been verified sucessfully";

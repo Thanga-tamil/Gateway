@@ -135,7 +135,7 @@ public class MailAuthService {
 			log.error("Invalid OTP provided for email: {}", otpToken.getEmail());
 			throw new BadDataException(GatewayConstants.INVALID_OTP);
 		}
-		if (otpToken.getCreatedAt().plusMinutes(15).isBefore(LocalDateTime.now())) {
+		if (otpToken.getCreatedAt().plusMinutes(10).isBefore(LocalDateTime.now())) {
 			log.error("OTP expired for email: {}", otpToken.getEmail());
 			throw new BadDataException(GatewayConstants.OTP_EXPIRED);
 		}
