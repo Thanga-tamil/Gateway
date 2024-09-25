@@ -76,7 +76,7 @@ public class GatewayConstants {
 
 	public static final String EMAIL_REGEX = "^([_a-zA-Z0-9-!#$%&+]+(\\.[_a-zA-Z0-9-!#$%&+]+)*@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*(\\.[a-zA-Z]{2,6}))?$";
 
-	public static final String ALPHA_NUMERIC = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	public static final String ALPHA_NUMERIC = "abcdefghijklmnopqrstuvwxyz0123456789";
 
 	public static final String EMAIL_OTP_SUBJECT = "Verify Your Email for SafeTalk – Your OTP Inside!";
 
