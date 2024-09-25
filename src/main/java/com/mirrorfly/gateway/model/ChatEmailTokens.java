@@ -1,5 +1,6 @@
 package com.mirrorfly.gateway.model;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -14,8 +15,8 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "otp_tokens")
-public class OtpTokens {
+@Table(name = "chat_email_tokens")
+public class ChatEmailTokens {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,10 +26,17 @@ public class OtpTokens {
 
 	private String otp;
 
+	@Column(name = "verify_attempt")
+	private Integer verifyAttempt = 0;
+
+	@Column(name = "is_verified")
+	private Integer isVerified = 0;
+
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
 
-	private Integer attempts = 0;
+	@Column(name = "expires_at")
+	private Long expiresAt;
 
 	@PrePersist
 	protected void onCreate() {
@@ -38,6 +46,15 @@ public class OtpTokens {
 	@PreUpdate
 	protected void onUpdate() {
 		this.createdAt = LocalDateTime.now(); // Update createdAt to current time during update
+	}
+
+	public boolean isOtpExpired() {
+		return System.currentTimeMillis() > this.expiresAt;
+	}
+
+	public boolean hasMoreThanFiveMinutes() {
+		long fiveMinutesInMillis = Duration.ofMinutes(5).toMillis();
+		return (this.expiresAt - System.currentTimeMillis()) > fiveMinutesInMillis;
 	}
 
 }

@@ -82,6 +82,8 @@ public class GatewayConstants {
 
 	public static final String OTP_SENT_SUCCESS = "OTP has been sent successfully";
 
+	public static final String VERIFY_OTP_LIMIT_REACHED = "OTP verification attempt limit exceeded. Please request a new OTP";
+
 	public static final String OTP_VERIFIED_SUCCESS = "OTP has been verified sucessfully";
 
 	public static final String INVALID_OTP = "Invalid OTP";
