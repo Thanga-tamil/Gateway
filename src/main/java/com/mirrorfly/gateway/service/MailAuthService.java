@@ -128,6 +128,7 @@ public class MailAuthService {
 
 		Map<String, Object> responseData = new HashMap<>();
 		responseData.put("username", username);
+		responseData.put("email", emailToken.getEmail());
 		return buildResponse(HttpStatus.OK, GatewayConstants.OTP_VERIFIED_SUCCESS, responseData);
 	}
 
@@ -192,7 +193,7 @@ public class MailAuthService {
 	 */
 	private String findOrGenerateUsername(String email, String ivProfile) {
 		log.debug("Searching for username in VCardSearch for email: {}", email);
-		String username = vcardSearchRepo.getUsernamesByEmail(email, ivProfile);
+		String username = vcardSearchRepo.findUsernameByEmail(email, ivProfile);
 		if (StringUtils.isBlank(username)) {
 			log.info("Username not found. Generating a new username for email: {}", email);
 			username = GenerateToken.generateRandomUsername(10); // Generate a 10-character random user-name
