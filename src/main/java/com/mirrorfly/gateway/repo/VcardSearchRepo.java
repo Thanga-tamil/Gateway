@@ -13,7 +13,8 @@ public interface VcardSearchRepo extends JpaRepository<VcardSearch, String> {
 	public VcardSearch findByUsername(String username);
 
 	@Query(value = "SELECT v.username FROM vcard_search v "
-			+ " WHERE CONVERT(AES_DECRYPT(from_base64(v.email), LEFT(SHA2(v.username, 256), 32), :iv) USING utf8) = :email limit 1", nativeQuery = true)
+			+ " WHERE (CONVERT(AES_DECRYPT(from_base64(v.email), LEFT(SHA2(v.username, 256), 32), :iv) USING utf8) = :email "
+			+ " OR v.email = :email) LIMIT 1", nativeQuery = true)
 	public String getUsernamesByEmail(@Param("email") String email, @Param("iv") String iv);
 
 }
