@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +53,12 @@ public class GatewayUtil {
 
 	public static String getName(String firstName, String lastName) {
 		return firstName + " " + lastName;
+	}
+
+	public static boolean validateEmailBasedOnRegex(String regex, String value) {
+		Pattern p = Pattern.compile(regex);
+		Matcher m = p.matcher(value);
+		return m.matches();
 	}
 
 	// function to generate a random string of length n
