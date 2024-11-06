@@ -85,6 +85,19 @@ public class ApplicationProperties {
 		return env.getProperty("spring.datasource.hikari.maxLifetime", Long.class, 200000l);
 	}
 
+	// OTP sending email for safe-talk authentication
+	public String getSafeTalkEmail() {
+		return env.getProperty("email.safeTalk");
+	}
+
+	public String getAccessKey() {
+		return env.getProperty("aws.email.AccessKey");
+	}
+
+	public String getSecretKey() {
+		return env.getProperty("aws.email.SecretKey");
+	}
+
 	public List<String> getUserTypes() {
 		List<String> types = new ArrayList<>();
 		String[] userTypes = StringUtils.split(env.getProperty("user.types"), ",");
@@ -112,15 +125,15 @@ public class ApplicationProperties {
 	public String getSandboxUrl() {
 		return env.getProperty("sandbox.domain");
 	}
-	
+
 	public String getPreProdUrl() {
 		return env.getProperty("preprod.url");
 	}
-	
+
 	public String getWhiteListIpStartRange() {
 		return env.getProperty("white-list-ip-range-start");
 	}
-	
+
 	public String getWhiteListIpEndRange() {
 		return env.getProperty("white-list-ip-range-end");
 	}
