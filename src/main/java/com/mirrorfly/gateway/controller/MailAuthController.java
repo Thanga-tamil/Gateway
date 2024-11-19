@@ -20,14 +20,12 @@ public class MailAuthController {
 	private MailAuthService mailAuthService;
 
 	@PostMapping("send-otp")
-	public Response<Object> sendMailOtp(@RequestHeader(value = "userdomain") String userdomain,
-			@RequestBody Map<String, String> request) {
+	public Response<Object> sendMailOtp(@RequestHeader String userdomain, @RequestBody Map<String, String> request) {
 		return mailAuthService.sendOtpViaMail(userdomain, request.get("email"));
 	}
 
 	@PostMapping("verify-otp")
-	public Response<Object> verifyMailOtp(@RequestHeader(value = "userdomain") String userdomain,
-			@RequestBody Map<String, String> request) {
+	public Response<Object> verifyMailOtp(@RequestHeader String userdomain, @RequestBody Map<String, String> request) {
 		return mailAuthService.validateEmailOtp(userdomain, request.get("email"), request.get("otp"));
 	}
 
