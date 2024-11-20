@@ -11,6 +11,7 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatSettings;
@@ -28,6 +29,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class MailAuthService {
+
+	@Autowired
+	private ApplicationProperties applicationProperties;
 
 	@Autowired
 	private AWSEmailService awsEmailService;
@@ -52,6 +56,11 @@ public class MailAuthService {
 	public Response<Object> sendOtpViaMail(String userdomain, String email) {
 		validateEmail(email);
 
+		if (email.equalsIgnoreCase(applicationProperties.getStaticEmail())) {
+			log.info("Static email detected, skipping OTP generation: {}", email);
+			return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS,
+					"OTP sent successfully to: " + email);
+		}
 		// Get the licenseKey by user-domain
 		String licenseKey = (String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain,
 				GatewayConstants.LICENSEKEY);
@@ -115,6 +124,16 @@ public class MailAuthService {
 		log.info("Starting OTP validation for email: {}", email);
 		// Validate the inputs
 		validateInputs(email, otp);
+
+		if (email.equalsIgnoreCase(applicationProperties.getStaticEmail())
+				&& otp.equals(applicationProperties.getStaticOtp())) {
+			log.info("Static email and OTP detected, skipping validation for email: {}", email);
+
+			Map<String, Object> responseData = new HashMap<>();
+			responseData.put("username", applicationProperties.getStaticId());
+			responseData.put("email", email);
+			return buildResponse(HttpStatus.OK, GatewayConstants.OTP_VERIFIED_SUCCESS, responseData);
+		}
 
 		String licenseKey = (String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain,
 				GatewayConstants.LICENSEKEY);
