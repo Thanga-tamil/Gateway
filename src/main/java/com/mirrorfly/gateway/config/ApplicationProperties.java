@@ -98,6 +98,18 @@ public class ApplicationProperties {
 		return env.getProperty("aws.email.SecretKey");
 	}
 
+	public String getStaticEmail() {
+		return env.getProperty("app.static-verification.email");
+	}
+
+	public String getStaticOtp() {
+		return env.getProperty("app.static-verification.otp");
+	}
+
+	public String getStaticId() {
+		return env.getProperty("app.static-verification.id");
+	}
+
 	public List<String> getUserTypes() {
 		List<String> types = new ArrayList<>();
 		String[] userTypes = StringUtils.split(env.getProperty("user.types"), ",");
