@@ -56,32 +56,29 @@ public class MailAuthService {
 		validateEmail(email);
 
 		ConnectionConfig config = dataStore.getConnectionConfigByDomain(userdomain);
-		if (config.getEmailConfig() != null) {
-			if (isStaticEmail(config, email)) {
-				log.info("Static email detected, skipping OTP generation for email: {}", email);
-				return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS,
-						"OTP sent successfully to: " + email);
-			}
 
-			String otpToken = saveOrUpdateOtpInDb(email, config.getLicenseKey());
-			// Send Mail with the generated 6-digit OTP
-			try {
-				awsEmailService.sendOtpEmail(config.getEmailConfig(), email, otpToken);
-				log.info("OTP sent successfully to email: {}", email);
-				return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS,
-						"OTP sent successfully to: " + email);
-			} catch (MessagingException e) {
-				log.error("Error occurred while sending OTP email: " + e.getMessage());
-				// Roll-back transaction if sending email fails
-				throw new MessagingException("Failed to send OTP email ==> " + email);
-			}
-		} else {
-			throw new BadDataException("Email configuration not for the domain ==> " + userdomain);
+		if (isStaticEmail(config, email)) {
+			log.info("Static email detected, skipping OTP generation for email: {}", email);
+			return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS,
+					"OTP sent successfully to: " + email);
+		}
+
+		String otpToken = saveOrUpdateOtpInDb(email, config.getLicenseKey());
+		// Send Mail with the generated 6-digit OTP
+		try {
+			awsEmailService.sendOtpEmail(userdomain, config.getEmailConfig(), email, otpToken);
+			log.info("OTP sent successfully to email: {}", email);
+			return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS,
+					"OTP sent successfully to: " + email);
+		} catch (MessagingException e) {
+			log.error("Error occurred while sending OTP email: " + e.getMessage());
+			// Roll-back transaction if sending email fails
+			throw new MessagingException("Failed to send OTP email ==> " + email);
 		}
 	}
 
 	private boolean isStaticEmail(ConnectionConfig config, String email) {
-		return config.getEmailConfig().getStaticMetadata() != null
+		return config.getEmailConfig() != null && config.getEmailConfig().getStaticMetadata() != null
 				&& email.equalsIgnoreCase(config.getEmailConfig().getStaticMetadata().getStaticEmail());
 	}
 
