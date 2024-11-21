@@ -43,8 +43,8 @@ public class AWSEmailService {
 			log.debug("Generated OTP email content for: {}", recipientEmail);
 
 			// Sending email using AWS SES
-			if (sendAWSSES(userdomain, emailConfig, recipientEmail, GatewayConstants.EMAIL_OTP_SUBJECT, htmlContent))
-				log.info("OTP Email successfully sent to: {}", recipientEmail);
+			sendAWSSES(userdomain, emailConfig, recipientEmail, GatewayConstants.EMAIL_OTP_SUBJECT, htmlContent);
+			log.info("OTP Email successfully sent to: {}", recipientEmail);
 		} catch (Exception e) {
 			log.error("Error generating OTP email content for: {}. Exception: {}", recipientEmail, e.getMessage());
 			throw new MessagingException("Error occurred while preparing OTP email for " + recipientEmail, e);
@@ -52,8 +52,7 @@ public class AWSEmailService {
 	}
 
 	// AWS SES email sending method
-	private boolean sendAWSSES(String userdomain, EmailConfig emailConfig, String recipient, String subject,
-			String body) {
+	private void sendAWSSES(String userdomain, EmailConfig emailConfig, String recipient, String subject, String body) {
 		log.info("Attempting to send email to: {}", recipient);
 		try {
 			AmazonSimpleEmailService amazonSimpleEmailService = awsSesClientManager.getSesClient(userdomain);
@@ -68,8 +67,6 @@ public class AWSEmailService {
 					.withSource(emailConfig.getDefaultFromAddress());
 
 			amazonSimpleEmailService.sendEmail(sendEmailRequest);
-			log.info("Email sent successfully to: {}", recipient);
-			return true;
 		} catch (Exception e) {
 			log.error("Error while sending email to: {}. Exception: {}", recipient, e.getMessage());
 			throw new IllegalArgumentException("Error while sending email Message => : " + e.getMessage());
