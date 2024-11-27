@@ -1,7 +1,6 @@
 package com.mirrorfly.gateway.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.MessagingException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -24,52 +23,74 @@ import lombok.extern.slf4j.Slf4j;
 public class AWSEmailService {
 
 	@Autowired
+	private DataStore dataStore;
+
+	@Autowired
 	private AWSSesClientManager awsSesClientManager;
 
 	@Autowired
 	private TemplateEngine templateEngine;
 
+	/**
+	 * Sends an OTP email to the recipient.
+	 *
+	 * @param domain      The domain for the SES client.
+	 * @param emailConfig Email configuration for the domain.
+	 * @param recipient   Recipient email address.
+	 * @param otp         The OTP to send.
+	 */
 	@Async
-	public void sendOtpEmail(String userdomain, EmailConfig emailConfig, String recipientEmail, String otp)
-			throws MessagingException {
-		log.info("Preparing to send OTP email to: {}", recipientEmail);
+	public void sendOtpEmail(String domain, EmailConfig emailConfig, String recipient, String otp) {
+		log.info("Preparing to send OTP email to: {}", recipient);
 
+		// Prepare the email content
 		Context context = new Context();
-		context.setVariable("otpCode", otp); // Pass the OTP to the template
+		context.setVariable("otpCode", otp);
 
 		try {
-			// Generate HTML content from template
-			String htmlContent = templateEngine.process("otp_email_template", context);
-			log.debug("Generated OTP email content for: {}", recipientEmail);
+			String emailContent = templateEngine.process("otp_email_template", context);
 
-			// Sending email using AWS SES
-			sendAWSSES(userdomain, emailConfig, recipientEmail, GatewayConstants.EMAIL_OTP_SUBJECT, htmlContent);
-			log.info("OTP Email successfully sent to: {}", recipientEmail);
+			log.debug("Generated email content for recipient: {}", recipient);
+
+			// Send email
+			sendAWSSES(domain, emailConfig, recipient, GatewayConstants.EMAIL_OTP_SUBJECT, emailContent);
+			log.info("Successfully sent OTP email to: {}", recipient);
 		} catch (Exception e) {
-			log.error("Error generating OTP email content for: {}. Exception: {}", recipientEmail, e.getMessage());
-			throw new MessagingException("Error occurred while preparing OTP email for " + recipientEmail, e);
+			log.error("Failed to send OTP email to {}. Error: {}", recipient, e.getMessage());
+			throw new IllegalArgumentException("Error sending email: " + e.getMessage());
 		}
 	}
 
-	// AWS SES email sending method
-	private void sendAWSSES(String userdomain, EmailConfig emailConfig, String recipient, String subject, String body) {
-		log.info("Attempting to send email to: {}", recipient);
+	/**
+	 * Sends an email using AWS SES.
+	 *
+	 * @param domain      The domain for the SES client.
+	 * @param emailConfig Email configuration for the domain.
+	 * @param recipient   Recipient email address.
+	 * @param subject     Email subject.
+	 * @param body        Email body (HTML).
+	 */
+	private void sendAWSSES(String domain, EmailConfig emailConfig, String recipient, String subject, String body) {
+		log.info("Sending email to: {}", recipient);
+
 		try {
-			AmazonSimpleEmailService amazonSimpleEmailService = awsSesClientManager.getSesClient(userdomain);
-			log.debug("SES client created successfully with region: {}", emailConfig.getRegion());
+			AmazonSimpleEmailService sesClient = awsSesClientManager.getSesClient(domain);
+
+			if (emailConfig == null)
+				emailConfig = dataStore.getConnectionConfigByDomain(domain).getEmailConfig();
 
 			Destination destination = new Destination().withToAddresses(recipient);
-
-			SendEmailRequest sendEmailRequest = new SendEmailRequest().withDestination(destination)
+			SendEmailRequest request = new SendEmailRequest().withDestination(destination)
 					.withMessage(new com.amazonaws.services.simpleemail.model.Message()
 							.withBody(new Body().withHtml(new Content().withCharset("UTF-8").withData(body)))
 							.withSubject(new Content().withCharset("UTF-8").withData(subject)))
 					.withSource(emailConfig.getDefaultFromAddress());
 
-			amazonSimpleEmailService.sendEmail(sendEmailRequest);
+			sesClient.sendEmail(request);
+			log.info("Email successfully sent to: {}", recipient);
 		} catch (Exception e) {
-			log.error("Error while sending email to: {}. Exception: {}", recipient, e.getMessage());
-			throw new IllegalArgumentException("Error while sending email Message => : " + e.getMessage());
+			log.error("Failed to send email to: {}. Error: {}", recipient, e.getMessage());
+			throw new IllegalArgumentException("Failed to send email: " + e.getMessage());
 		}
 	}
 

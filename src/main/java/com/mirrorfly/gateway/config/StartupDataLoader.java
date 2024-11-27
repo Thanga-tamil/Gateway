@@ -38,7 +38,7 @@ public class StartupDataLoader implements ApplicationListener<ApplicationReadyEv
 		/*
 		 * Create AWS SES Clients and Store In-Memory
 		 */
-		awsSesClientManager.initializeSesClients();
+		awsSesClientManager.initializeSesClients(connectionConfig);
 	}
 
 }
