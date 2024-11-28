@@ -15,6 +15,8 @@ import lombok.Data;
 @Data
 public class Last implements Serializable {
 
+	private static final long serialVersionUID = 1L;
+
 	@Id
 	@Column(name = "username")
 	private String username;

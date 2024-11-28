@@ -11,10 +11,10 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatSettings;
+import com.mirrorfly.gateway.model.ConnectionConfig;
 import com.mirrorfly.gateway.model.ChatEmailTokens;
 import com.mirrorfly.gateway.repo.ChatEmailTokensRepository;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
@@ -29,9 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class MailAuthService {
-
-	@Autowired
-	private ApplicationProperties applicationProperties;
 
 	@Autowired
 	private AWSEmailService awsEmailService;
@@ -54,21 +51,23 @@ public class MailAuthService {
 	@Transactional
 	@SwitchDataSource(value = "[0]")
 	public Response<Object> sendOtpViaMail(String userdomain, String email) {
+
+		log.info("Starting OTP generation for email: {}", email);
 		validateEmail(email);
 
-		if (email.equalsIgnoreCase(applicationProperties.getStaticEmail())) {
-			log.info("Static email detected, skipping OTP generation: {}", email);
+		ConnectionConfig config = dataStore.getConnectionConfigByDomain(userdomain);
+
+		if (isStaticEmail(config, email)) {
+			log.info("Static email detected, skipping OTP generation for email: {}", email);
 			return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS,
 					"OTP sent successfully to: " + email);
 		}
-		// Get the licenseKey by user-domain
-		String licenseKey = (String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain,
-				GatewayConstants.LICENSEKEY);
 
-		String otpToken = saveOrUpdateOtpInDb(email, licenseKey);
+		String otpToken = saveOrUpdateOtpInDb(email, config.getLicenseKey());
 		// Send Mail with the generated 6-digit OTP
 		try {
-			awsEmailService.sendOtpEmail(email, otpToken);
+			awsEmailService.sendOtpEmail(userdomain, config.getEmailConfig(), email, otpToken);
+			log.info("OTP sent successfully to email: {}", email);
 			return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS,
 					"OTP sent successfully to: " + email);
 		} catch (MessagingException e) {
@@ -76,6 +75,11 @@ public class MailAuthService {
 			// Roll-back transaction if sending email fails
 			throw new MessagingException("Failed to send OTP email ==> " + email);
 		}
+	}
+
+	private boolean isStaticEmail(ConnectionConfig config, String email) {
+		return config.getEmailConfig() != null && config.getEmailConfig().getStaticMetadata() != null
+				&& email.equalsIgnoreCase(config.getEmailConfig().getStaticMetadata().getStaticEmail());
 	}
 
 	private String saveOrUpdateOtpInDb(String email, String licenseKey) {
@@ -125,26 +129,23 @@ public class MailAuthService {
 		// Validate the inputs
 		validateInputs(email, otp);
 
-		if (email.equalsIgnoreCase(applicationProperties.getStaticEmail())
-				&& otp.equals(applicationProperties.getStaticOtp())) {
-			log.info("Static email and OTP detected, skipping validation for email: {}", email);
+		ConnectionConfig config = dataStore.getConnectionConfigByDomain(userdomain);
 
+		if (isStaticEmail(config, email) && otp.equals(config.getEmailConfig().getStaticMetadata().getStaticOtp())) {
+			log.info("Static email and OTP detected, skipping validation for email: {}", email);
 			Map<String, Object> responseData = new HashMap<>();
-			responseData.put("username", applicationProperties.getStaticId());
+			responseData.put("username", config.getEmailConfig().getStaticMetadata().getStaticUserId());
 			responseData.put("email", email);
 			return buildResponse(HttpStatus.OK, GatewayConstants.OTP_VERIFIED_SUCCESS, responseData);
 		}
 
-		String licenseKey = (String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain,
-				GatewayConstants.LICENSEKEY);
-
-		ChatEmailTokens emailToken = findOtpToken(AESEncryption.encryptString(email, licenseKey));
+		ChatEmailTokens emailToken = findOtpToken(AESEncryption.encryptString(email, config.getLicenseKey()));
 		/*
 		 * validate the OTP
 		 */
-		validateOtp(emailToken, otp, licenseKey);
+		validateOtp(emailToken, otp, config.getLicenseKey());
 
-		ChatSettings chatSettings = configService.getChatSettingsData(licenseKey);
+		ChatSettings chatSettings = configService.getChatSettingsData(config.getLicenseKey());
 		/*
 		 * Enable Encryption mode aes-256-cbc in the MySQL Server
 		 */
