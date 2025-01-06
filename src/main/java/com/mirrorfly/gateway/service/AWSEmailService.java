@@ -46,20 +46,9 @@ public class AWSEmailService {
 	public void sendOtpEmail(String domain, EmailConfig emailConfig, String recipient, String otp) {
 		log.info("Preparing to send OTP email to: {}", recipient);
 
-		// Prepare the email content
-		Context context = new Context();
-		context.setVariable("otpCode", otp);
-
 		try {
-			if (emailConfig.getEmailTemplate() == null || emailConfig.getEmailTemplate().isEmpty())
-				throw new BadDataException("Email template is missing");
-
-			String emailContent = templateEngine.process(emailConfig.getEmailTemplate(), context);
-
-			log.debug("Generated email content for recipient: {}", recipient);
-
 			// Send email
-			sendAWSSES(domain, emailConfig, recipient, GatewayConstants.EMAIL_OTP_SUBJECT, emailContent);
+			sendAWSSES(domain, emailConfig, recipient, GatewayConstants.EMAIL_OTP_SUBJECT, otp);
 			log.info("Successfully sent OTP email to: {}", recipient);
 		} catch (Exception e) {
 			log.error("Failed to send OTP email to {}. Error: {}", recipient, e.getMessage());
@@ -76,7 +65,7 @@ public class AWSEmailService {
 	 * @param subject     Email subject.
 	 * @param body        Email body (HTML).
 	 */
-	private void sendAWSSES(String domain, EmailConfig emailConfig, String recipient, String subject, String body) {
+	private void sendAWSSES(String domain, EmailConfig emailConfig, String recipient, String subject, String otp) {
 		log.info("Sending email to: {}", recipient);
 
 		try {
@@ -84,11 +73,20 @@ public class AWSEmailService {
 
 			if (emailConfig == null)
 				emailConfig = dataStore.getConnectionConfigByDomain(domain).getEmailConfig();
+			if (emailConfig == null) {
+				log.error("Email configuration not found for domain: {}", domain);
+				throw new BadDataException("Email configuration not found for domain: " + domain);
+			}
+			Context context = new Context();
+			context.setVariable("otpCode", otp);
+
+			String emailContent = templateEngine.process(emailConfig.getEmailTemplate(), context);
+			log.debug("Generated email content for recipient: {}", recipient);
 
 			Destination destination = new Destination().withToAddresses(recipient);
 			SendEmailRequest request = new SendEmailRequest().withDestination(destination)
 					.withMessage(new com.amazonaws.services.simpleemail.model.Message()
-							.withBody(new Body().withHtml(new Content().withCharset("UTF-8").withData(body)))
+							.withBody(new Body().withHtml(new Content().withCharset("UTF-8").withData(emailContent)))
 							.withSubject(new Content().withCharset("UTF-8").withData(subject)))
 					.withSource(emailConfig.getDefaultFromAddress());
 

@@ -11,16 +11,15 @@ public class GatewayConfig {
 
 	@Bean
 	TemplateEngine customTemplateEngine() {
-		return new TemplateEngine() {
-			{
-				setTemplateResolver(new StringTemplateResolver() {
-					{
-						setTemplateMode(TemplateMode.HTML);
-						setCacheable(false);
-					}
-				});
-			}
-		};
+		TemplateEngine templateEngine = new TemplateEngine();
+
+		StringTemplateResolver templateResolver = new StringTemplateResolver();
+		templateResolver.setTemplateMode(TemplateMode.HTML);
+		templateResolver.setCacheable(false);
+
+		templateEngine.setTemplateResolver(templateResolver);
+
+		return templateEngine;
 	}
 
 }
