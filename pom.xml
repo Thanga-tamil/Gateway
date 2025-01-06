@@ -160,6 +160,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>ognl</groupId>
+			<artifactId>ognl</artifactId>
+			<version>3.3.1</version>
+		</dependency>
 		<!-- AWS SDK for sending emails -->
 		<dependency>
 			<groupId>com.amazonaws</groupId>
