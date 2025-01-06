@@ -13,6 +13,7 @@ public class EmailConfig implements Serializable {
 	private String secretAccessKey;
 	private String region;
 	private String defaultFromAddress;
+	private String emailTemplate;
 	private StaticMetadata staticMetadata;
 
 	@Data

@@ -1,6 +1,7 @@
 package com.mirrorfly.gateway.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,7 @@ import com.amazonaws.services.simpleemail.model.Destination;
 import com.amazonaws.services.simpleemail.model.SendEmailRequest;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
 import com.mirrorfly.gateway.datasourcerouter.AWSSesClientManager;
+import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.EmailConfig;
 import com.mirrorfly.gateway.util.GatewayConstants;
 
@@ -29,6 +31,7 @@ public class AWSEmailService {
 	private AWSSesClientManager awsSesClientManager;
 
 	@Autowired
+	@Qualifier("customTemplateEngine")
 	private TemplateEngine templateEngine;
 
 	/**
@@ -48,7 +51,10 @@ public class AWSEmailService {
 		context.setVariable("otpCode", otp);
 
 		try {
-			String emailContent = templateEngine.process("otp_email_template", context);
+			if (emailConfig.getEmailTemplate() == null || emailConfig.getEmailTemplate().isEmpty())
+				throw new BadDataException("Email template is missing");
+
+			String emailContent = templateEngine.process(emailConfig.getEmailTemplate(), context);
 
 			log.debug("Generated email content for recipient: {}", recipient);
 
