@@ -73,7 +73,7 @@ public class MailAuthService {
 		} catch (MessagingException e) {
 			log.error("Error occurred while sending OTP email: " + e.getMessage());
 			// Roll-back transaction if sending email fails
-			throw new MessagingException("Failed to send OTP email ==> " + email);
+			throw new MessagingException("Failed to send OTP email ==> " + e.getMessage());
 		}
 	}
 

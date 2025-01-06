@@ -7,11 +7,13 @@ import org.springframework.stereotype.Service;
 
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import org.thymeleaf.exceptions.TemplateInputException;
 
 import com.amazonaws.services.simpleemail.model.Body;
 import com.amazonaws.services.simpleemail.model.Content;
 import com.amazonaws.services.simpleemail.model.Destination;
 import com.amazonaws.services.simpleemail.model.SendEmailRequest;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
 import com.mirrorfly.gateway.datasourcerouter.AWSSesClientManager;
 import com.mirrorfly.gateway.exception.BadDataException;
@@ -70,32 +72,42 @@ public class AWSEmailService {
 
 		try {
 			AmazonSimpleEmailService sesClient = awsSesClientManager.getSesClient(domain);
-
-			if (emailConfig == null)
+			if (emailConfig == null && sesClient != null)
 				emailConfig = dataStore.getConnectionConfigByDomain(domain).getEmailConfig();
-			if (emailConfig == null) {
-				log.error("Email configuration not found for domain: {}", domain);
-				throw new BadDataException("Email configuration not found for domain: " + domain);
+			if (emailConfig != null && sesClient != null) {
+				String emailContent = generateEmailContent(emailConfig.getEmailTemplate(), otp);
+				log.debug("Generated email content for recipient: {}", recipient);
+
+				Destination destination = new Destination().withToAddresses(recipient);
+				SendEmailRequest request = new SendEmailRequest().withDestination(destination)
+						.withMessage(new com.amazonaws.services.simpleemail.model.Message()
+								.withBody(
+										new Body().withHtml(new Content().withCharset("UTF-8").withData(emailContent)))
+								.withSubject(new Content().withCharset("UTF-8").withData(subject)))
+						.withSource(emailConfig.getDefaultFromAddress());
+
+				sesClient.sendEmail(request);
+				log.info("Email successfully sent to: {}", recipient);
 			}
-			Context context = new Context();
-			context.setVariable("otpCode", otp);
-
-			String emailContent = templateEngine.process(emailConfig.getEmailTemplate(), context);
-			log.debug("Generated email content for recipient: {}", recipient);
-
-			Destination destination = new Destination().withToAddresses(recipient);
-			SendEmailRequest request = new SendEmailRequest().withDestination(destination)
-					.withMessage(new com.amazonaws.services.simpleemail.model.Message()
-							.withBody(new Body().withHtml(new Content().withCharset("UTF-8").withData(emailContent)))
-							.withSubject(new Content().withCharset("UTF-8").withData(subject)))
-					.withSource(emailConfig.getDefaultFromAddress());
-
-			sesClient.sendEmail(request);
-			log.info("Email successfully sent to: {}", recipient);
+		} catch (AmazonServiceException e) {
+			log.error("AWS SES service error: {}", e.getErrorMessage());
+			throw new IllegalArgumentException("AWS SES error: " + e.getErrorMessage());
+		} catch (TemplateInputException e) {
+			log.error("Error processing email template: {}", e.getMessage());
+			throw new IllegalArgumentException("Email template processing error: " + e.getMessage());
 		} catch (Exception e) {
-			log.error("Failed to send email to: {}. Error: {}", recipient, e.getMessage());
+			log.error("Unexpected error: {}", e.getMessage());
 			throw new IllegalArgumentException("Failed to send email: " + e.getMessage());
 		}
+	}
+
+	private String generateEmailContent(String template, String otp) {
+		if (template == null || template.isEmpty()) {
+			throw new BadDataException("Email template is missing");
+		}
+		Context context = new Context();
+		context.setVariable("otpCode", otp);
+		return templateEngine.process(template, context);
 	}
 
 }
