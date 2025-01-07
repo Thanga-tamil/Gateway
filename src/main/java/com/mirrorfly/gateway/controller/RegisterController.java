@@ -7,15 +7,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterRequestDto;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.RegisterService;
-
-import io.swagger.annotations.ApiParam;
 
 @RestController
 @RequestMapping("/api/v1/register")
@@ -34,8 +31,7 @@ public class RegisterController {
 	 */
 
 	@GetMapping("/info")
-	public @ResponseBody Response<RegisterInfoDto> getRegisterInfo(
-			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain) {
+	public Response<RegisterInfoDto> getRegisterInfo(@RequestHeader String userdomain) {
 		return registerService.getRegisterInfo(userdomain);
 	}
 
@@ -49,8 +45,8 @@ public class RegisterController {
 	 */
 
 	@PostMapping
-	public @ResponseBody Response<String> registerNewUser(@Validated @RequestBody RegisterRequestDto registerRequestDto,
-			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain) {
+	public Response<String> registerNewUser(@Validated @RequestBody RegisterRequestDto registerRequestDto,
+			@RequestHeader String userdomain) {
 		return registerService.registerNewUser(userdomain, registerRequestDto);
 	}
 

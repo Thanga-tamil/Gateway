@@ -2,6 +2,9 @@ package com.mirrorfly.gateway.model;
 
 import java.io.Serializable;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -54,6 +57,10 @@ public class ConnectionConfig implements Serializable {
 
 	@Column(name = "ios_push_details", columnDefinition = "json")
 	private String iosPushDetails;
+
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(name = "email_config", columnDefinition = "JSON")
+	private EmailConfig emailConfig;
 
 	@Column(name = "user_max_sessions")
 	private int userMaxSessions;
