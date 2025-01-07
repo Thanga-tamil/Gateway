@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,9 +20,6 @@ import com.mirrorfly.gateway.dto.LoginDto;
 import com.mirrorfly.gateway.dto.PasswordDto;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.LoginService;
-
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -43,8 +39,8 @@ public class LoginController {
 	 */
 
 	@PostMapping("/login")
-	public @ResponseBody Response<LoginDetailsDto> login(@Validated @RequestBody LoginDto loginDto,
-			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain) {
+	public Response<LoginDetailsDto> login(@Validated @RequestBody LoginDto loginDto,
+			@RequestHeader String userdomain) {
 		return loginService.login(userdomain, loginDto);
 	}
 
@@ -58,8 +54,8 @@ public class LoginController {
 	 */
 
 	@PostMapping("/admin/login")
-	public @ResponseBody Response<AdminLoginResponse> admin(@Validated @RequestBody AdminLoginDto login,
-			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain) {
+	public Response<AdminLoginResponse> admin(@Validated @RequestBody AdminLoginDto login,
+			@RequestHeader String userdomain) {
 		return loginService.adminLogin(userdomain, login);
 	}
 
@@ -73,7 +69,7 @@ public class LoginController {
 	 */
 
 	@PostMapping("/admin/forgotpassword")
-	public @ResponseBody Response<String> login(@Validated @RequestBody ForgetPasswordDto forgetPasswordDto) {
+	public Response<String> login(@Validated @RequestBody ForgetPasswordDto forgetPasswordDto) {
 		return loginService.sendForgotPasswordEmail(forgetPasswordDto.getEmailId());
 	}
 
@@ -88,7 +84,7 @@ public class LoginController {
 	 */
 
 	@GetMapping("/admin/resetpassword")
-	public @ResponseBody Response<String> resetpassword(@RequestParam String userName, PasswordDto passwordDto) {
+	public Response<String> resetpassword(@RequestParam String userName, PasswordDto passwordDto) {
 		return loginService.resetPassword(userName, passwordDto);
 	}
 
@@ -102,19 +98,18 @@ public class LoginController {
 	 * @return
 	 */
 	@GetMapping("/admin/activateaccount")
-	public @ResponseBody Response<String> activateAccount(@RequestParam String token, PasswordDto passwordDto) {
+	public Response<String> activateAccount(@RequestParam String token, PasswordDto passwordDto) {
 		return loginService.activateAccount(token, passwordDto);
 	}
 
 	@GetMapping("/logout")
-	public @ResponseBody Response<String> logout(@RequestHeader("Authorization") String authorization,
-			@ApiParam(hidden = true) @RequestHeader(value = "userdomain") String userdomain) {
+	public Response<String> logout(@RequestHeader("Authorization") String authorization,
+			@RequestHeader String userdomain) {
 		return loginService.logout(userdomain, authorization);
 	}
-	
-	@ApiOperation(value = "API to reload inmemory data")
+
 	@GetMapping("/admin/inmemory/refresh")
-	public @ResponseBody Response<String> refreshInMemoryData() {
+	public Response<String> refreshInMemoryData() {
 		return loginService.refreshInMemory();
 	}
 
