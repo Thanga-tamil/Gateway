@@ -207,7 +207,7 @@ public class MailAuthService {
 		} catch (Exception e) {
 			// Log the exception and re-throw as a custom exception if needed
 			log.error("Failed to fetch email configuration for domain: {}", userdomain, e);
-			throw new RuntimeException("Error fetching email configuration for domain " + userdomain);
+			throw new BadDataException("Error fetching email configuration for domain " + userdomain);
 		}
 	}
 
