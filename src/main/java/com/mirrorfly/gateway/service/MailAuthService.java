@@ -1,8 +1,10 @@
 package com.mirrorfly.gateway.service;
 
 import java.time.Duration;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,10 +13,11 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatSettings;
-import com.mirrorfly.gateway.model.ConnectionConfig;
+import com.mirrorfly.gateway.model.EmailConfig;
 import com.mirrorfly.gateway.model.ChatEmailTokens;
 import com.mirrorfly.gateway.repo.ChatEmailTokensRepository;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
@@ -24,6 +27,7 @@ import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
+import jakarta.persistence.EntityManagerFactory;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -32,6 +36,9 @@ public class MailAuthService {
 
 	@Autowired
 	private AWSEmailService awsEmailService;
+
+	@Autowired
+	private EntityManagerFactory entityManagerFactory;
 
 	@Autowired
 	private ChatEmailTokensRepository chatEmailTokensRepository;
@@ -55,18 +62,29 @@ public class MailAuthService {
 		log.info("Starting OTP generation for email: {}", email);
 		validateEmail(email);
 
-		ConnectionConfig config = dataStore.getConnectionConfigByDomain(userdomain);
+		String licenseKey = Optional
+				.ofNullable(dataStore.getConnectionConfigDataByDomainAndKey(userdomain, GatewayConstants.LICENSEKEY))
+				.map(Object::toString).orElseThrow(() -> new IllegalArgumentException(
+						"License key is not configured for the domain: " + userdomain));
 
-		if (isStaticEmail(config, email)) {
+		EmailConfig emailConfig = fetchEmailConfig(userdomain);
+
+		if (emailConfig == null) {
+			log.warn("No email configuration found for domain: {}", userdomain);
+			throw new IllegalArgumentException("No email configuration found for domain: " + userdomain);
+		}
+
+		if (isStaticEmail(emailConfig, email)) {
 			log.info("Static email detected, skipping OTP generation for email: {}", email);
 			return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS,
 					"OTP sent successfully to: " + email);
 		}
 
-		String otpToken = saveOrUpdateOtpInDb(email, config.getLicenseKey());
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+		String otpToken = saveOrUpdateOtpInDb(email, licenseKey);
 		// Send Mail with the generated 6-digit OTP
 		try {
-			awsEmailService.sendOtpEmail(userdomain, config.getEmailConfig(), email, otpToken);
+			awsEmailService.sendAWSSES(emailConfig, email, otpToken);
 			log.info("OTP sent successfully to email: {}", email);
 			return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS,
 					"OTP sent successfully to: " + email);
@@ -75,11 +93,6 @@ public class MailAuthService {
 			// Roll-back transaction if sending email fails
 			throw new MessagingException("Failed to send OTP email ==> " + e.getMessage());
 		}
-	}
-
-	private boolean isStaticEmail(ConnectionConfig config, String email) {
-		return config.getEmailConfig() != null && config.getEmailConfig().getStaticMetadata() != null
-				&& email.equalsIgnoreCase(config.getEmailConfig().getStaticMetadata().getStaticEmail());
 	}
 
 	private String saveOrUpdateOtpInDb(String email, String licenseKey) {
@@ -129,23 +142,30 @@ public class MailAuthService {
 		// Validate the inputs
 		validateInputs(email, otp);
 
-		ConnectionConfig config = dataStore.getConnectionConfigByDomain(userdomain);
+		String licenseKey = Optional
+				.ofNullable(dataStore.getConnectionConfigDataByDomainAndKey(userdomain, GatewayConstants.LICENSEKEY))
+				.map(Object::toString).orElseThrow(() -> new IllegalArgumentException(
+						"License key is not configured for the domain: " + userdomain));
 
-		if (isStaticEmail(config, email) && otp.equals(config.getEmailConfig().getStaticMetadata().getStaticOtp())) {
+		EmailConfig emailConfig = fetchEmailConfig(userdomain);
+
+		if (isStaticEmail(emailConfig, email) && otp.equals(emailConfig.getStaticMetadata().getStaticOtp())) {
 			log.info("Static email and OTP detected, skipping validation for email: {}", email);
 			Map<String, Object> responseData = new HashMap<>();
-			responseData.put("username", config.getEmailConfig().getStaticMetadata().getStaticUserId());
+			responseData.put("username", emailConfig.getStaticMetadata().getStaticUserId());
 			responseData.put("email", email);
 			return buildResponse(HttpStatus.OK, GatewayConstants.OTP_VERIFIED_SUCCESS, responseData);
 		}
 
-		ChatEmailTokens emailToken = findOtpToken(AESEncryption.encryptString(email, config.getLicenseKey()));
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+
+		ChatEmailTokens emailToken = findOtpToken(AESEncryption.encryptString(email, licenseKey));
 		/*
 		 * validate the OTP
 		 */
-		validateOtp(emailToken, otp, config.getLicenseKey());
+		validateOtp(emailToken, otp, licenseKey);
 
-		ChatSettings chatSettings = configService.getChatSettingsData(config.getLicenseKey());
+		ChatSettings chatSettings = configService.getChatSettingsData(licenseKey);
 		/*
 		 * Enable Encryption mode aes-256-cbc in the MySQL Server
 		 */
@@ -174,6 +194,26 @@ public class MailAuthService {
 		validateEmail(email);
 		if (StringUtils.isBlank(otp))
 			throw new BadDataException(GatewayConstants.INVALID_OTP);
+	}
+
+	private EmailConfig fetchEmailConfig(String userdomain) {
+		try {
+			// Set the database to default
+			AbstractRoutingDataSourceImpl.setDatabaseName("default");
+			return entityManagerFactory.createEntityManager()
+					.createQuery("SELECT c.emailConfig FROM ConnectionConfig c WHERE c.apiDomain = :apiDomain",
+							EmailConfig.class)
+					.setParameter("apiDomain", userdomain).getResultStream().findFirst().orElse(null);
+		} catch (Exception e) {
+			// Log the exception and re-throw as a custom exception if needed
+			log.error("Failed to fetch email configuration for domain: {}", userdomain, e);
+			throw new RuntimeException("Error fetching email configuration for domain " + userdomain);
+		}
+	}
+
+	private boolean isStaticEmail(EmailConfig emailConfig, String email) {
+		return emailConfig != null && emailConfig.getStaticMetadata() != null
+				&& email.equalsIgnoreCase(emailConfig.getStaticMetadata().getStaticEmail());
 	}
 
 	private ChatEmailTokens findOtpToken(String email) {

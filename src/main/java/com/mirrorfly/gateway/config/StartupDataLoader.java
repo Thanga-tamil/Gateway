@@ -8,7 +8,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import com.mirrorfly.gateway.datasourcerouter.AWSSesClientManager;
 import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.model.ConnectionConfig;
 import com.mirrorfly.gateway.repo.ConnectionConfigRepo;
@@ -22,9 +21,6 @@ public class StartupDataLoader implements ApplicationListener<ApplicationReadyEv
 	private ConnectionConfigRepo connectionConfigRepo;
 
 	@Autowired
-	private AWSSesClientManager awsSesClientManager;
-
-	@Autowired
 	private DataStore dataStore;
 
 	@Override
@@ -35,10 +31,6 @@ public class StartupDataLoader implements ApplicationListener<ApplicationReadyEv
 		 * Set All Connection-Config Data In-Memory
 		 */
 		dataStore.setConnectionConfig(connectionConfig);
-		/*
-		 * Create AWS SES Clients and Store In-Memory
-		 */
-		awsSesClientManager.initializeSesClients(connectionConfig);
 	}
 
 }
