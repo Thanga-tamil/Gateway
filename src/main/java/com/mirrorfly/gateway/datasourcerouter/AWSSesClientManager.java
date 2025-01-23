@@ -83,7 +83,8 @@ public class AWSSesClientManager {
 		// Check if the SES client already exists in the in-memory map
 		AmazonSimpleEmailService sesClient = sesClients.get(domain);
 
-		if (sesClient != null) {
+		// Check if the existing client is valid
+		if (sesClient != null && isValidSesClient(sesClient)) {
 			log.debug("Found cached SES client for domain: {}", domain);
 			return sesClient;
 		}
@@ -116,6 +117,16 @@ public class AWSSesClientManager {
 		} catch (Exception e) {
 			log.error("Failed to create AWS SES client for domain: {}. Error: {}", domain, e.getMessage());
 			throw new IllegalStateException("Failed to create AWS SES client for domain: " + domain, e);
+		}
+	}
+
+	private boolean isValidSesClient(AmazonSimpleEmailService sesClient) {
+		try {
+			sesClient.getSendQuota(); // Lightweight AWS SES API call
+			return true; // Client is valid
+		} catch (Exception e) {
+			log.warn("Invalid or stale AWS SES client detected: {}", e.getMessage());
+			return false; // Client is invalid
 		}
 	}
 
