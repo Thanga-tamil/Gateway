@@ -15,6 +15,7 @@ import com.amazonaws.services.simpleemail.model.Destination;
 import com.amazonaws.services.simpleemail.model.SendEmailRequest;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
+
 import com.mirrorfly.gateway.datasourcerouter.AWSSesClientManager;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.EmailConfig;
