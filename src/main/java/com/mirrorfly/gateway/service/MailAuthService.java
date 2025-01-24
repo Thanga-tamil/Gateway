@@ -17,6 +17,7 @@ import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.model.ChatSettings;
+import com.mirrorfly.gateway.model.ConnectionConfig;
 import com.mirrorfly.gateway.model.EmailConfig;
 import com.mirrorfly.gateway.model.ChatEmailTokens;
 import com.mirrorfly.gateway.repo.ChatEmailTokensRepository;
@@ -28,6 +29,7 @@ import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.NoResultException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -62,12 +64,12 @@ public class MailAuthService {
 		log.info("Starting OTP generation for email: {}", email);
 		validateEmail(email);
 
-		String licenseKey = Optional
-				.ofNullable(dataStore.getConnectionConfigDataByDomainAndKey(userdomain, GatewayConstants.LICENSEKEY))
-				.map(Object::toString).orElseThrow(() -> new IllegalArgumentException(
-						"License key is not configured for the domain: " + userdomain));
+		// Fetch connection configuration from the data store
+		ConnectionConfig config = getConnectionConfigByDomain(userdomain);
 
-		EmailConfig emailConfig = fetchEmailConfig(userdomain);
+		// Determine email configuration
+		EmailConfig emailConfig = config.getEmailConfig() != null ? config.getEmailConfig()
+				: fetchEmailConfig(userdomain);
 
 		if (emailConfig == null) {
 			log.warn("No email configuration found for domain: {}", userdomain);
@@ -81,7 +83,7 @@ public class MailAuthService {
 		}
 
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-		String otpToken = saveOrUpdateOtpInDb(email, licenseKey);
+		String otpToken = saveOrUpdateOtpInDb(email, config.getLicenseKey());
 		// Send Mail with the generated 6-digit OTP
 		try {
 			awsEmailService.sendAWSSES(emailConfig, email, otpToken);
@@ -142,12 +144,16 @@ public class MailAuthService {
 		// Validate the inputs
 		validateInputs(email, otp);
 
-		String licenseKey = Optional
-				.ofNullable(dataStore.getConnectionConfigDataByDomainAndKey(userdomain, GatewayConstants.LICENSEKEY))
-				.map(Object::toString).orElseThrow(() -> new IllegalArgumentException(
-						"License key is not configured for the domain: " + userdomain));
+		ConnectionConfig config = getConnectionConfigByDomain(userdomain);
 
-		EmailConfig emailConfig = fetchEmailConfig(userdomain);
+		// Determine email configuration
+		EmailConfig emailConfig = config.getEmailConfig() != null ? config.getEmailConfig()
+				: fetchEmailConfig(userdomain);
+
+		if (emailConfig == null) {
+			log.warn("No email configuration found for domain: {}", userdomain);
+			throw new IllegalArgumentException("No email configuration found for domain: " + userdomain);
+		}
 
 		if (isStaticEmail(emailConfig, email) && otp.equals(emailConfig.getStaticMetadata().getStaticOtp())) {
 			log.info("Static email and OTP detected, skipping validation for email: {}", email);
@@ -159,13 +165,13 @@ public class MailAuthService {
 
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
-		ChatEmailTokens emailToken = findOtpToken(AESEncryption.encryptString(email, licenseKey));
+		ChatEmailTokens emailToken = findOtpToken(AESEncryption.encryptString(email, config.getLicenseKey()));
 		/*
 		 * validate the OTP
 		 */
-		validateOtp(emailToken, otp, licenseKey);
+		validateOtp(emailToken, otp, config.getLicenseKey());
 
-		ChatSettings chatSettings = configService.getChatSettingsData(licenseKey);
+		ChatSettings chatSettings = configService.getChatSettingsData(config.getLicenseKey());
 		/*
 		 * Enable Encryption mode aes-256-cbc in the MySQL Server
 		 */
@@ -196,6 +202,13 @@ public class MailAuthService {
 			throw new BadDataException(GatewayConstants.INVALID_OTP);
 	}
 
+	private ConnectionConfig getConnectionConfigByDomain(String userdomain) {
+		return Optional.ofNullable(dataStore.getConnectionConfigByDomain(userdomain)).orElseThrow(() -> {
+			log.warn("No connection configuration found for domain: {}", userdomain);
+			return new IllegalArgumentException("No connection configuration found for domain: " + userdomain);
+		});
+	}
+
 	private EmailConfig fetchEmailConfig(String userdomain) {
 		try {
 			// Set the database to default
@@ -203,11 +216,13 @@ public class MailAuthService {
 			return entityManagerFactory.createEntityManager()
 					.createQuery("SELECT c.emailConfig FROM ConnectionConfig c WHERE c.apiDomain = :apiDomain",
 							EmailConfig.class)
-					.setParameter("apiDomain", userdomain).getResultStream().findFirst().orElse(null);
+					.setParameter("apiDomain", userdomain).getSingleResult();
+		} catch (NoResultException e) {
+			log.warn("Email configuration found for domain: {}", userdomain);
+			return null;
 		} catch (Exception e) {
-			// Log the exception and re-throw as a custom exception if needed
 			log.error("Failed to fetch email configuration for domain: {}", userdomain, e);
-			throw new BadDataException("Error fetching email configuration for domain " + userdomain);
+			throw new BadDataException("Error fetching email configuration for doamin => " + userdomain);
 		}
 	}
 
