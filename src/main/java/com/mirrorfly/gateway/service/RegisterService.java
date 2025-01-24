@@ -190,7 +190,6 @@ public class RegisterService {
 			chatUser.setLicenseKey(registerDto.getLicenseKey());
 			chatUser.setIsDeleteInprogrees(0);
 			chatUser.setDevicetype(registerDto.getDeviceType());
-			chatUser.setDeviceToken(registerDto.getDeviceToken());
 			// To insert the register login time
 			registerLogintime(registerDto.getUserIdentifier());
 			user.setUsername(registerDto.getUserIdentifier());
@@ -267,10 +266,13 @@ public class RegisterService {
 	public String updateChatUserDetails(String userdomain, RegisterDto registerDto, ChatUser chatUser) {
 		String deviceIdprefix = "";
 		String pushServerType = "";
-		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
+		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
 			deviceIdprefix = "-web";
-		else {
+		} else {
 			deviceIdprefix = "-mobile";
+			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().isEmpty()) {
+				chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
+			}
 			if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().isEmpty()) {
 				chatUsersDetailsRepo.updateVoipDeviceTokenAsEmpty(registerDto.getVoipDeviceToken());
 			}
@@ -280,7 +282,7 @@ public class RegisterService {
 			}
 			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)) {
 				pushServerType = "fcm";
-			} else if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)) {
+			} else {
 				if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
 					pushServerType = registerDto.getPushServerType();
 				} else {
@@ -288,10 +290,6 @@ public class RegisterService {
 				}
 			}
 		}
-		if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().isEmpty()) {
-			chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
-		}
-
 		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
 				? registerDto.getDeviceId()
 				: "MF-01" + deviceIdprefix;
