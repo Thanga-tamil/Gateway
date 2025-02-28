@@ -34,7 +34,7 @@ public class TokenService {
 	 * 
 	 * @param header as Bearer in JSON input type
 	 */
-	
+
 	@SwitchDataSource(value = "[0]")
 	public String validateToken(String userdomain, String token) {
 		log.info("requesting token: " + token);
@@ -94,7 +94,7 @@ public class TokenService {
 		return token.getUsername();
 	}
 
-	@SwitchDataSource(value="[0]")
+	@SwitchDataSource(value = "[0]")
 	public String getUserNameByToken(String userdomain, String authorization) {
 		String username = validateToken(userdomain, authorization);
 		if (username == null) {
@@ -104,15 +104,23 @@ public class TokenService {
 		return username;
 	}
 
-	@SwitchDataSource(value="[0]")
+	@SwitchDataSource(value = "[0]")
 	public void deleteToken(String userdomain, String authorization) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		TokenDetail token = tokenRepo.findByToken(authorization);
-		if (token != null)
-			tokenRepo.delete(token);
+		if (token != null) {
+			try {
+				stringRedisTemplate.delete(authorization);
+				tokenRepo.delete(token);
+			} catch (Exception e) {
+				log.error("Error while removing token from Redis", e);
+			}
+		} else {
+			log.warn("Token not found in database: {}", authorization);
+		}
 	}
-	
-	@SwitchDataSource(value="[0]")
+
+	@SwitchDataSource(value = "[0]")
 	public TokenDetail getTokenDetail(String userdomain, String token) {
 		return tokenRepo.findTop1ByTokenOrderByIdDesc(token);
 	}
