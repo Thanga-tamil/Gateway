@@ -1,6 +1,7 @@
 package com.mirrorfly.gateway.util;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -77,15 +78,16 @@ public class GatewayUtil {
 		try {
 			MessageDigest md = MessageDigest.getInstance("MD5"); // NOSONAR not used in secure contexts
 
-			byte[] messageDigest = md.digest(input.getBytes());
+			byte[] messageDigest = md.digest(input.getBytes(StandardCharsets.UTF_8));
 			BigInteger no = new BigInteger(1, messageDigest);
 			hashtext.append(no.toString(16));
+
+			// Ensure the hash is 32 characters by prepending zeros if necessary
 			while (hashtext.length() < 32) {
-				hashtext.append("0" + hashtext);
+				hashtext.insert(0, "0");
 			}
 		} catch (NoSuchAlgorithmException e) {
-			log.error("Error while create string to MD5");
-			log.error(e.getMessage());
+			log.error("Error while creating MD5 hash", e);
 		}
 		return hashtext.toString();
 	}
