@@ -72,7 +72,7 @@ public class LoginService {
 
 	@Autowired
 	private DataStore dataStore;
-	
+
 	@Autowired
 	private SpoolRepo spoolRepo;
 
@@ -97,7 +97,8 @@ public class LoginService {
 					LoginRequestDto.class);
 			password = login.getPassword();
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
-			log.error("Unable to unserialize the password field " + e.getMessage()+", continuing assuming the password is plain");
+			log.error("Unable to unserialize the password field " + e.getMessage()
+					+ ", continuing assuming the password is plain");
 			password = loginRequestDto.getPassword();
 		}
 
@@ -150,7 +151,6 @@ public class LoginService {
 		return response;
 	}
 
-	@SuppressWarnings("unused")
 	@SwitchDataSource(value = "[0]")
 	public Response<AdminLoginResponse> adminLogin(String userdomain, AdminLoginDto login) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
@@ -282,7 +282,7 @@ public class LoginService {
 
 		/*** End ***/
 
-		if(adminUser != null) {
+		if (adminUser != null) {
 			adminUser.setHashedPassword(hashPassword);
 			adminUser.setSaltPassword(saltValue.isPresent() ? saltValue.get() : "");
 			adminUser.setUpdatedAt(LocalDateTime.now());
