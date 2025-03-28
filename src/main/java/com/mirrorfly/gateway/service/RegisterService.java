@@ -8,10 +8,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -30,7 +27,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
-import com.mirrorfly.gateway.dto.QueuePayloadDto;
 import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterRequestDto;
@@ -54,6 +50,7 @@ import com.mirrorfly.gateway.repo.SpoolRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
+import com.mirrorfly.gateway.util.DataHelperUtils;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
@@ -317,14 +314,13 @@ public class RegisterService {
 					if (deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
 							&& StringUtils.isNotBlank(deletableRecord.getSocketId())) {
 						try {
-							queueService.sendUserSessionLogoutActivity(prepareIQPayload(userdomain,
+							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
 									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
 						} catch (JsonProcessingException e) {
 							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
 									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
 						}
 					}
-
 				}
 			}
 			user = new ChatUserDetails();
@@ -444,11 +440,4 @@ public class RegisterService {
 		}
 	}
 
-	private QueuePayloadDto prepareIQPayload(String userdomain, String username, Set<String> sessionIds)
-			throws JsonProcessingException {
-		Map<String, Object> iqPayloadMap = new HashMap<>();
-		iqPayloadMap.put("username", username);
-		iqPayloadMap.put("socket_id", String.join(",", sessionIds));
-		return new QueuePayloadDto("logout_sessions", GatewayUtil.convertMapToJson(iqPayloadMap), userdomain);
-	}
 }
