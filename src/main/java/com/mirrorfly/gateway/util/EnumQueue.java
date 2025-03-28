@@ -2,7 +2,7 @@ package com.mirrorfly.gateway.util;
 
 public enum EnumQueue {
 
-	EMAIL_QUEUE("email_queue"), LICENSE_QUEUE("data");
+	EMAIL_QUEUE("email_queue"), LICENSE_QUEUE("data"), API_DATA_QUEUE("api_data");
 
 	private String queue;
 

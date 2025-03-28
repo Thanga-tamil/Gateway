@@ -8,11 +8,13 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -28,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
+import com.mirrorfly.gateway.dto.QueuePayloadDto;
 import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.RegisterInfoDto;
 import com.mirrorfly.gateway.dto.RegisterRequestDto;
@@ -42,6 +45,7 @@ import com.mirrorfly.gateway.model.Last;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.model.VcardSearch;
+import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
@@ -53,50 +57,41 @@ import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class RegisterService {
 
-	@Autowired
-	private ChatSettingsRepo settingsRepo;
+	private final ChatSettingsRepo settingsRepo;
 
-	@Autowired
-	private TokenService tokenService;
+	private final TokenService tokenService;
 
-	@Autowired
-	private PasswordService passwordService;
+	private final PasswordService passwordService;
 
-	@Autowired
-	private ChatUserRepo chatUserRepo;
+	private final ChatUserRepo chatUserRepo;
 
-	@Autowired
-	private UserRepo userRepo;
+	private final UserRepo userRepo;
 
-	@Autowired
-	private ApplicationProperties applicationProperties;
+	private final ApplicationProperties applicationProperties;
 
-	@Autowired
-	private RestTemplate restTemplate;
+	private final RestTemplate restTemplate;
 
-	@Autowired
-	private LastRepo lastRepo;
+	private final LastRepo lastRepo;
 
-	@Autowired
-	private ConfigService configService;
+	private final ConfigService configService;
 
-	@Autowired
-	private VcardService vcardService;
+	private final VcardService vcardService;
 
-	@Autowired
-	private ChatUsersDetailsRepo chatUsersDetailsRepo;
+	private final ChatUsersDetailsRepo chatUsersDetailsRepo;
 
-	@Autowired
-	private SpoolRepo spoolRepo;
+	private final SpoolRepo spoolRepo;
 
-	@Autowired
-	private DataStore dataStore;
+	private final DataStore dataStore;
+
+	private final QueueService queueService;
 
 	@SwitchDataSource(value = "[0]")
 	public Response<RegisterInfoDto> getRegisterInfo(String userdomain) {
@@ -296,16 +291,40 @@ public class RegisterService {
 		ChatUserDetails user = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
 		String password = passwordService.generateRandomPassword();
 		if (user == null) {
+
 			int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "userMaxSessions");
+
 			List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 					.findByUsername(chatUser.getUsername());
+
+			/*
+			 * 1. Check if User Max-Session Exceeded if yes fetch the user session and find
+			 * the session needs to be deleted.
+			 * 
+			 * 2. If the found session is Web and Logged in via QR-Code (SocketId). Then
+			 * Send session logged-out IQ to the devices
+			 */
 			if (existingChatUsersDetails.size() >= maxSessions) {
 				ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
 						registerDto.getDeviceType());
+
 				if (deletableRecord != null) {
+
 					chatUsersDetailsRepo.delete(deletableRecord);
 					spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
 							deletableRecord.getDeviceId());
+
+					if (deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
+							&& StringUtils.isNotBlank(deletableRecord.getSocketId())) {
+						try {
+							queueService.sendUserSessionLogoutActivity(prepareIQPayload(userdomain,
+									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
+						} catch (JsonProcessingException e) {
+							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
+									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
+						}
+					}
+
 				}
 			}
 			user = new ChatUserDetails();
@@ -423,5 +442,13 @@ public class RegisterService {
 		} catch (JsonProcessingException ex) {
 			throw new BadDataException("Error in registration. Please try again later");
 		}
+	}
+
+	private QueuePayloadDto prepareIQPayload(String userdomain, String username, Set<String> sessionIds)
+			throws JsonProcessingException {
+		Map<String, Object> iqPayloadMap = new HashMap<>();
+		iqPayloadMap.put("username", username);
+		iqPayloadMap.put("socket_id", String.join(",", sessionIds));
+		return new QueuePayloadDto("logout_sessions", GatewayUtil.convertMapToJson(iqPayloadMap), userdomain);
 	}
 }
