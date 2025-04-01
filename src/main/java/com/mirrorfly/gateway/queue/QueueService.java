@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.dto.QueuePayloadDto;
 import com.mirrorfly.gateway.util.EnumQueue;
 
 import lombok.extern.slf4j.Slf4j;
@@ -34,11 +35,11 @@ public class QueueService {
 		}
 		return true;
 	}
-	
+
 	public boolean sendLicenseDataPayload(LicenseDataPayload licenseDataPayload) {
 		try {
-			rabbitTemplate.convertAndSend(applicationProperties.getLicenseDataQueue(), EnumQueue.LICENSE_QUEUE.getQueue(),
-					licenseDataPayload);
+			rabbitTemplate.convertAndSend(applicationProperties.getLicenseDataQueue(),
+					EnumQueue.LICENSE_QUEUE.getQueue(), licenseDataPayload);
 		} catch (AmqpException a) {
 			log.error("Error in Sending to RabbitMQ Mail Exchange", a);
 			return false;
@@ -49,4 +50,14 @@ public class QueueService {
 		}
 		return true;
 	}
+
+	public void sendUserSessionLogoutActivity(QueuePayloadDto payload) {
+		try {
+			log.info("Multi-Sessions Logout RabbitMQ payload ::: " + payload);
+			rabbitTemplate.convertAndSend(EnumQueue.API_DATA_QUEUE.getQueue(), payload);
+		} catch (Exception e) {
+			log.error("Failed to send logout payload to RabbitMQ: {}", payload, e);
+		}
+	}
+
 }

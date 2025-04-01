@@ -11,12 +11,12 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitMQConfig {
 
 	@Bean
-	public MessageConverter jsonMessageConverter() {
+	MessageConverter jsonMessageConverter() {
 		return new Jackson2JsonMessageConverter();
 	}
 
 	@Bean
-	public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
+	RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
 		RabbitTemplate template = new RabbitTemplate(connectionFactory);
 		template.setMessageConverter(jsonMessageConverter());
 		return template;
