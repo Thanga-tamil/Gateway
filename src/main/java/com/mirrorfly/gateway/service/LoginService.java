@@ -4,8 +4,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Optional;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ import com.mirrorfly.gateway.repo.SpoolRepo;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
+import com.mirrorfly.gateway.util.DataHelperUtils;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
@@ -131,8 +134,10 @@ public class LoginService {
 
 	@SwitchDataSource(value = "[0]")
 	public Response<String> logout(String userdomain, String authorization) {
+
 		TokenDetail tokenDetail = tokenService.getTokenDetail(userdomain, authorization);
 		tokenService.deleteToken(userdomain, authorization);
+
 		if (tokenDetail != null) {
 			String deviceId = tokenDetail.getDevicetype() != null && !tokenDetail.getDevicetype().isEmpty()
 					? tokenDetail.getDevicetype()
@@ -140,8 +145,22 @@ public class LoginService {
 			ChatUserDetails chatUserDetail = chatUsersDetailsRepo.findByUsernameAndDeviceId(tokenDetail.getUsername(),
 					deviceId);
 			if (chatUserDetail != null) {
+
 				chatUsersDetailsRepo.delete(chatUserDetail);
 				spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(tokenDetail.getUsername(), deviceId);
+
+				// If QR-Web session (SocketId) send session logged-out IQ to the devices
+				if (chatUserDetail.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
+						&& StringUtils.isNotBlank(chatUserDetail.getSocketId())) {
+					try {
+						queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
+								chatUserDetail.getUsername(), Collections.singleton(chatUserDetail.getSocketId())));
+					} catch (JsonProcessingException e) {
+						log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
+								userdomain, chatUserDetail.getUsername(), chatUserDetail.getSocketId(), e.getMessage());
+					}
+				}
+
 			}
 		}
 
