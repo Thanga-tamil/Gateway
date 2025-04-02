@@ -20,7 +20,7 @@ public class ChatUserDetails {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	private String id;
-	
+
 	@Column(name = "username")
 	private String username;
 
@@ -39,21 +39,24 @@ public class ChatUserDetails {
 	@Column(name = "device_type")
 	private String deviceType;
 
+	@Column(name = "socket_id")
+	private String socketId;
+
 	@Column(name = "device_os_version")
 	private String deviceOsVersion = "";
-	
+
 	@Column(name = "password")
 	private String password;
-	
+
 	@Column(name = "push_server_type")
 	private String pushServerType;
-	
+
 	@Column(name = "last_logged_in_at")
 	private LocalDateTime lastLoggedInAt;
-	
+
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
-	
+
 	@Column(name = "user_type")
 	private String userType;
 
