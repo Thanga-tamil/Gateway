@@ -3,16 +3,23 @@ package com.mirrorfly.gateway.service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Properties;
+
+import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
+import com.mirrorfly.gateway.cachemanager.CacheManager;
 import com.mirrorfly.gateway.model.ConnectionConfig;
-import com.mirrorfly.gateway.repo.ConnectionConfigRepo;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,41 +27,85 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class DataStore {
 
-	@Autowired
-	private ConnectionConfigRepo connectionConfigRepo;
+	private final CacheManager cacheManager;
+	private final DataSource defaultDataSource;
 
-	private Map<String, ConnectionConfig> connectionConfig = new ConcurrentHashMap<>();
+	@Autowired
+	public DataStore(CacheManager cacheManager,
+			EntityManagerFactory entityManagerFactory,
+			@Qualifier("defaultDataSource") DataSource defaultDataSource) {
+		this.cacheManager = cacheManager;
+		this.defaultDataSource = defaultDataSource;
+	}
 
 	public void setConnectionConfig(List<ConnectionConfig> config) {
-		connectionConfig = new ConcurrentHashMap<>();
-		config.forEach(data -> connectionConfig.put(data.getApiDomain(), data));
-		log.info("ConnectionConfig loaded into inmemory. Size is : " + connectionConfig.size() + ", Current data is "
-				+ connectionConfig);
+		cacheManager.invalidateAll(); // Clear the cache
+		config.forEach(data -> cacheManager.put(data.getApiDomain(), data));
+		log.info("ConnectionConfig loaded into Caffeine cache. Size is : " + cacheManager.estimatedSize());
 	}
 
 	public void reloadConnectionConfig() {
-		AbstractRoutingDataSourceImpl.setDatabaseName("default");
-		connectionConfig = new ConcurrentHashMap<>();
-		connectionConfigRepo.findAll().forEach(config -> connectionConfig.put(config.getApiDomain(), config));
-		log.info("ConnectionConfig inmemory refreshed. Size is : " + connectionConfig.size() + ", Current data is "
-				+ connectionConfig);
+
+		// Clear the cache
+		cacheManager.invalidateAll();
+
+		EntityManagerFactory entityManagerFactory = createEntityManagerFactory(defaultDataSource);
+		EntityManager entityManager = entityManagerFactory.createEntityManager();
+
+		try {
+			// Fetch all ConnectionConfig entities
+			List<ConnectionConfig> configs = entityManager.createQuery(
+					"SELECT c FROM ConnectionConfig c", ConnectionConfig.class)
+					.getResultList();
+
+			// Put each ConnectionConfig into the cache
+			configs.forEach(config -> {
+				cacheManager.put(config.getApiDomain(), config);
+			});
+
+			log.info("ConnectionConfig cache refreshed. Size is: {}", cacheManager.estimatedSize());
+		} catch (Exception e) {
+			log.error("Error while reloading ConnectionConfig", e);
+			throw new RuntimeException("Failed to reload ConnectionConfig", e);
+		} finally {
+			if (entityManager != null && entityManager.isOpen()) {
+				entityManager.close();
+				log.info("EntityManager closed.");
+			}
+		}
 	}
 
-	public Map<String, ConnectionConfig> getConnectionConfig() {
-		return connectionConfig;
+	private EntityManagerFactory createEntityManagerFactory(DataSource dataSource) {
+		// Create a LocalContainerEntityManagerFactoryBean
+		LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
+		factoryBean.setDataSource(dataSource);
+		factoryBean.setPackagesToScan("com.mirrorfly.gateway.model");
+		factoryBean.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
+
+		Properties jpaProperties = new Properties();
+		jpaProperties.put("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
+		jpaProperties.put("hibernate.hbm2ddl.auto", "none");
+		jpaProperties.put("hibernate.show_sql", "true");
+		jpaProperties.put("hibernate.format_sql", "true");
+		factoryBean.setJpaProperties(jpaProperties);
+
+		factoryBean.afterPropertiesSet();
+
+		return factoryBean.getObject();
 	}
 
 	public ConnectionConfig getConnectionConfigByDomain(String domain) {
-		ConnectionConfig config = connectionConfig.get(domain);
+
+		ConnectionConfig config = cacheManager.getIfPresent(domain);
+
+		// If the config is not found in the cache, reload it
 		if (config == null) {
-			log.info("Could not find ConnectionConfig data for domain " + domain
-					+ " in inmemory. Reloading connection_config table.");
+			log.info("Could not find ConnectionConfig data for domain {} in cache. Reloading connection_config table.",
+					domain);
 			reloadConnectionConfig();
-			config = connectionConfig.get(domain);
+			config = cacheManager.getIfPresent(domain);
 		}
-		// setting back the active datasource name to whatever it was before calling
-		// this method
-		AbstractRoutingDataSourceImpl.setDatabaseName(domain);
+
 		return config;
 	}
 
