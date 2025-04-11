@@ -8,7 +8,6 @@ import java.util.Properties;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.stereotype.Service;
@@ -16,6 +15,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.cachemanager.CacheManager;
+import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.model.ConnectionConfig;
 
 import jakarta.persistence.EntityManager;
@@ -28,14 +28,10 @@ import lombok.extern.slf4j.Slf4j;
 public class DataStore {
 
 	private final CacheManager cacheManager;
-	private final DataSource defaultDataSource;
 
 	@Autowired
-	public DataStore(CacheManager cacheManager,
-			EntityManagerFactory entityManagerFactory,
-			@Qualifier("defaultDataSource") DataSource defaultDataSource) {
+	public DataStore(CacheManager cacheManager) {
 		this.cacheManager = cacheManager;
-		this.defaultDataSource = defaultDataSource;
 	}
 
 	public void setConnectionConfig(List<ConnectionConfig> config) {
@@ -49,7 +45,7 @@ public class DataStore {
 		// Clear the cache
 		cacheManager.invalidateAll();
 
-		EntityManagerFactory entityManagerFactory = createEntityManagerFactory(defaultDataSource);
+		EntityManagerFactory entityManagerFactory = createEntityManagerFactory();
 		EntityManager entityManager = entityManagerFactory.createEntityManager();
 
 		try {
@@ -59,14 +55,11 @@ public class DataStore {
 					.getResultList();
 
 			// Put each ConnectionConfig into the cache
-			configs.forEach(config -> {
-				cacheManager.put(config.getApiDomain(), config);
-			});
+			configs.forEach(config -> cacheManager.put(config.getApiDomain(), config));
 
 			log.info("ConnectionConfig cache refreshed. Size is: {}", cacheManager.estimatedSize());
 		} catch (Exception e) {
 			log.error("Error while reloading ConnectionConfig", e);
-			throw new RuntimeException("Failed to reload ConnectionConfig", e);
 		} finally {
 			if (entityManager != null && entityManager.isOpen()) {
 				entityManager.close();
@@ -75,7 +68,10 @@ public class DataStore {
 		}
 	}
 
-	private EntityManagerFactory createEntityManagerFactory(DataSource dataSource) {
+	private EntityManagerFactory createEntityManagerFactory() {
+
+		DataSource dataSource = AbstractRoutingDataSourceImpl.getDefaultDataSource();
+
 		// Create a LocalContainerEntityManagerFactoryBean
 		LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
 		factoryBean.setDataSource(dataSource);
