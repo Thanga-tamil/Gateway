@@ -7,7 +7,6 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.stereotype.Service;
@@ -20,19 +19,15 @@ import com.mirrorfly.gateway.model.ConnectionConfig;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DataStore {
 
 	private final CacheManager cacheManager;
-
-	@Autowired
-	public DataStore(CacheManager cacheManager) {
-		this.cacheManager = cacheManager;
-	}
 
 	public void setConnectionConfig(List<ConnectionConfig> config) {
 		cacheManager.invalidateAll(); // Clear the cache
@@ -50,9 +45,8 @@ public class DataStore {
 
 		try {
 			// Fetch all ConnectionConfig entities
-			List<ConnectionConfig> configs = entityManager.createQuery(
-					"SELECT c FROM ConnectionConfig c", ConnectionConfig.class)
-					.getResultList();
+			List<ConnectionConfig> configs = entityManager
+					.createQuery("SELECT c FROM ConnectionConfig c", ConnectionConfig.class).getResultList();
 
 			// Put each ConnectionConfig into the cache
 			configs.forEach(config -> cacheManager.put(config.getApiDomain(), config));

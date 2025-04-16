@@ -8,39 +8,40 @@ import org.springframework.stereotype.Component;
 @Component
 public class CaffeineCacheManager implements CacheManager {
 
-    private final Cache<String, ConnectionConfig> cache;
+	private final Cache<String, ConnectionConfig> cache;
 
-    public CaffeineCacheManager(Cache<String, ConnectionConfig> cache) {
-        this.cache = cache;
-    }
+	public CaffeineCacheManager(Cache<String, ConnectionConfig> cache) {
+		this.cache = cache;
+	}
 
-    @Override
-    public void put(String key, ConnectionConfig value) {
-        cache.put(key, value);
-    }
+	@Override
+	public void put(String key, ConnectionConfig value) {
+		cache.put(key, value);
+	}
 
-    @Override
-    public ConnectionConfig get(String key) {
-        return cache.getIfPresent(key);
-    }
+	@Override
+	public ConnectionConfig get(String key) {
+		return cache.getIfPresent(key);
+	}
 
-    @Override
-    public void invalidateAll() {
-        cache.invalidateAll();
-    }
+	@Override
+	public void invalidateAll() {
+		cache.invalidateAll();
+	}
 
-    @Override
-    public long size() {
-        return cache.estimatedSize();
-    }
+	@Override
+	public long size() {
+		return cache.estimatedSize();
+	}
 
-    @Override 
-    public ConnectionConfig getIfPresent(String key) {
-        return cache.getIfPresent(key);
-    } 
+	@Override
+	public ConnectionConfig getIfPresent(String key) {
+		return cache.getIfPresent(key);
+	}
 
-    @Override
-    public String estimatedSize() {
-        return String.valueOf(cache.estimatedSize());
-    }
+	@Override
+	public String estimatedSize() {
+		return String.valueOf(cache.estimatedSize());
+	}
+
 }
