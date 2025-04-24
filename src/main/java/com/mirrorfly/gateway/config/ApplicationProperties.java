@@ -123,4 +123,12 @@ public class ApplicationProperties {
 	public String getWhiteListIpEndRange() {
 		return env.getProperty("white-list-ip-range-end");
 	}
+
+	public String getCaffeineTtl() {
+		return env.getProperty("caffeine.ttl");
+	}
+	
+	public String getCaffeineTotalLimit() {
+		return env.getProperty("caffeine.totallimit");
+	}
 }
