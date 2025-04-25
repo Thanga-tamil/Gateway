@@ -28,6 +28,7 @@ import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.NoResultException;
 import lombok.extern.slf4j.Slf4j;
@@ -38,9 +39,6 @@ public class MailAuthService {
 
 	@Autowired
 	private AWSEmailService awsEmailService;
-
-	@Autowired
-	private EntityManagerFactory entityManagerFactory;
 
 	@Autowired
 	private ChatEmailTokensRepository chatEmailTokensRepository;
@@ -67,13 +65,15 @@ public class MailAuthService {
 		// Fetch connection configuration from the data store
 		ConnectionConfig config = getConnectionConfigByDomain(userdomain);
 
-		// Determine email configuration
-		EmailConfig emailConfig = config.getEmailConfig() != null ? config.getEmailConfig()
-				: fetchEmailConfig(userdomain);
+		EmailConfig emailConfig = Optional.ofNullable(config.getEmailConfig()).orElseGet(() -> {
+			log.warn("EmailConfig is null for domain '{}'. Current ConnectionConfig: {}", userdomain, config);
+			return fetchEmailConfig(userdomain);
+		});
 
 		if (emailConfig == null) {
 			log.warn("No email configuration found for domain: {}", userdomain);
-			throw new IllegalArgumentException("No email configuration found for domain: " + userdomain);
+			return buildResponse(HttpStatus.BAD_REQUEST, "No email configuration found for domain: " + userdomain,
+					null);
 		}
 
 		if (isStaticEmail(emailConfig, email)) {
@@ -141,18 +141,19 @@ public class MailAuthService {
 	public Response<Object> validateEmailOtp(String userdomain, String email, String otp) {
 
 		log.info("Starting OTP validation for email: {}", email);
-		// Validate the inputs
 		validateInputs(email, otp);
 
 		ConnectionConfig config = getConnectionConfigByDomain(userdomain);
 
-		// Determine email configuration
-		EmailConfig emailConfig = config.getEmailConfig() != null ? config.getEmailConfig()
-				: fetchEmailConfig(userdomain);
+		EmailConfig emailConfig = Optional.ofNullable(config.getEmailConfig()).orElseGet(() -> {
+			log.warn("EmailConfig is null for domain '{}'. Current ConnectionConfig: {}", userdomain, config);
+			return fetchEmailConfig(userdomain);
+		});
 
 		if (emailConfig == null) {
 			log.warn("No email configuration found for domain: {}", userdomain);
-			throw new IllegalArgumentException("No email configuration found for domain: " + userdomain);
+			return buildResponse(HttpStatus.BAD_REQUEST, "No email configuration found for domain: " + userdomain,
+					null);
 		}
 
 		if (isStaticEmail(emailConfig, email) && otp.equals(emailConfig.getStaticMetadata().getStaticOtp())) {
@@ -210,9 +211,15 @@ public class MailAuthService {
 	}
 
 	private EmailConfig fetchEmailConfig(String userdomain) {
+
+		EntityManagerFactory entityManagerFactory = null;
+		EntityManager entityManager = null;
+
 		try {
 			// Set the database to default
-			AbstractRoutingDataSourceImpl.setDatabaseName("default");
+			entityManagerFactory = dataStore.createMasterEntityManagerFactory();
+			entityManager = entityManagerFactory.createEntityManager();
+
 			return entityManagerFactory.createEntityManager()
 					.createQuery("SELECT c.emailConfig FROM ConnectionConfig c WHERE c.apiDomain = :apiDomain",
 							EmailConfig.class)
@@ -222,7 +229,14 @@ public class MailAuthService {
 			return null;
 		} catch (Exception e) {
 			log.error("Failed to fetch email configuration for domain: {}", userdomain, e);
-			throw new BadDataException("Error fetching email configuration for doamin => " + userdomain);
+			return null;
+
+		} finally {
+			if (entityManager != null && entityManager.isOpen())
+				entityManager.close();
+
+			if (entityManagerFactory != null)
+				entityManagerFactory.close();
 		}
 	}
 
