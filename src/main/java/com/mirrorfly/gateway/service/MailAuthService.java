@@ -141,7 +141,6 @@ public class MailAuthService {
 	public Response<Object> validateEmailOtp(String userdomain, String email, String otp) {
 
 		log.info("Starting OTP validation for email: {}", email);
-		// Validate the inputs
 		validateInputs(email, otp);
 
 		ConnectionConfig config = getConnectionConfigByDomain(userdomain);
