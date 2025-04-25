@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.sql.DataSource;
-
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.stereotype.Service;
@@ -40,7 +38,7 @@ public class DataStore {
 		// Clear the cache
 		cacheManager.invalidateAll();
 
-		EntityManagerFactory entityManagerFactory = createEntityManagerFactory();
+		EntityManagerFactory entityManagerFactory = createMasterEntityManagerFactory();
 		EntityManager entityManager = entityManagerFactory.createEntityManager();
 
 		try {
@@ -55,30 +53,27 @@ public class DataStore {
 		} catch (Exception e) {
 			log.error("Error while reloading ConnectionConfig", e);
 		} finally {
-			if (entityManager != null && entityManager.isOpen()) {
+			if (entityManager != null && entityManager.isOpen())
 				entityManager.close();
-				log.info("EntityManager closed.");
-			}
 		}
 	}
 
-	private EntityManagerFactory createEntityManagerFactory() {
-
-		DataSource dataSource = AbstractRoutingDataSourceImpl.getDefaultDataSource();
-
-		// Create a LocalContainerEntityManagerFactoryBean
+	public EntityManagerFactory createMasterEntityManagerFactory() {
 		LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
-		factoryBean.setDataSource(dataSource);
+
+		factoryBean.setDataSource(AbstractRoutingDataSourceImpl.getDefaultDataSource()); // Master DB Connection
 		factoryBean.setPackagesToScan("com.mirrorfly.gateway.model");
 		factoryBean.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
 
 		Properties jpaProperties = new Properties();
 		jpaProperties.put("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
 		jpaProperties.put("hibernate.hbm2ddl.auto", "none");
-		jpaProperties.put("hibernate.show_sql", "true");
 		jpaProperties.put("hibernate.format_sql", "true");
-		factoryBean.setJpaProperties(jpaProperties);
+		jpaProperties.put("hibernate.show_sql", "true");
+		jpaProperties.put("hibernate.jdbc.batch_size", "30");
 
+		factoryBean.setJpaProperties(jpaProperties);
+		factoryBean.setPersistenceUnitName("masterPU");
 		factoryBean.afterPropertiesSet();
 
 		return factoryBean.getObject();
