@@ -65,9 +65,10 @@ public class MailAuthService {
 		// Fetch connection configuration from the data store
 		ConnectionConfig config = getConnectionConfigByDomain(userdomain);
 
-		// Determine email configuration
-		EmailConfig emailConfig = config.getEmailConfig() != null ? config.getEmailConfig()
-				: fetchEmailConfig(userdomain);
+		EmailConfig emailConfig = Optional.ofNullable(config.getEmailConfig()).orElseGet(() -> {
+			log.warn("EmailConfig is null for domain '{}'. Current ConnectionConfig: {}", userdomain, config);
+			return fetchEmailConfig(userdomain);
+		});
 
 		if (emailConfig == null) {
 			log.warn("No email configuration found for domain: {}", userdomain);
