@@ -91,11 +91,11 @@ public class LoginService {
 		}
 
 		String password = "";
-		String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),
-				licenseKey + licenseKey + licenseKey);
 		LoginRequestDto login;
 		ObjectMapper mapper = new ObjectMapper();
 		try {
+			String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),
+					licenseKey + licenseKey + licenseKey);
 			login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
 					LoginRequestDto.class);
 			password = login.getPassword();
