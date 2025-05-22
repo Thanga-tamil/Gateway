@@ -431,6 +431,7 @@ public class RegisterService {
 
 	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
 		String responseBody = e.getResponseBodyAsString();
+		log.error("LicecesKey Validation Response :: " + responseBody);
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			Response<?> r = mapper.readValue(responseBody, Response.class);
