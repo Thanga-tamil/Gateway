@@ -119,8 +119,7 @@ public class RegisterService {
 		ObjectMapper decryptmapper = new ObjectMapper();
 		RegisterDto registerDto;
 		try {
-			registerDto = decryptmapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
-					RegisterDto.class);
+			registerDto = decryptmapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()), RegisterDto.class);
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
 			log.error("RegisterDto values are not readable ::: " + e.getMessage());
 			throw new BadDataException(GatewayConstants.INVALID_ERROR);
@@ -176,7 +175,7 @@ public class RegisterService {
 			}
 			chatUser = new ChatUser();
 			chatUser.setUsername(registerDto.getUserIdentifier());
-			chatUser.setMobileNumber(registerDto.getMobileNumber());
+			chatUser.setMobileNumber(registerDto.getMobileNumber().trim());
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 			chatUser.setLicenseKey(registerDto.getLicenseKey());
@@ -245,7 +244,7 @@ public class RegisterService {
 		data.setDeviceToken(registerDto.getDeviceToken());
 		data.setDeviceType(registerDto.getDeviceType());
 		data.setLicenseKey(registerDto.getLicenseKey());
-		data.setMobileNumber(registerDto.getMobileNumber());
+		data.setMobileNumber(registerDto.getMobileNumber().trim());
 		data.setMode(registerDto.getMode());
 		data.setUserIdentifier(registerDto.getUserIdentifier());
 		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
@@ -382,7 +381,7 @@ public class RegisterService {
 		registerData.setDeviceToken(registerDto.getDeviceToken());
 		registerData.setDeviceType(registerDto.getDeviceType());
 		registerData.setLicenseKey(registerDto.getLicenseKey());
-		registerData.setMobileNumber(registerDto.getMobileNumber());
+		registerData.setMobileNumber(registerDto.getMobileNumber().trim());
 		registerData.setMode(registerDto.getMode());
 		registerData.setUserIdentifier(registerDto.getUserIdentifier());
 		registerData.setVoipDeviceToken(registerDto.getVoipDeviceToken());
@@ -431,6 +430,7 @@ public class RegisterService {
 
 	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
 		String responseBody = e.getResponseBodyAsString();
+		log.error("LicecesKey Validation Response :: " + responseBody);
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			Response<?> r = mapper.readValue(responseBody, Response.class);

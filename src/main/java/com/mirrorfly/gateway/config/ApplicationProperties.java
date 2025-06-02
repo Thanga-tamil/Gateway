@@ -127,8 +127,16 @@ public class ApplicationProperties {
 	public String getCaffeineTtl() {
 		return env.getProperty("caffeine.ttl");
 	}
-	
+
 	public String getCaffeineTotalLimit() {
 		return env.getProperty("caffeine.totallimit");
+	}
+
+	public String getMailSourceType() {
+		return env.getProperty("mail.source.type");
+	}
+
+	public String getMailSource() {
+		return env.getProperty("mail.source.address");
 	}
 }

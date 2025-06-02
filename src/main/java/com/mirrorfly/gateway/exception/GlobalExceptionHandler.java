@@ -1,7 +1,9 @@
 package com.mirrorfly.gateway.exception;
 
 import java.io.FileNotFoundException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -12,7 +14,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.support.NotFoundException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.mail.MailException;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -23,6 +27,7 @@ import org.springframework.web.bind.support.WebExchangeBindException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.mirrorfly.gateway.response.Response;
 
+import jakarta.mail.MessagingException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.ValidationException;
@@ -44,7 +49,16 @@ public class GlobalExceptionHandler {
 		printErrorStack(e);
 		return setStatusAndMessage(HttpStatus.NOT_FOUND.value(), e.getMessage());
 	}
+	 
+	@ExceptionHandler({ MailException.class, MessagingException.class })
+	public ResponseEntity<?> handleMailException(Exception ex) {
+		Map<String, Object> error = new HashMap<>();
+		error.put("error", "Mail Service Unavailable");
+		error.put("message", ex.getMessage());
 
+		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+	}
+	 
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	public Response<String> httpMessageNotReadableException(final HttpMessageNotReadableException e) {
 		printErrorStack(e);
