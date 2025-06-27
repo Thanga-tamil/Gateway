@@ -430,13 +430,21 @@ public class RegisterService {
 			log.info("condition success");
 			ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails, registerDto.getDeviceType());
 			log.info("Deletable records :: {}", deletableRecord);
-				if (deletableRecord != null) {
-					if (!deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
-//							&& StringUtils.isNotBlank(deletableRecord.getSocketId())
-					) {
+				if (deletableRecord != null){
+					if(!deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
 						chatUsersDetailsRepo.delete(deletableRecord);
 						spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
 								deletableRecord.getDeviceId());
+						try {
+							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
+									chatUser.getUsername(), Collections.singleton(deletableRecord.getDeviceId())));
+						} catch (JsonProcessingException e) {
+							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
+									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
+						}
+				}else if(deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
+							&& StringUtils.isNotBlank(deletableRecord.getSocketId())
+							&& registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB) ){
 						try {
 							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
 									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
@@ -444,7 +452,8 @@ public class RegisterService {
 							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
 									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
 						}
-				}
+					}
+//				}
 			}
 			throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 		}
