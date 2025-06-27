@@ -436,8 +436,8 @@ public class RegisterService {
 					spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
 							deletableRecord.getDeviceId());
 
-					if (deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
-							&& StringUtils.isNotBlank(deletableRecord.getSocketId())) {
+//					if (deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
+//							&& StringUtils.isNotBlank(deletableRecord.getSocketId())) {
 						try {
 							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
 									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
@@ -445,7 +445,7 @@ public class RegisterService {
 							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
 									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
 						}
-				}
+//				}
 			}
 			throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 		}
