@@ -29,7 +29,11 @@ public class DataStore {
 
 	public void setConnectionConfig(List<ConnectionConfig> config) {
 		cacheManager.invalidateAll(); // Clear the cache
-		config.forEach(data -> cacheManager.put(data.getApiDomain(), data));
+		config.forEach(data ->
+		{cacheManager.put(data.getApiDomain(), data);
+			log.info("connection config details :: {}", data);}
+		);
+
 		log.info("ConnectionConfig loaded into Caffeine cache. Size is : " + cacheManager.estimatedSize());
 	}
 
