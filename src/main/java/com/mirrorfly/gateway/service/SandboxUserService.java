@@ -71,10 +71,10 @@ public class SandboxUserService {
 			throws JsonProcessingException {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
-		registerService.inputDataValidation(userdomain, registerDto);
+		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
+		registerService.inputDataValidation(userdomain, registerDto, chatUser);
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		Users users = new Users();
-		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser != null) {
 			if (chatUser.getIsDeleteInprogrees() == 1) {
 				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);

@@ -158,9 +158,9 @@ public class RegisterService {
 	private RegisterResponseDto registerUser(String userdomain, RegisterDto registerDto) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
-		inputDataValidation(userdomain, registerDto);
-		Users user = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
+		inputDataValidation(userdomain, registerDto, chatUser);
+		Users user = new Users();
 		if (chatUser == null) {
 			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
 			try {
@@ -374,7 +374,7 @@ public class RegisterService {
 	}
 
 	@SwitchDataSource(value = "[0]")
-	public void inputDataValidation(String userdomain, SanboxUserRegisterDto registerDto) {
+	public void inputDataValidation(String userdomain, SanboxUserRegisterDto registerDto, ChatUser chatUser) {
 		RegisterDto registerData = new RegisterDto();
 		registerData.setDeviceId(registerDto.getDeviceId());
 		registerData.setDeviceOsVersion(registerDto.getDeviceOsVersion());
@@ -389,10 +389,10 @@ public class RegisterService {
 		registerData.setPushServerType(registerDto.getPushServerType());
 		registerData.setMetaData(registerDto.getMetaData());
 		registerData.setUserType(registerDto.getUserType());
-		inputDataValidation(userdomain, registerData);
+		inputDataValidation(userdomain, registerData, chatUser);
 	}
 
-	private void inputDataValidation(String userdomain, RegisterDto registerDto) {
+	private void inputDataValidation(String userdomain, RegisterDto registerDto, ChatUser chatUser) {
 		String userIdentifier = registerDto.getUserIdentifier();
 		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
@@ -424,6 +424,26 @@ public class RegisterService {
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
 		if (existingChatUsersDetails.size() >= maxSessions && Boolean.FALSE.equals(registerDto.getForceRegister())) {
+							ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
+						registerDto.getDeviceType());
+
+				if (deletableRecord != null) {
+
+					chatUsersDetailsRepo.delete(deletableRecord);
+					spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
+							deletableRecord.getDeviceId());
+
+					if (deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
+							&& StringUtils.isNotBlank(deletableRecord.getSocketId())) {
+						try {
+							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
+									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
+						} catch (JsonProcessingException e) {
+							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
+									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
+						}
+				}
+			}
 			throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 		}
 	}
