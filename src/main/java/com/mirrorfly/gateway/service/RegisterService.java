@@ -423,9 +423,11 @@ public class RegisterService {
 		int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "userMaxSessions");
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
+		log.info("existing records from chat user details :: {}", existingChatUsersDetails);
+		log.info("Max session :: {}", maxSessions);
+		System.out.println(registerDto.getForceRegister());
 		if (existingChatUsersDetails.size() >= maxSessions && Boolean.FALSE.equals(registerDto.getForceRegister())) {
-							ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
-						registerDto.getDeviceType());
+			ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails, registerDto.getDeviceType());
 
 				if (deletableRecord != null) {
 
