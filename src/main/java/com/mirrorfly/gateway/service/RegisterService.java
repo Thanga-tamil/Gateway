@@ -317,7 +317,7 @@ public class RegisterService {
 							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
 									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
 						} catch (JsonProcessingException e) {
-							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
+							log.error("Failed to convert IQ payload to JSON: userDomain={}, username={}, sessionIds={}, Error_message : {}",
 									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
 						}
 					}
@@ -382,12 +382,6 @@ public class RegisterService {
 		}else{
 			return null;
 		}
-
-		// Fallback: return earliest login regardless of device
-//		return existingChatUsersDetails.stream()
-//				.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt))
-//				.findFirst()
-//				.orElse(null);
 	}
 
 	@SwitchDataSource(value = "[0]")
@@ -442,18 +436,15 @@ public class RegisterService {
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo.findByUsername(registerDto.getUserIdentifier());
 
 		log.info("existing records from chat user details :: {}, size -> {}", existingChatUsersDetails, existingChatUsersDetails.size());
-		log.info("Max session :: {}", maxSessions);
-		System.out.println("Force Register -> " + registerDto.getForceRegister());
 
 		if (existingChatUsersDetails.size() >= maxSessions && Boolean.FALSE.equals(registerDto.getForceRegister())) {
-			log.info("condition success");
 			ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails, registerDto.getDeviceType());
 			log.info("Deletable records :: {}", deletableRecord);
 				if (deletableRecord != null){
 					log.info("Deletable record device type :: {}", deletableRecord.getDeviceType());
 					if(!deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
 							&& !registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-						log.info("Logout IQ for Mobile :: ");
+						log.info(":: Logout IQ for MOBILE :: ");
 						chatUsersDetailsRepo.delete(deletableRecord);
 						spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
 								deletableRecord.getDeviceId());
@@ -461,23 +452,16 @@ public class RegisterService {
 							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
 									chatUser.getUsername(), Collections.singleton(deletableRecord.getDeviceId())));
 						} catch (JsonProcessingException e) {
-							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
+							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}, Error_Message::{}",
 									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
 						}
 						throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 				}else if(deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
 							&& registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB) ){
-						log.info("Logout IQ for Web :: ");
+						log.info(":: Logout IN for WEB :: ");
 						chatUsersDetailsRepo.delete(deletableRecord);
 						spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
 								deletableRecord.getDeviceId());
-//						try {
-//							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
-//									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
-//						} catch (JsonProcessingException e) {
-//							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
-//									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
-//						}
 						throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 					}
 			}
