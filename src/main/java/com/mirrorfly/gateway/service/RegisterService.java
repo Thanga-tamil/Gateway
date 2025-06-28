@@ -301,28 +301,28 @@ public class RegisterService {
 			 * 2. If the found session is Web and Logged in via QR-Code (SocketId). Then
 			 * Send session logged-out IQ to the devices
 			 */
-//			if (existingChatUsersDetails.size() >= maxSessions) {
-//				ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
-//						registerDto.getDeviceType());
-//
-//				if (deletableRecord != null) {
-//
-//					chatUsersDetailsRepo.delete(deletableRecord);
-//					spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
-//							deletableRecord.getDeviceId());
-//
-//					if (deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
-//							&& StringUtils.isNotBlank(deletableRecord.getSocketId())) {
-//						try {
-//							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
-//									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
-//						} catch (JsonProcessingException e) {
-//							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
-//									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
-//						}
-//					}
-//				}
-//			}
+			if (existingChatUsersDetails.size() >= maxSessions) {
+				ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
+						registerDto.getDeviceType());
+
+				if (deletableRecord != null) {
+
+					chatUsersDetailsRepo.delete(deletableRecord);
+					spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
+							deletableRecord.getDeviceId());
+
+					if (deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
+							&& StringUtils.isNotBlank(deletableRecord.getSocketId())) {
+						try {
+							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
+									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
+						} catch (JsonProcessingException e) {
+							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
+									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
+						}
+					}
+				}
+			}
 			user = new ChatUserDetails();
 			user.setCreatedAt(LocalDateTime.now());
 			user.setDeviceId(deviceId);
@@ -379,13 +379,15 @@ public class RegisterService {
 
 		if (!filtered.isEmpty()) {
 			return filtered.get(0); // Earliest login among filtered
+		}else{
+			return null;
 		}
 
 		// Fallback: return earliest login regardless of device
-		return existingChatUsersDetails.stream()
-				.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt))
-				.findFirst()
-				.orElse(null);
+//		return existingChatUsersDetails.stream()
+//				.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt))
+//				.findFirst()
+//				.orElse(null);
 	}
 
 	@SwitchDataSource(value = "[0]")
@@ -435,12 +437,14 @@ public class RegisterService {
 		}
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
 		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
+
 		int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "userMaxSessions");
-		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
-				.findByUsername(registerDto.getUserIdentifier());
+		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo.findByUsername(registerDto.getUserIdentifier());
+
 		log.info("existing records from chat user details :: {}, size -> {}", existingChatUsersDetails, existingChatUsersDetails.size());
 		log.info("Max session :: {}", maxSessions);
-		System.out.println(registerDto.getForceRegister());
+		System.out.println("Force Register -> " + registerDto.getForceRegister());
+
 		if (existingChatUsersDetails.size() >= maxSessions && Boolean.FALSE.equals(registerDto.getForceRegister())) {
 			log.info("condition success");
 			ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails, registerDto.getDeviceType());
