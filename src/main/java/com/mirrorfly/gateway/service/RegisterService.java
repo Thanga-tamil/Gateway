@@ -359,28 +359,33 @@ public class RegisterService {
 	}
 
 	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> existingChatUsersDetails,
-			String deviceType) {
+														  String deviceType) {
+		List<ChatUserDetails> filtered;
+
 		if (deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-			List<ChatUserDetails> samePlatformDevices = existingChatUsersDetails.stream()
-					.filter(p -> p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
-					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
-			if (!samePlatformDevices.isEmpty()) {
-				// need to delete first logged in web device
-				return samePlatformDevices.get(0);
-			}
-		}else {
-			List<ChatUserDetails> mobileDevices = existingChatUsersDetails.stream()
-					.filter(r -> (r.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
-										|| r.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS) ))
-					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).toList();
-			if (!mobileDevices.isEmpty()) {
-				// Delete the earliest logged in mobile device
-				return mobileDevices.get(0);
-			}
+			// Only filter WEB devices
+			filtered = existingChatUsersDetails.stream()
+					.filter(user -> user.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
+					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt))
+					.collect(Collectors.toList());
+		} else {
+			// Treat both ANDROID and IOS as mobile
+			filtered = existingChatUsersDetails.stream()
+					.filter(user -> user.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
+							|| user.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS))
+					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt))
+					.collect(Collectors.toList());
 		}
-		// need to delete first logged in record irrespective to platform
-		Collections.sort(existingChatUsersDetails, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
-		return existingChatUsersDetails.get(0);
+
+		if (!filtered.isEmpty()) {
+			return filtered.get(0); // Earliest login among filtered
+		}
+
+		// Fallback: return earliest login regardless of device
+		return existingChatUsersDetails.stream()
+				.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt))
+				.findFirst()
+				.orElse(null);
 	}
 
 	@SwitchDataSource(value = "[0]")
