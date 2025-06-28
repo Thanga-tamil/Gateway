@@ -471,13 +471,13 @@ public class RegisterService {
 						chatUsersDetailsRepo.delete(deletableRecord);
 						spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
 								deletableRecord.getDeviceId());
-						try {
-							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
-									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
-						} catch (JsonProcessingException e) {
-							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
-									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
-						}
+//						try {
+//							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
+//									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
+//						} catch (JsonProcessingException e) {
+//							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
+//									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
+//						}
 						throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 					}
 			}
