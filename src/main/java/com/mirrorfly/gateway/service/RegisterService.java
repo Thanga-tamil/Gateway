@@ -6,6 +6,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -359,15 +360,23 @@ public class RegisterService {
 
 	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> existingChatUsersDetails,
 			String deviceType) {
-//		if (deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-//			List<ChatUserDetails> samePlatformDevices = existingChatUsersDetails.stream()
-//					.filter(p -> p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
-//					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
-//			if (!samePlatformDevices.isEmpty()) {
-//				// need to delete first logged in web device
-//				return samePlatformDevices.get(0);
-//			}
-//		}
+		if (deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
+			List<ChatUserDetails> samePlatformDevices = existingChatUsersDetails.stream()
+					.filter(p -> p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
+					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
+			if (!samePlatformDevices.isEmpty()) {
+				// need to delete first logged in web device
+				return samePlatformDevices.get(0);
+			}else {
+				for (ChatUserDetails existingChatUsersDetail : existingChatUsersDetails) {
+					if (existingChatUsersDetail.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
+						|| existingChatUsersDetail.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
+					&& Arrays.asList("ios", "android").contains(deviceType)){
+						return existingChatUsersDetail;
+					}
+				}
+			}
+		}
 		// need to delete first logged in record irrespective to platform
 		Collections.sort(existingChatUsersDetails, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
 		return existingChatUsersDetails.get(0);
