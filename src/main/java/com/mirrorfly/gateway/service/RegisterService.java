@@ -367,14 +367,15 @@ public class RegisterService {
 			if (!samePlatformDevices.isEmpty()) {
 				// need to delete first logged in web device
 				return samePlatformDevices.get(0);
-			}else {
-				for (ChatUserDetails existingChatUsersDetail : existingChatUsersDetails) {
-					if (existingChatUsersDetail.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
-						|| existingChatUsersDetail.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
-					&& Arrays.asList("ios", "android").contains(deviceType)){
-						return existingChatUsersDetail;
-					}
-				}
+			}
+		}else {
+			List<ChatUserDetails> mobileDevices = existingChatUsersDetails.stream()
+					.filter(r -> (r.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
+										|| r.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS) ))
+					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).toList();
+			if (!mobileDevices.isEmpty()) {
+				// Delete the earliest logged in mobile device
+				return mobileDevices.get(0);
 			}
 		}
 		// need to delete first logged in record irrespective to platform
@@ -440,6 +441,7 @@ public class RegisterService {
 			ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails, registerDto.getDeviceType());
 			log.info("Deletable records :: {}", deletableRecord);
 				if (deletableRecord != null){
+					log.info("Deletable record device type :: {}", deletableRecord.getDeviceType());
 					if(!deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
 							&& !registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
 						log.info("Logout IQ for Mobile :: ");
