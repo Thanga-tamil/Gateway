@@ -359,15 +359,15 @@ public class RegisterService {
 
 	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> existingChatUsersDetails,
 			String deviceType) {
-		if (deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-			List<ChatUserDetails> samePlatformDevices = existingChatUsersDetails.stream()
-					.filter(p -> p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
-					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
-			if (!samePlatformDevices.isEmpty()) {
-				// need to delete first logged in web device
-				return samePlatformDevices.get(0);
-			}
-		}
+//		if (deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
+//			List<ChatUserDetails> samePlatformDevices = existingChatUsersDetails.stream()
+//					.filter(p -> p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
+//					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
+//			if (!samePlatformDevices.isEmpty()) {
+//				// need to delete first logged in web device
+//				return samePlatformDevices.get(0);
+//			}
+//		}
 		// need to delete first logged in record irrespective to platform
 		Collections.sort(existingChatUsersDetails, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
 		return existingChatUsersDetails.get(0);
@@ -431,7 +431,8 @@ public class RegisterService {
 			ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails, registerDto.getDeviceType());
 			log.info("Deletable records :: {}", deletableRecord);
 				if (deletableRecord != null){
-					if(!deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
+					if(!deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
+							&& !registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
 						log.info("Logout IQ for Mobile :: ");
 						chatUsersDetailsRepo.delete(deletableRecord);
 						spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
@@ -445,7 +446,6 @@ public class RegisterService {
 						}
 						throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 				}else if(deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
-							&& StringUtils.isNotBlank(deletableRecord.getSocketId())
 							&& registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB) ){
 						log.info("Logout IQ for Web :: ");
 						chatUsersDetailsRepo.delete(deletableRecord);
