@@ -6,6 +6,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -158,9 +159,9 @@ public class RegisterService {
 	private RegisterResponseDto registerUser(String userdomain, RegisterDto registerDto) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
-		inputDataValidation(userdomain, registerDto);
-		Users user = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
+		inputDataValidation(userdomain, registerDto, chatUser);
+		Users user = new Users();
 		if (chatUser == null) {
 			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
 			try {
@@ -316,7 +317,7 @@ public class RegisterService {
 							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
 									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
 						} catch (JsonProcessingException e) {
-							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
+							log.error("Failed to convert IQ payload to JSON: userDomain={}, username={}, sessionIds={}, Error_message : {}",
 									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
 						}
 					}
@@ -358,23 +359,33 @@ public class RegisterService {
 	}
 
 	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> existingChatUsersDetails,
-			String deviceType) {
+														  String deviceType) {
+		List<ChatUserDetails> filtered;
+
 		if (deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-			List<ChatUserDetails> samePlatformDevices = existingChatUsersDetails.stream()
-					.filter(p -> p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
-					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
-			if (!samePlatformDevices.isEmpty()) {
-				// need to delete first logged in web device
-				return samePlatformDevices.get(0);
-			}
+			// Only filter WEB devices
+			filtered = existingChatUsersDetails.stream()
+					.filter(user -> user.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
+					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt))
+					.collect(Collectors.toList());
+		} else {
+			// Treat both ANDROID and IOS as mobile
+			filtered = existingChatUsersDetails.stream()
+					.filter(user -> user.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
+							|| user.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS))
+					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt))
+					.collect(Collectors.toList());
 		}
-		// need to delete first logged in record irrespective to platform
-		Collections.sort(existingChatUsersDetails, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
-		return existingChatUsersDetails.get(0);
+
+		if (!filtered.isEmpty()) {
+			return filtered.get(0); // Earliest login among filtered
+		}else{
+			return null;
+		}
 	}
 
 	@SwitchDataSource(value = "[0]")
-	public void inputDataValidation(String userdomain, SanboxUserRegisterDto registerDto) {
+	public void inputDataValidation(String userdomain, SanboxUserRegisterDto registerDto, ChatUser chatUser) {
 		RegisterDto registerData = new RegisterDto();
 		registerData.setDeviceId(registerDto.getDeviceId());
 		registerData.setDeviceOsVersion(registerDto.getDeviceOsVersion());
@@ -389,10 +400,10 @@ public class RegisterService {
 		registerData.setPushServerType(registerDto.getPushServerType());
 		registerData.setMetaData(registerDto.getMetaData());
 		registerData.setUserType(registerDto.getUserType());
-		inputDataValidation(userdomain, registerData);
+		inputDataValidation(userdomain, registerData, chatUser);
 	}
 
-	private void inputDataValidation(String userdomain, RegisterDto registerDto) {
+	private void inputDataValidation(String userdomain, RegisterDto registerDto, ChatUser chatUser) {
 		String userIdentifier = registerDto.getUserIdentifier();
 		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
@@ -420,11 +431,41 @@ public class RegisterService {
 		}
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
 		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
+
 		int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "userMaxSessions");
-		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
-				.findByUsername(registerDto.getUserIdentifier());
+		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo.findByUsername(registerDto.getUserIdentifier());
+
+		log.info("existing records from chat user details :: {}, size -> {}", existingChatUsersDetails, existingChatUsersDetails.size());
+
 		if (existingChatUsersDetails.size() >= maxSessions && Boolean.FALSE.equals(registerDto.getForceRegister())) {
-			throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
+			ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails, registerDto.getDeviceType());
+			log.info("Deletable records :: {}", deletableRecord);
+				if (deletableRecord != null){
+					log.info("Deletable record device type :: {}", deletableRecord.getDeviceType());
+					if(!deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
+							&& !registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
+						log.info(":: Logout IQ for MOBILE :: ");
+						chatUsersDetailsRepo.delete(deletableRecord);
+						spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
+								deletableRecord.getDeviceId());
+						try {
+							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
+									chatUser.getUsername(), Collections.singleton(deletableRecord.getDeviceId())));
+						} catch (JsonProcessingException e) {
+							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}, Error_Message::{}",
+									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
+						}
+						throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
+				}else if(deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
+							&& registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB) ){
+						log.info(":: Logout IN for WEB :: ");
+						chatUsersDetailsRepo.delete(deletableRecord);
+						spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
+								deletableRecord.getDeviceId());
+						throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
+					}
+			}
+
 		}
 	}
 
