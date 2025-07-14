@@ -225,7 +225,7 @@ public class LoginService {
 		EmailToken validToken = emailTokenRepo.findByToken(token);
 
 		if (validToken == null)
-			throw new BadDataException("Please use the latest link or trigger a new email to reset your password");
+			throw new BadDataException("Please use the latest Reset Password link received in your email inbox or use the Forgot password option again to reset your password");
 
 		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
 		if (adminUser != null && adminUser.getIsActive() == 0) {
