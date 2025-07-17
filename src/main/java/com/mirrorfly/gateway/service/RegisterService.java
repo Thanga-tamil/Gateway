@@ -438,16 +438,17 @@ public class RegisterService {
 		int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "userMaxSessions");
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo.findByUsername(registerDto.getUserIdentifier());
 
-		log.info("existing records from chat user details :: {}, size -> {}", existingChatUsersDetails, existingChatUsersDetails.size());
+		existingChatUsersDetails.forEach(r -> log.info("Existing Record Device Type = {}", r.getDeviceType()));
+		log.info("Existing records from chat user details :: {}, size -> {}", existingChatUsersDetails, existingChatUsersDetails.size());
 
-		if (existingChatUsersDetails.size() >= maxSessions && Boolean.FALSE.equals(registerDto.getForceRegister())) {
+		if (existingChatUsersDetails.size() >= maxSessions) {
 			ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails, registerDto.getDeviceType());
 			log.info("Deletable records :: {}", deletableRecord);
 				if (deletableRecord != null){
-					log.info("Deletable record device type :: {}", deletableRecord.getDeviceType());
+					log.info("Deletable Record Device Type :: {}", deletableRecord.getDeviceType());
 					if(!deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
 							&& !registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-						log.info(":: Logout IQ for MOBILE :: ");
+						log.info(" :: Logout IQ For MOBILE :: ");
 						chatUsersDetailsRepo.delete(deletableRecord);
 						spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
 								deletableRecord.getDeviceId());
@@ -455,13 +456,13 @@ public class RegisterService {
 							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
 									chatUser.getUsername(), Collections.singleton(null)));
 						} catch (JsonProcessingException e) {
-							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}, Error_Message::{}",
-									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
+							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, socketIdsAsNull={}, Error_Message::{}",
+									userdomain, chatUser.getUsername(), null, e.getMessage());
 						}
 						throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 				}else if(deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
 							&& registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB) ){
-						log.info(":: Logout IN for WEB :: ");
+						log.info(" :: Logout IQ For WEB :: ");
 						chatUsersDetailsRepo.delete(deletableRecord);
 						spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
 								deletableRecord.getDeviceId());
