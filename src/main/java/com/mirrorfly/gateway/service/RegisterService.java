@@ -437,7 +437,7 @@ public class RegisterService {
 
 		log.info("existing records from chat user details :: {}, size -> {}", existingChatUsersDetails, existingChatUsersDetails.size());
 
-		if (existingChatUsersDetails.size() >= maxSessions && Boolean.FALSE.equals(registerDto.getForceRegister())) {
+		if (existingChatUsersDetails.size() >= maxSessions && Boolean.TRUE.equals(registerDto.getForceRegister())) {
 			ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails, registerDto.getDeviceType());
 			log.info("Deletable records :: {}", deletableRecord);
 				if (deletableRecord != null){
