@@ -301,28 +301,28 @@ public class RegisterService {
 			 * 2. If the found session is Web and Logged in via QR-Code (SocketId). Then
 			 * Send session logged-out IQ to the devices
 			 */
-			if (existingChatUsersDetails.size() >= maxSessions) {
-				ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
-						registerDto.getDeviceType());
-
-				if (deletableRecord != null) {
-
-					chatUsersDetailsRepo.delete(deletableRecord);
-					spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
-							deletableRecord.getDeviceId());
-
-					if (deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
-							&& StringUtils.isNotBlank(deletableRecord.getSocketId())) {
-						try {
-							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
-									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
-						} catch (JsonProcessingException e) {
-							log.error("Failed to convert IQ payload to JSON: userDomain={}, username={}, sessionIds={}, Error_message : {}",
-									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
-						}
-					}
-				}
-			}
+//			if (existingChatUsersDetails.size() >= maxSessions) {
+//				ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
+//						registerDto.getDeviceType());
+//
+//				if (deletableRecord != null) {
+//
+//					chatUsersDetailsRepo.delete(deletableRecord);
+//					spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
+//							deletableRecord.getDeviceId());
+//
+//					if (deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
+//							&& StringUtils.isNotBlank(deletableRecord.getSocketId())) {
+//						try {
+//							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
+//									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
+//						} catch (JsonProcessingException e) {
+//							log.error("Failed to convert IQ payload to JSON: userDomain={}, username={}, sessionIds={}, Error_message : {}",
+//									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
+//						}
+//					}
+//				}
+//			}
 			user = new ChatUserDetails();
 			user.setCreatedAt(LocalDateTime.now());
 			user.setDeviceId(deviceId);
@@ -453,7 +453,7 @@ public class RegisterService {
 								deletableRecord.getDeviceId());
 						try {
 							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
-									chatUser.getUsername(), Collections.singleton(deletableRecord.getDeviceId())));
+									chatUser.getUsername(), Collections.singleton(null)));
 						} catch (JsonProcessingException e) {
 							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}, Error_Message::{}",
 									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
@@ -465,6 +465,13 @@ public class RegisterService {
 						chatUsersDetailsRepo.delete(deletableRecord);
 						spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
 								deletableRecord.getDeviceId());
+						try {
+							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
+									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
+						} catch (JsonProcessingException e) {
+							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}, Error_Message::{}",
+									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
+						}
 						throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 					}
 			}
