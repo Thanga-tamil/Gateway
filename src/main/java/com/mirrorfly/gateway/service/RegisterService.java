@@ -376,7 +376,6 @@ public class RegisterService {
 							|| user.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS))
 					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt))
 					.collect(Collectors.toList());
-			log.info(":: Deletable Record Found {} ::", filtered.get(0).getDeviceType() );
 		}
 
 		if (!filtered.isEmpty()) {
