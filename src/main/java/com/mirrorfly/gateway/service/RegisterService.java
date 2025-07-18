@@ -453,8 +453,7 @@ public class RegisterService {
 						spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
 								deletableRecord.getDeviceId());
 						try {
-							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
-									chatUser.getUsername(), null));
+							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain, chatUser.getUsername(), null));
 						} catch (JsonProcessingException e) {
 							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, socketIdsAsNull={}, Error_Message::{}",
 									userdomain, chatUser.getUsername(), null, e.getMessage());
@@ -467,8 +466,7 @@ public class RegisterService {
 						spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
 								deletableRecord.getDeviceId());
 						try {
-							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
-									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
+							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain, chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
 						} catch (JsonProcessingException e) {
 							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}, Error_Message::{}",
 									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
