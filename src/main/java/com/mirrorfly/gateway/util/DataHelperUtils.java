@@ -20,9 +20,8 @@ public class DataHelperUtils {
 			throws JsonProcessingException {
 		Map<String, Object> iqPayloadMap = new HashMap<>();
 		iqPayloadMap.put("username", username);
-		if (sessionIds != null) {
-			iqPayloadMap.put("socket_id", sessionIds.stream().filter(Objects::nonNull).collect(Collectors.joining(",")));
-		}
+		String socketId = sessionIds == null ? "" : sessionIds.stream().filter(Objects::nonNull).collect(Collectors.joining(","));
+		iqPayloadMap.put("socket_id", socketId);
 		return new QueuePayloadDto("logout_sessions", GatewayUtil.convertMapToJson(iqPayloadMap), userdomain);
 	}
 
