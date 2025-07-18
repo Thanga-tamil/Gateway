@@ -9,6 +9,8 @@ import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
@@ -38,6 +41,9 @@ import com.mirrorfly.gateway.model.ChatSettings;
 import com.mirrorfly.gateway.model.ChatUser;
 import com.mirrorfly.gateway.model.ChatUserDetails;
 import com.mirrorfly.gateway.model.Last;
+import com.mirrorfly.gateway.model.RosterUser;
+import com.mirrorfly.gateway.model.RosterUserKey;
+import com.mirrorfly.gateway.model.UserContact;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.model.VcardSearch;
@@ -46,7 +52,9 @@ import com.mirrorfly.gateway.repo.ChatSettingsRepo;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
 import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
 import com.mirrorfly.gateway.repo.LastRepo;
+import com.mirrorfly.gateway.repo.RosterUserRepo;
 import com.mirrorfly.gateway.repo.SpoolRepo;
+import com.mirrorfly.gateway.repo.UserContactRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
@@ -54,6 +62,7 @@ import com.mirrorfly.gateway.util.DataHelperUtils;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -90,6 +99,12 @@ public class RegisterService {
 
 	private final QueueService queueService;
 
+	private final UserContactRepo userContactRepo;
+
+	private final RosterUserRepo rosterUserRepo;
+
+	private static final ObjectMapper MAPPER = new ObjectMapper();
+
 	@SwitchDataSource(value = "[0]")
 	public Response<RegisterInfoDto> getRegisterInfo(String userdomain) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
@@ -106,35 +121,39 @@ public class RegisterService {
 
 	@SwitchDataSource(value = "[0]")
 	public Response<String> registerNewUser(String userdomain, RegisterRequestDto registerRequestDto) {
-		Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
-		String licenseKey = config != null ? (String) config : null;
-		if (licenseKey == null) {
-			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
-		}
-		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(),
-				licenseKey + licenseKey + licenseKey);
+
+		String licenseKey = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
+		
+		String xmppDomain = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain")).orElseThrow(() -> new BadDataException("Xmpp Domain not found"));
+		
+		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(), licenseKey.repeat(3));
 		if (decyptedString.equals("")) {
 			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
 		}
-		ObjectMapper decryptmapper = new ObjectMapper();
 		RegisterDto registerDto;
 		try {
-			registerDto = decryptmapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()), RegisterDto.class);
+			registerDto = MAPPER.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()), RegisterDto.class);
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
 			log.error("RegisterDto values are not readable ::: " + e.getMessage());
 			throw new BadDataException(GatewayConstants.INVALID_ERROR);
 		}
+
 		RegisterResponseDto registerResponseDto = registerUser(userdomain, registerDto);
 		// get config details and return in the response
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		registerResponseDto.setConfig(configService.getConfigData(licenseKey));
-		ObjectMapper mapper = new ObjectMapper();
 		String jsonString;
 		try {
-			jsonString = mapper.writeValueAsString(registerResponseDto);
+			jsonString = MAPPER.writeValueAsString(registerResponseDto);
 		} catch (JsonProcessingException e) {
 			throw new BadDataException("Json Parsing Error");
 		}
+
+		// Update the Rosters
+		if (StringUtils.isNotBlank(registerDto.getContactNo())) {
+			updateRosters(registerResponseDto.getUsername(), registerDto.getContactNo(), xmppDomain);
+		}
+
 		Response<String> response = new Response<>();
 		response.setData(AESEncryption.encryptString(jsonString, licenseKey + licenseKey + licenseKey));
 		response.setStatus(HttpStatus.OK.value());
@@ -373,6 +392,35 @@ public class RegisterService {
 		return existingChatUsersDetails.get(0);
 	}
 
+	@Async
+	public void updateRosters(String username, String contactNo, String xmppDomain) {
+		
+		CompletableFuture.supplyAsync(() -> userContactRepo.findByMobileNumber(contactNo)).thenApply(usersContacts -> {
+		
+			if (usersContacts == null || usersContacts.isEmpty())
+				return Collections.emptyList();
+
+			List<RosterUser> rosters = usersContacts.parallelStream().map(contact -> {
+				String fullJid = username + "@" + xmppDomain;
+				RosterUserKey rosterKey = new RosterUserKey(contact.getUsername(), fullJid);
+				return new RosterUser(rosterKey, 'N', 'N', username, contact.getName(), 'B', "item", contact.getLicenseKey());
+			}).collect(Collectors.toList());
+
+			saveAndDeleteRosters(rosters, usersContacts);
+			return usersContacts;
+		}).exceptionally(ex -> {
+			log.error("Roster update failed", ex.getMessage());
+			return null;
+		});
+	}
+
+	@Transactional
+	public void saveAndDeleteRosters(List<RosterUser> rosters, List<UserContact> contacts) {
+	    rosterUserRepo.saveAll(rosters);
+	    userContactRepo.deleteAll(contacts);
+	}
+
+
 	@SwitchDataSource(value = "[0]")
 	public void inputDataValidation(String userdomain, SanboxUserRegisterDto registerDto) {
 		RegisterDto registerData = new RegisterDto();
@@ -431,9 +479,8 @@ public class RegisterService {
 	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
 		String responseBody = e.getResponseBodyAsString();
 		log.error("LicecesKey Validation Response :: " + responseBody);
-		ObjectMapper mapper = new ObjectMapper();
 		try {
-			Response<?> r = mapper.readValue(responseBody, Response.class);
+			Response<?> r = MAPPER.readValue(responseBody, Response.class);
 			throw new BadDataException(r.getMessage());
 		} catch (JsonProcessingException ex) {
 			throw new BadDataException("Error in registration. Please try again later");
