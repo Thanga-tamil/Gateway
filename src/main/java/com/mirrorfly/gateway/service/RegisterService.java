@@ -138,6 +138,9 @@ public class RegisterService {
 			throw new BadDataException(GatewayConstants.INVALID_ERROR);
 		}
 
+		String contactNo = registerDto.getMobileNumber();
+		registerDto.setMobileNumber(registerDto.getCountryCode() + contactNo);
+		
 		RegisterResponseDto registerResponseDto = registerUser(userdomain, registerDto);
 		// get config details and return in the response
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
@@ -150,8 +153,8 @@ public class RegisterService {
 		}
 
 		// Update the Rosters
-		if (StringUtils.isNotBlank(registerDto.getContactNo())) {
-			updateRosters(registerResponseDto.getUsername(), registerDto.getContactNo(), xmppDomain);
+		if (StringUtils.isNotBlank(contactNo)) {
+			updateRosters(registerResponseDto.getUsername(), contactNo, xmppDomain);
 		}
 
 		Response<String> response = new Response<>();
