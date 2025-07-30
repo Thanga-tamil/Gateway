@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.StringTemplateResolver;
@@ -22,6 +23,11 @@ public class GatewayConfig {
 
 	@Autowired
 	private ApplicationProperties applicationProperties;
+
+	@Bean
+	RestTemplate restTemplate() {
+		return new RestTemplate();
+	}
 
 	@Bean
 	Cache<String, ConnectionConfig> connectionConfigCache() {
