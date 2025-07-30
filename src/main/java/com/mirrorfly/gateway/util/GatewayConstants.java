@@ -10,6 +10,10 @@ package com.mirrorfly.gateway.util;
 
 public class GatewayConstants {
 
+	public static final String GOOGLE_SSO_AUTH_API = "https://oauth2.googleapis.com/tokeninfo";
+
+	public static final String OUTLOOK_SSO_AUTH_API = "https://graph.microsoft.com/v1.0/me";
+
 	public static final String AVAILABLE = "Data Retrieved Successfully";
 
 	public static final String GIF_NOT_SUPPORTED = "Gif not supported";
@@ -83,6 +87,8 @@ public class GatewayConstants {
 	public static final String VERIFY_OTP_LIMIT_REACHED = "OTP verification attempt limit exceeded. Please request a new OTP";
 
 	public static final String OTP_VERIFIED_SUCCESS = "OTP has been verified successfully";
+
+	public static final String SSO_VERIFY_SUCCESS = "SSO token has been verified successfully";
 
 	public static final String INVALID_OTP = "Invalid OTP";
 
@@ -255,6 +261,10 @@ public class GatewayConstants {
 	public static final String DEVICE_WEB = "web";
 
 	public static final String USER_TYPE_NOT_VALID = "User type value is not valid";
+
+	public static final String SSO_TYPE_NOT_FOUND = "SSO type cannot be null or empty";
+
+	public static final String SSO_TOKEN_NOT_FOUND = "SSO token cannot be null or empty";
 
 	private GatewayConstants() {
 	}
