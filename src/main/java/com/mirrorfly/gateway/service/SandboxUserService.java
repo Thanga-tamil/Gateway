@@ -71,9 +71,14 @@ public class SandboxUserService {
 			throws JsonProcessingException {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
+		
+		String contactNo = registerDto.getMobileNumber();
+		registerDto.setMobileNumber(registerDto.getCountryCode() + contactNo);
+		
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		registerService.inputDataValidation(userdomain, registerDto, chatUser);
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+		
 		Users users = new Users();
 		if (chatUser != null) {
 			if (chatUser.getIsDeleteInprogrees() == 1) {
