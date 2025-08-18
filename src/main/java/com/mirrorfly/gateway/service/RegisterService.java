@@ -294,35 +294,6 @@ public class RegisterService {
 			List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 					.findByUsername(chatUser.getUsername());
 
-			/*
-			 * 1. Check if User Max-Session Exceeded if yes fetch the user session and find
-			 * the session needs to be deleted.
-			 * 
-			 * 2. If the found session is Web and Logged in via QR-Code (SocketId). Then
-			 * Send session logged-out IQ to the devices
-			 */
-//			if (existingChatUsersDetails.size() >= maxSessions) {
-//				ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
-//						registerDto.getDeviceType());
-//
-//				if (deletableRecord != null) {
-//
-//					chatUsersDetailsRepo.delete(deletableRecord);
-//					spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
-//							deletableRecord.getDeviceId());
-//
-//					if (deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
-//							&& StringUtils.isNotBlank(deletableRecord.getSocketId())) {
-//						try {
-//							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
-//									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
-//						} catch (JsonProcessingException e) {
-//							log.error("Failed to convert IQ payload to JSON: userDomain={}, username={}, sessionIds={}, Error_message : {}",
-//									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
-//						}
-//					}
-//				}
-//			}
 			user = new ChatUserDetails();
 			user.setCreatedAt(LocalDateTime.now());
 			user.setDeviceId(deviceId);
@@ -441,7 +412,15 @@ public class RegisterService {
 		existingChatUsersDetails.forEach(r -> log.info("Existing Record Device Type = {}", r.getDeviceType()));
 		log.info("Existing records from chat user details :: {}, size -> {}", existingChatUsersDetails, existingChatUsersDetails.size());
 
-		if (existingChatUsersDetails.size() >= maxSessions) {
+        /*
+         * 1. Check if User Max-Session Exceeded if yes fetch the user session and find
+         * the session needs to be deleted.
+         *
+         * 2. If the found session is Web and Logged in via QR-Code (SocketId). Then
+         * Send session logged-out IQ to the devices
+         */
+
+        if (existingChatUsersDetails.size() >= maxSessions) {
 			ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails, registerDto.getDeviceType());
 			log.info("Deletable records :: {}", deletableRecord);
 				if (deletableRecord != null){
