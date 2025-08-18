@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
+import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -35,6 +37,7 @@ public class SsoAuthService {
 
 	private final VcardSearchRepo vcardSearchRepo;
 
+	@SwitchDataSource(value = "[0]")
 	public Response<Object> validateAndFetchUsername(String userdomain, Map<String, Object> request) {
 
 		String ssoToken = Optional.ofNullable((String) request.get("ssoToken")).filter(StringUtils::isNotBlank)
@@ -52,6 +55,8 @@ public class SsoAuthService {
 		/*
 		 * Enable Encryption mode aes-256-cbc in the MySQL Server
 		 */
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+
 		commonService.enableEncryptionMode();
 
 		Map<String, Object> response = new HashMap<>();
