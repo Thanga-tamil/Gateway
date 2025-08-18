@@ -54,7 +54,7 @@ public class VcardService {
 		}
 		if (vcardSearch.getStatus() != null) {
 			sb.append("<mobileNumber>");
-			sb.append(vcardSearch.getMobilenumber());
+			sb.append(vcardSearch.getMobilenumber().trim());
 			sb.append("</mobileNumber>");
 		} else {
 			sb.append("<mobileNumber/>");

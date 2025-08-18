@@ -79,10 +79,11 @@ public class LoginService {
 	@Autowired
 	private SpoolRepo spoolRepo;
 
+	private static final ObjectMapper MAPPER = new ObjectMapper();
+
 	@SwitchDataSource(value = "[0]")
 	public Response<LoginDetailsDto> login(String userdomain, LoginDto loginRequestDto) {
-		// If incoming requested in encrypted means, we need to decrypt the password
-		// field to find the original password
+		// If incoming requested in encrypted means, we need to decrypt the password field to find the original password
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
 		String licenseKey = config != null ? (String) config : null;
@@ -91,17 +92,13 @@ public class LoginService {
 		}
 
 		String password = "";
-		String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(),
-				licenseKey + licenseKey + licenseKey);
 		LoginRequestDto login;
-		ObjectMapper mapper = new ObjectMapper();
+
 		try {
-			login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
-					LoginRequestDto.class);
+			String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(), licenseKey + licenseKey + licenseKey);
+			login = MAPPER.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()), LoginRequestDto.class);
 			password = login.getPassword();
 		} catch (JsonProcessingException | UnsupportedEncodingException e) {
-			log.error("Unable to unserialize the password field " + e.getMessage()
-					+ ", continuing assuming the password is plain");
 			password = loginRequestDto.getPassword();
 		}
 
@@ -228,7 +225,7 @@ public class LoginService {
 		EmailToken validToken = emailTokenRepo.findByToken(token);
 
 		if (validToken == null)
-			throw new BadDataException("You can't be able to Reset Password");
+			throw new BadDataException("Please use the latest Reset Password link received in your email inbox or use the Forgot password option again to reset your password");
 
 		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
 		if (adminUser != null && adminUser.getIsActive() == 0) {
