@@ -71,6 +71,10 @@ public class SandboxUserService {
 			throws JsonProcessingException {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
+
+		String contactNo = registerDto.getMobileNumber();
+		registerDto.setMobileNumber(registerDto.getCountryCode() + contactNo);
+
 		registerService.inputDataValidation(userdomain, registerDto);
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		Users users = new Users();
