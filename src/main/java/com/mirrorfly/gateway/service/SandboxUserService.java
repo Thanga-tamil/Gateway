@@ -71,10 +71,11 @@ public class SandboxUserService {
 			throws JsonProcessingException {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
+		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		registerService.inputDataValidation(userdomain, registerDto);
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+		
 		Users users = new Users();
-		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser != null) {
 			if (chatUser.getIsDeleteInprogrees() == 1) {
 				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
@@ -160,10 +161,14 @@ public class SandboxUserService {
 
 		registerResponseDto
 				.setToken(tokenService.getToken(userdomain, registerResponseDto.getUsername(), deviceId, ""));
+		if (users == null) {
+		    users = new Users();
+		    users.setUsername(registerResponseDto.getUsername());
+		}
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
-			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		    users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		} else {
-			users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
+		    users.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		}
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		userRepo.save(users);
