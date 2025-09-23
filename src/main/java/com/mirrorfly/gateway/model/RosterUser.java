@@ -6,11 +6,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
 import lombok.Data;
+import java.util.Objects;
 
 @Entity
 @Table(name = "rosterusers")
 @Data
-public class RosterUser {
+public class RosterUser extends AbstractEntity<RosterUserKey> {
 
 	@EmbeddedId
 	private RosterUserKey rosterUserKey;
@@ -38,5 +39,42 @@ public class RosterUser {
 
 	@Column(name = "jid_username")
 	private String jidUsername;
+	@Column(name = "license_key")
+	private String licenseKey;
+
+	public RosterUser() {
+	}
+
+	public RosterUser(RosterUserKey rosterUserKey, Character ask, Character server, String jidUsername, String nick,
+					  Character subscription, String type, String licenseKey) {
+		this.rosterUserKey = rosterUserKey;
+		this.ask = ask;
+		this.server = server;
+		this.jidUsername = jidUsername;
+		this.nick = nick;
+		this.subscription = subscription;
+		this.type = type;
+		this.licenseKey = licenseKey;
+	}
+
+	@Override
+	public RosterUserKey getId() {
+		return rosterUserKey;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		RosterUser that = (RosterUser) o;
+		return Objects.equals(rosterUserKey, that.rosterUserKey);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(rosterUserKey);
+	}
 
 }

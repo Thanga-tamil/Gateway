@@ -9,6 +9,8 @@ public class SanboxUserRegisterDto {
 
 	private String mobileNumber;
 
+	private String countryCode = "";
+
 	private String deviceType;
 	
 	private String deviceId = "";

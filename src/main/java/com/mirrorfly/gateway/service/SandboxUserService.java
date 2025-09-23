@@ -72,6 +72,10 @@ public class SandboxUserService {
 		SandboxRegisterResponseDto registerResponseDto = new SandboxRegisterResponseDto();
 		String jsonString = null;
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
+
+		String contactNo = registerDto.getMobileNumber();
+		registerDto.setMobileNumber(registerDto.getCountryCode() + contactNo);
+
 		registerService.inputDataValidation(userdomain, registerDto);
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		
