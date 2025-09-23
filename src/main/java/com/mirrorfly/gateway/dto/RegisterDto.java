@@ -11,6 +11,8 @@ public class RegisterDto {
 
 	private String mobileNumber = "";
 
+	private String countryCode = "";
+
 	private String deviceType;
 
 	private Integer mode = 0;
