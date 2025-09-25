@@ -165,6 +165,10 @@ public class SandboxUserService {
 
 		registerResponseDto
 				.setToken(tokenService.getToken(userdomain, registerResponseDto.getUsername(), deviceId, ""));
+        if (users == null) {
+            users = new Users();
+            users.setUsername(registerResponseDto.getUsername());
+        }
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
 			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		} else {
