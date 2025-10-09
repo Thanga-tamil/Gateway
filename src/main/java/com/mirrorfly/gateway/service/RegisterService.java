@@ -452,6 +452,30 @@ public class RegisterService {
 		int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "userMaxSessions");
 		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 				.findByUsername(registerDto.getUserIdentifier());
+
+
+        if (existingChatUsersDetails.size() >= maxSessions) {
+            ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
+                    registerDto.getDeviceType());
+
+            if (deletableRecord != null) {
+
+                chatUsersDetailsRepo.delete(deletableRecord);
+                spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
+                        deletableRecord.getDeviceId());
+
+
+                    try {
+                        queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
+                                registerDto.getUserIdentifier(), Collections.singleton(deletableRecord.getSocketId())));
+                    } catch (JsonProcessingException e) {
+                        log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
+                                userdomain, registerDto.getUserIdentifier(), deletableRecord.getSocketId(), e.getMessage());
+                    }
+
+            }
+        }
+
 		if (existingChatUsersDetails.size() >= maxSessions && Boolean.FALSE.equals(registerDto.getForceRegister())) {
 			throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
 		}
