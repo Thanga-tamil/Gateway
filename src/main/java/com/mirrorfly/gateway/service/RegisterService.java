@@ -314,6 +314,9 @@ public class RegisterService {
 				? registerDto.getDeviceId()
 				: "MF-01" + deviceIdprefix;
 		ChatUserDetails user = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
+        log.info("deviceId ", deviceId);
+        log.info("chatUser.getUsername() ", chatUser.getUsername());
+        log.info("ChatUserDetails ", user.toString());
 		String password = passwordService.generateRandomPassword();
 		if (user == null) {
 
@@ -321,7 +324,7 @@ public class RegisterService {
 
 			List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 					.findByUsername(chatUser.getUsername());
-
+            log.info("existingChatUsersDetails count ", existingChatUsersDetails.size());
 			/*
 			 * 1. Check if User Max-Session Exceeded if yes fetch the user session and find
 			 * the session needs to be deleted.
@@ -332,7 +335,7 @@ public class RegisterService {
 //			if (existingChatUsersDetails.size() >= maxSessions) {
 				ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
 						registerDto.getDeviceType());
-
+                log.info("deletable records details ", deletableRecord.toString());
 				if (deletableRecord != null) {
 
 					chatUsersDetailsRepo.delete(deletableRecord);
@@ -342,6 +345,7 @@ public class RegisterService {
 //					if (deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
 //							&& StringUtils.isNotBlank(deletableRecord.getSocketId())) {
 						try {
+                            log.info("inside sendUserSessionLogoutActivity");
 							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
 									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
 						} catch (JsonProcessingException e) {
