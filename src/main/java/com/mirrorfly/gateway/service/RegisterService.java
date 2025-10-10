@@ -322,7 +322,7 @@ public class RegisterService {
 
 			List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
 					.findByUsername(chatUser.getUsername());
-            log.info("existingChatUsersDetails count ", existingChatUsersDetails.size());
+
 			/*
 			 * 1. Check if User Max-Session Exceeded if yes fetch the user session and find
 			 * the session needs to be deleted.
