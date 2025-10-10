@@ -150,8 +150,8 @@ public class LoginService {
 				spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(tokenDetail.getUsername(), deviceId);
 
 				// If QR-Web session (SocketId) send session logged-out IQ to the devices
-				if (chatUserDetail.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
-						&& StringUtils.isNotBlank(chatUserDetail.getSocketId())) {
+//				if (chatUserDetail.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
+//						&& StringUtils.isNotBlank(chatUserDetail.getSocketId())) {
 					try {
 						queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
 								chatUserDetail.getUsername(), Collections.singleton(chatUserDetail.getSocketId())));
@@ -161,7 +161,7 @@ public class LoginService {
 					}
 				}
 
-			}
+//			}
 		}
 
 		Response<String> response = new Response<>();
