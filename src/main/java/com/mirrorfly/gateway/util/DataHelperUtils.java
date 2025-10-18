@@ -14,11 +14,12 @@ public class DataHelperUtils {
 		throw new UnsupportedOperationException("Utility class - instantiation not allowed");
 	}
 
-	public static QueuePayloadDto prepareIQPayload(String userdomain, String username, Set<String> sessionIds)
+	public static QueuePayloadDto prepareIQPayload(String userdomain, String username, Set<String> sessionIds, String deviceId)
 			throws JsonProcessingException {
 		Map<String, Object> iqPayloadMap = new HashMap<>();
 		iqPayloadMap.put("username", username);
 		iqPayloadMap.put("socket_id", String.join(",", sessionIds));
+        iqPayloadMap.put("device_id", deviceId);
 		return new QueuePayloadDto("logout_sessions", GatewayUtil.convertMapToJson(iqPayloadMap), userdomain);
 	}
 
