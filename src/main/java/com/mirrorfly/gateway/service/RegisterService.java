@@ -179,15 +179,17 @@ public class RegisterService {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
 		inputDataValidation(userdomain, registerDto);
-		Users user = new Users();
+
+        handleUserSession(userdomain, registerDto.getUserIdentifier(), registerDto.getDeviceType());
+
+        Users user = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
 			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
 			try {
 				HttpHeaders headers = new HttpHeaders();
 				headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-				UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url).queryParam("licenseKey",
-						registerDto.getLicenseKey());
+				UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url).queryParam("licenseKey", registerDto.getLicenseKey());
 				HttpEntity<?> entity = new HttpEntity<>(headers);
 				restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
 			} catch (HttpStatusCodeException e) {
@@ -232,17 +234,15 @@ public class RegisterService {
 
 		chatUserRepo.save(chatUser);
 
-		String password = updateChatUserDetails(userdomain, registerDto, chatUser);
-		registerResponseDto.setPassword(password);
+		registerResponseDto.setPassword(updateChatUserDetails(userdomain, registerDto, chatUser));
 
-		String deviceIdprefix = "";
+		String deviceIdPrefix;
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-			deviceIdprefix = "-web";
+            deviceIdPrefix = "-web";
 		} else {
-			deviceIdprefix = "-mobile";
+            deviceIdPrefix = "-mobile";
 		}
-		String deviceId = StringUtils.isNotBlank(registerDto.getDeviceId()) ? registerDto.getDeviceId()
-				: "MF-01" + deviceIdprefix;
+		String deviceId = StringUtils.isNotBlank(registerDto.getDeviceId()) ? registerDto.getDeviceId() : "MF-01" + deviceIdPrefix;
 
 		registerResponseDto.setToken(tokenService.getToken(userdomain, registerDto.getUserIdentifier(), deviceId, ""));
 		registerResponseDto.setUsername(user.getUsername());
@@ -276,9 +276,10 @@ public class RegisterService {
 
 	public String updateChatUserDetails(String userdomain, RegisterDto registerDto, ChatUser chatUser) {
 		String deviceIdprefix = "";
-		String pushServerType = "";
+		String pushServerType;
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-			deviceIdprefix = "-web";
+            pushServerType = "";
+            deviceIdprefix = "-web";
 		} else {
 			deviceIdprefix = "-mobile";
 			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().isEmpty()) {
@@ -301,78 +302,43 @@ public class RegisterService {
 				}
 			}
 		}
-		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
-				? registerDto.getDeviceId()
-				: "MF-01" + deviceIdprefix;
-		ChatUserDetails user = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
+		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty() ? registerDto.getDeviceId() : "MF-01" + deviceIdprefix;
 
-		String password = passwordService.generateRandomPassword();
-		if (user == null) {
+        String password = passwordService.generateRandomPassword();
 
-			int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "userMaxSessions");
+        ChatUserDetails chatUserDetails = Optional.ofNullable(chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId)).map(user -> {
+            user.setMode(registerDto.getMode());
+            user.setPushServerType(pushServerType);
+            user.setLastLoggedInAt(LocalDateTime.now());
+            user.setDeviceType(registerDto.getDeviceType());
+            user.setDeviceToken(registerDto.getDeviceToken());
+            user.setPassword(GatewayUtil.getMd5String(password));
+            user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+            user.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+            return user;
+        }).orElseGet(() -> {
+            ChatUserDetails userDetails = new ChatUserDetails();
+            userDetails.setDeviceId(deviceId);
+            userDetails.setMode(registerDto.getMode());
+            userDetails.setPushServerType(pushServerType);
+            userDetails.setCreatedAt(LocalDateTime.now());
+            userDetails.setUsername(chatUser.getUsername());
+            userDetails.setLastLoggedInAt(LocalDateTime.now());
+            userDetails.setDeviceType(registerDto.getDeviceType());
+            userDetails.setDeviceToken(registerDto.getDeviceToken());
+            userDetails.setPassword(GatewayUtil.getMd5String(password));
+            userDetails.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+            userDetails.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+            userDetails.setUserType(applicationProperties.getDefaultUserType());
+            return userDetails;
+        });
 
-			List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo.findByUsername(chatUser.getUsername());
-
-			/*
-			 * 1. Check if User Max-Session Exceeded if yes fetch the user session and find
-			 * the session needs to be deleted.
-			 * 
-			 * 2. If the found session is Web and Logged in via QR-Code (SocketId). Then
-			 * Send session logged-out IQ to the devices
-			 */
-			if (existingChatUsersDetails.size() >= maxSessions) {
-				ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
-						registerDto.getDeviceType());
-				if (deletableRecord != null) {
-
-					chatUsersDetailsRepo.delete(deletableRecord);
-					spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
-							deletableRecord.getDeviceId());
-
-					if (deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
-							&& StringUtils.isNotBlank(deletableRecord.getSocketId())) {
-						try {
-							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain, chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId() != null ? deletableRecord.getSocketId() : ""), deletableRecord.getDeviceId() != null ? deletableRecord.getDeviceId() : ""));
-						} catch (JsonProcessingException e) {
-							log.error("Failed to convert IQ payload to JSON: userDomain={}, username={}, sessionIds={}, Error.. {}", userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
-						}
-					}
-				}
-			}
-			user = new ChatUserDetails();
-			user.setCreatedAt(LocalDateTime.now());
-			user.setDeviceId(deviceId);
-			user.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-			user.setDeviceToken(registerDto.getDeviceToken());
-			user.setDeviceType(registerDto.getDeviceType());
-			user.setLastLoggedInAt(LocalDateTime.now());
-			user.setMode(registerDto.getMode());
-			user.setPassword(GatewayUtil.getMd5String(password));
-			user.setUsername(chatUser.getUsername());
-			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-			user.setPushServerType(pushServerType);
-			user.setUserType(applicationProperties.getDefaultUserType());
-			if (StringUtils.isNotBlank(registerDto.getUserType())) {
-				user.setUserType(registerDto.getUserType().trim());
-			}
-			chatUsersDetailsRepo.save(user);
-			return password;
-		} else {
-			user.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-			user.setDeviceToken(registerDto.getDeviceToken());
-			user.setDeviceType(registerDto.getDeviceType());
-			user.setLastLoggedInAt(LocalDateTime.now());
-			user.setMode(registerDto.getMode());
-			user.setPassword(GatewayUtil.getMd5String(password));
-			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-			user.setPushServerType(pushServerType);
-			if (StringUtils.isNotBlank(registerDto.getUserType())) {
-				user.setUserType(registerDto.getUserType().trim());
-			}
-			chatUsersDetailsRepo.save(user);
-			return password;
-		}
-	}
+        if (StringUtils.isNotBlank(registerDto.getUserType())) {
+            chatUserDetails.setUserType(registerDto.getUserType().trim());
+        }
+        chatUsersDetailsRepo.save(chatUserDetails);
+        return password;
+    }
 
 	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> existingChatUsersDetails,
 			String deviceType) {
@@ -438,11 +404,9 @@ public class RegisterService {
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
 		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
 
-        handleUserSession(userdomain, registerDto.getUserIdentifier(), registerDto.getDeviceType());
-
 	}
 
-    public void handleUserSession(String userDomain, String userIdentifier, String deviceType){
+    private void handleUserSession(String userDomain, String userIdentifier, String deviceType){
 
         int maxSessions = ( int ) dataStore.getConnectionConfigDataByDomainAndKey(userDomain, "userMaxSessions");
 
