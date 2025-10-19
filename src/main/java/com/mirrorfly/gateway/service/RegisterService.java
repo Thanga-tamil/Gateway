@@ -1,47 +1,41 @@
 package com.mirrorfly.gateway.service;
 
-import java.io.UnsupportedEncodingException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mirrorfly.gateway.config.ApplicationProperties;
+import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
+import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
+import com.mirrorfly.gateway.dto.*;
+import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.exception.ForbiddenException;
+import com.mirrorfly.gateway.model.*;
+import com.mirrorfly.gateway.queue.QueueService;
+import com.mirrorfly.gateway.repo.*;
+import com.mirrorfly.gateway.response.Response;
+import com.mirrorfly.gateway.util.AESEncryption;
+import com.mirrorfly.gateway.util.DataHelperUtils;
+import com.mirrorfly.gateway.util.GatewayConstants;
+import com.mirrorfly.gateway.util.GatewayUtil;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-
-import com.mirrorfly.gateway.dto.*;
-import com.mirrorfly.gateway.model.*;
-import com.mirrorfly.gateway.repo.*;
-import jakarta.transaction.Transactional;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpStatusCodeException;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mirrorfly.gateway.config.ApplicationProperties;
-import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
-import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
-import com.mirrorfly.gateway.exception.BadDataException;
-import com.mirrorfly.gateway.exception.ForbiddenException;
-import com.mirrorfly.gateway.queue.QueueService;
-import com.mirrorfly.gateway.response.Response;
-import com.mirrorfly.gateway.util.AESEncryption;
-import com.mirrorfly.gateway.util.DataHelperUtils;
-import com.mirrorfly.gateway.util.GatewayConstants;
-import com.mirrorfly.gateway.util.GatewayUtil;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -70,15 +64,11 @@ public class RegisterService {
 
 	private final ChatUsersDetailsRepo chatUsersDetailsRepo;
 
-	private final SpoolRepo spoolRepo;
-
 	private final DataStore dataStore;
 
 	private final QueueService queueService;
 
-	private final UserContactRepo userContactRepo;
-
-	private final RosterUserRepo rosterUserRepo;
+    private final AsyncService asyncService;
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -118,7 +108,6 @@ public class RegisterService {
 
 		RegisterResponseDto registerResponseDto = registerUser(userdomain, registerDto);
 
-        // get config details and return in the response
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
         registerResponseDto.setConfig(configService.getConfigData(licenseKey));
@@ -131,38 +120,13 @@ public class RegisterService {
 			throw new BadDataException("Json Parsing Error");
 		}
 
-		// Update the Rosters
-		if (StringUtils.isNotBlank(contactNo)) { updateRosters(registerResponseDto.getUsername(), contactNo, xmppDomain); }
+        asyncService.updateRosters(userdomain, registerResponseDto.getUsername(), contactNo, xmppDomain);
 
         return new Response<>(HttpStatus.OK.value(), AESEncryption.encryptString(jsonString, licenseKey.repeat(3)), GatewayConstants.DATA_RETRIEVED);
 
 	}
-	@Async
-	public void updateRosters(String username, String contactNo, String xmppDomain) {
 
-		CompletableFuture.supplyAsync(() -> userContactRepo.findByMobileNumber(contactNo)).thenApply(usersContacts -> {
-			if (usersContacts == null || usersContacts.isEmpty())
-				return Collections.emptyList();
-
-			List<RosterUser> rosters = usersContacts.parallelStream().map(contact -> {
-				String fullJid = username + "@" + xmppDomain;
-				RosterUserKey rosterKey = new RosterUserKey(contact.getUsername(), fullJid);
-				return new RosterUser(rosterKey, 'N', 'N', username, contact.getName(), 'B', "item", contact.getLicenseKey());
-			}).collect(Collectors.toList());
-			saveAndDeleteRosters(rosters, usersContacts);
-			return usersContacts;
-		}).exceptionally(ex -> {
-			log.error("Roster update failed", ex.getMessage());
-			return null;
-		});
-	}
-
-	@Transactional
-	public void saveAndDeleteRosters(List<RosterUser> rosters, List<UserContact> contacts) {
-		rosterUserRepo.saveAll(rosters);
-		userContactRepo.deleteAll(contacts);
-	}
-	public void registerLogintime(String username) {
+	public void registerLoginTime(String username) {
 		Last last = new Last();
 		last.setUsername(username);
 		last.setStatus(0);
@@ -177,11 +141,9 @@ public class RegisterService {
 	@SwitchDataSource(value = "[0]")
 	private RegisterResponseDto registerUser(String userdomain, RegisterDto registerDto) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
-		inputDataValidation(userdomain, registerDto);
-
-        handleUserSession(userdomain, registerDto.getUserIdentifier(), registerDto.getDeviceType());
-
+        RegisterResponseDto registerResponseDto = new RegisterResponseDto();
+        inputDataValidation(registerDto);
+        mobileSession(userdomain, registerDto.getUserIdentifier(), registerDto.getDeviceType());
         Users user = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
@@ -204,7 +166,7 @@ public class RegisterService {
 			chatUser.setIsDeleteInprogrees(0);
 			chatUser.setDevicetype(registerDto.getDeviceType());
 			// To insert the register login time
-			registerLogintime(registerDto.getUserIdentifier());
+            registerLoginTime(registerDto.getUserIdentifier());
 			user.setUsername(registerDto.getUserIdentifier());
 			// Insert the vcard details
 			VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(registerDto.getUserIdentifier());
@@ -357,7 +319,7 @@ public class RegisterService {
 	}
 
 	@SwitchDataSource(value = "[0]")
-	public void inputDataValidation(String userdomain, SanboxUserRegisterDto registerDto) {
+	public void inputDataValidation(SanboxUserRegisterDto registerDto) {
 		RegisterDto registerData = new RegisterDto();
 		registerData.setDeviceId(registerDto.getDeviceId());
 		registerData.setDeviceOsVersion(registerDto.getDeviceOsVersion());
@@ -372,10 +334,10 @@ public class RegisterService {
 		registerData.setPushServerType(registerDto.getPushServerType());
 		registerData.setMetaData(registerDto.getMetaData());
 		registerData.setUserType(registerDto.getUserType());
-		inputDataValidation(userdomain, registerData);
+		inputDataValidation(registerData);
 	}
 
-	private void inputDataValidation(String userdomain, RegisterDto registerDto) {
+	private void inputDataValidation(RegisterDto registerDto) {
 		String userIdentifier = registerDto.getUserIdentifier();
 		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
@@ -406,7 +368,7 @@ public class RegisterService {
 
 	}
 
-    private void handleUserSession(String userDomain, String userIdentifier, String deviceType){
+    private void mobileSession(String userDomain, String userIdentifier, String deviceType){
 
         int maxSessions = ( int ) dataStore.getConnectionConfigDataByDomainAndKey(userDomain, "userMaxSessions");
 

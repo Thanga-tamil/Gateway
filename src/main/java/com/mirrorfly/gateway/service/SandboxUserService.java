@@ -76,7 +76,7 @@ public class SandboxUserService {
 		String contactNo = registerDto.getMobileNumber();
 		registerDto.setMobileNumber(registerDto.getCountryCode() + contactNo);
 
-		registerService.inputDataValidation(userdomain, registerDto);
+		registerService.inputDataValidation(registerDto);
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		
 		Users users = new Users();
@@ -117,7 +117,7 @@ public class SandboxUserService {
 			URI url = UriComponentsBuilder
 					.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/addUserCount").build()
 					.toUri();
-			registerService.registerLogintime(registerDto.getUserIdentifier());// New entry in last login time
+			registerService.registerLoginTime(registerDto.getUserIdentifier());// New entry in last login time
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
 			try {

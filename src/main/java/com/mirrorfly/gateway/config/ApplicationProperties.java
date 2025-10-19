@@ -131,4 +131,6 @@ public class ApplicationProperties {
 	public String getCaffeineTotalLimit() {
 		return env.getProperty("caffeine.totallimit");
 	}
+
+    public Boolean getActuatorLogBool() { return Boolean.valueOf(env.getProperty("actuator_log")); }
 }
