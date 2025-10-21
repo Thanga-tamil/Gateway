@@ -44,10 +44,11 @@ public class AsyncService {
         List<UserContact> usersContacts = userContactRepo.findByMobileNumber(contactNo);
 
         List<RosterUser> rosterUsers = usersContacts.stream()
+                .filter(contact -> rosterUserRepo.findById(new RosterUserKey(contact.getUsername(), username + "@" + xmppDomain)).isEmpty())
                 .map(contact -> {
                     RosterUserKey key = new RosterUserKey(contact.getUsername(), username + "@" + xmppDomain);
                     // Exclude Existing Records Using "UNIQUE KEY i_rosteru_sh_user_jid".. ( RosterUserKey )
-                    return rosterUserRepo.findById(key).orElse(new RosterUser(key, 'N', 'N', username, contact.getName(), 'B', "item", contact.getLicenseKey()));
+                    return (new RosterUser(key, 'N', 'N', username, contact.getName(), 'B', "item", contact.getLicenseKey()));
                 }).toList();
 
         rosterUserRepo.saveAll(rosterUsers);
