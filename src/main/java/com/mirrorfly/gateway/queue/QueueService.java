@@ -51,12 +51,14 @@ public class QueueService {
 		return true;
 	}
 
-	public void sendUserSessionLogoutActivity(QueuePayloadDto payload) {
+	public boolean sendUserSessionLogoutActivity(QueuePayloadDto payload) {
 		try {
-			log.info("Multi-Sessions Logout RabbitMQ payload ::: " + payload);
+            log.info("Multi-Sessions Logout RabbitMQ payload ::: {}", payload);
 			rabbitTemplate.convertAndSend(EnumQueue.API_DATA_QUEUE.getQueue(), payload);
+            return true;
 		} catch (Exception e) {
 			log.error("Failed to send logout payload to RabbitMQ: {}", payload, e);
+            return false;
 		}
 	}
 

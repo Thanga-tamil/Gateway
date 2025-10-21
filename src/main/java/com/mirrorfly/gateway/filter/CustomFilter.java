@@ -3,9 +3,11 @@ package com.mirrorfly.gateway.filter;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import com.mirrorfly.gateway.config.ApplicationProperties;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
@@ -22,7 +24,10 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 public class CustomFilter implements WebFilter, Ordered {
-	
+
+    @Autowired
+    ApplicationProperties applicationProperties;
+
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
 		ServerHttpRequest.Builder builder = setHeaders(exchange.getRequest());
@@ -35,17 +40,21 @@ public class CustomFilter implements WebFilter, Ordered {
 	}
 
 	private ServerHttpRequest.Builder setHeaders(ServerHttpRequest request) {
-		URL url = null;
+		URL url;
 		try {
 			url = request.getURI().toURL();
 			String domain = getDomain(url.toString());
 			ServerHttpRequest.Builder builder = request.mutate();
 			if(StringUtils.isNotBlank(domain)) {
-				log.debug("setting userdomain =======================>>>> " + domain);
+                log.debug("setting userDomain =======================>>>> {}", domain);
 				builder.header(GatewayConstants.USER_DOMAIN, domain);
 				MDC.put(GatewayConstants.USER_DOMAIN, domain);
 			}
-			log.info("Method ==> "+request.getMethod().name()+ " url ==> " + url.toString());
+            if ( applicationProperties.getActuatorLogBool() ) {
+                log.info("Method [{}] URL --> {}", request.getMethod().name(), url);
+            } else if ( !String.valueOf(url).contains("health") ){
+                log.info("Method [{}] URL ---> {}", request.getMethod().name(), url);
+            }
 			return builder;
 		} catch (MalformedURLException e) {
 			throw new BadDataException("Unable to identify the domain from request");
@@ -62,4 +71,5 @@ public class CustomFilter implements WebFilter, Ordered {
 		}
 		return domain;
 	}
+
 }

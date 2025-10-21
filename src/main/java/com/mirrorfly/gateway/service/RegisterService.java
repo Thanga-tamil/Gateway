@@ -1,54 +1,41 @@
 package com.mirrorfly.gateway.service;
 
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-
-import com.mirrorfly.gateway.model.*;
-import com.mirrorfly.gateway.repo.*;
-import jakarta.transaction.Transactional;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpStatusCodeException;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
-import com.mirrorfly.gateway.dto.RegisterDto;
-import com.mirrorfly.gateway.dto.RegisterInfoDto;
-import com.mirrorfly.gateway.dto.RegisterRequestDto;
-import com.mirrorfly.gateway.dto.RegisterResponseDto;
-import com.mirrorfly.gateway.dto.SanboxUserRegisterDto;
+import com.mirrorfly.gateway.dto.*;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
+import com.mirrorfly.gateway.model.*;
 import com.mirrorfly.gateway.queue.QueueService;
+import com.mirrorfly.gateway.repo.*;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.DataHelperUtils;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
-
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.math.BigInteger;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -77,15 +64,11 @@ public class RegisterService {
 
 	private final ChatUsersDetailsRepo chatUsersDetailsRepo;
 
-	private final SpoolRepo spoolRepo;
-
 	private final DataStore dataStore;
 
 	private final QueueService queueService;
 
-	private final UserContactRepo userContactRepo;
-
-	private final RosterUserRepo rosterUserRepo;
+    private final AsyncService asyncService;
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -105,73 +88,45 @@ public class RegisterService {
 
 	@SwitchDataSource(value = "[0]")
 	public Response<String> registerNewUser(String userdomain, RegisterRequestDto registerRequestDto) {
-		String licenseKey = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
 
-		String xmppDomain = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain")).orElseThrow(() -> new BadDataException("Xmpp Domain not found"));
+        String licenseKey       = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
+		String xmppDomain       = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain")).orElseThrow(() -> new BadDataException("Xmpp Domain not found"));
+		String decyptedString   = Optional.ofNullable(AESEncryption.decryptString(registerRequestDto.getRegisterData(), licenseKey.repeat(3))).filter(s -> !s.isBlank()).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSEKEY_INVALID));
 
-		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(), licenseKey.repeat(3));
-		if (decyptedString.equals("")) {
-			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
-		}
 		RegisterDto registerDto;
+
 		try {
-			registerDto = MAPPER.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
-					RegisterDto.class);
-		} catch (JsonProcessingException | UnsupportedEncodingException e) {
-			log.error("RegisterDto values are not readable ::: " + e.getMessage());
+			registerDto = MAPPER.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8), RegisterDto.class);
+		} catch (JsonProcessingException e) {
+            log.error("Register Payload Are Not Readable :: {}", e.getMessage());
 			throw new BadDataException(GatewayConstants.INVALID_ERROR);
 		}
 
 		String contactNo = registerDto.getMobileNumber();
+
 		registerDto.setMobileNumber(registerDto.getCountryCode() + contactNo);
 
 		RegisterResponseDto registerResponseDto = registerUser(userdomain, registerDto);
-		// get config details and return in the response
+
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-		registerResponseDto.setConfig(configService.getConfigData(licenseKey));
+
+        registerResponseDto.setConfig(configService.getConfigData(licenseKey));
+
 		String jsonString;
+
 		try {
 			jsonString = MAPPER.writeValueAsString(registerResponseDto);
 		} catch (JsonProcessingException e) {
 			throw new BadDataException("Json Parsing Error");
 		}
 
-		// Update the Rosters
-		if (StringUtils.isNotBlank(contactNo)) {
-			updateRosters(registerResponseDto.getUsername(), contactNo, xmppDomain);
-		}
-		Response<String> response = new Response<>();
-		response.setData(AESEncryption.encryptString(jsonString, licenseKey + licenseKey + licenseKey));
-		response.setStatus(HttpStatus.OK.value());
-		response.setMessage(GatewayConstants.DATA_RETRIEVED);
-		return response;
-	}
-	@Async
-	public void updateRosters(String username, String contactNo, String xmppDomain) {
+        asyncService.updateRosters(userdomain, registerResponseDto.getUsername(), contactNo, xmppDomain);
 
-		CompletableFuture.supplyAsync(() -> userContactRepo.findByMobileNumber(contactNo)).thenApply(usersContacts -> {
-			if (usersContacts == null || usersContacts.isEmpty())
-				return Collections.emptyList();
+        return new Response<>(HttpStatus.OK.value(), AESEncryption.encryptString(jsonString, licenseKey.repeat(3)), GatewayConstants.DATA_RETRIEVED);
 
-			List<RosterUser> rosters = usersContacts.parallelStream().map(contact -> {
-				String fullJid = username + "@" + xmppDomain;
-				RosterUserKey rosterKey = new RosterUserKey(contact.getUsername(), fullJid);
-				return new RosterUser(rosterKey, 'N', 'N', username, contact.getName(), 'B', "item", contact.getLicenseKey());
-			}).collect(Collectors.toList());
-			saveAndDeleteRosters(rosters, usersContacts);
-			return usersContacts;
-		}).exceptionally(ex -> {
-			log.error("Roster update failed", ex.getMessage());
-			return null;
-		});
 	}
 
-	@Transactional
-	public void saveAndDeleteRosters(List<RosterUser> rosters, List<UserContact> contacts) {
-		rosterUserRepo.saveAll(rosters);
-		userContactRepo.deleteAll(contacts);
-	}
-	public void registerLogintime(String username) {
+	public void registerLoginTime(String username) {
 		Last last = new Last();
 		last.setUsername(username);
 		last.setStatus(0);
@@ -186,17 +141,17 @@ public class RegisterService {
 	@SwitchDataSource(value = "[0]")
 	private RegisterResponseDto registerUser(String userdomain, RegisterDto registerDto) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
-		inputDataValidation(userdomain, registerDto);
-		Users user = new Users();
+        RegisterResponseDto registerResponseDto = new RegisterResponseDto();
+        inputDataValidation(registerDto);
+        mobileSession(userdomain, registerDto.getUserIdentifier(), registerDto.getDeviceType());
+        Users user = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
 			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
 			try {
 				HttpHeaders headers = new HttpHeaders();
 				headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-				UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url).queryParam("licenseKey",
-						registerDto.getLicenseKey());
+				UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url).queryParam("licenseKey", registerDto.getLicenseKey());
 				HttpEntity<?> entity = new HttpEntity<>(headers);
 				restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
 			} catch (HttpStatusCodeException e) {
@@ -211,7 +166,7 @@ public class RegisterService {
 			chatUser.setIsDeleteInprogrees(0);
 			chatUser.setDevicetype(registerDto.getDeviceType());
 			// To insert the register login time
-			registerLogintime(registerDto.getUserIdentifier());
+            registerLoginTime(registerDto.getUserIdentifier());
 			user.setUsername(registerDto.getUserIdentifier());
 			// Insert the vcard details
 			VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(registerDto.getUserIdentifier());
@@ -241,17 +196,15 @@ public class RegisterService {
 
 		chatUserRepo.save(chatUser);
 
-		String password = updateChatUserDetails(userdomain, registerDto, chatUser);
-		registerResponseDto.setPassword(password);
+		registerResponseDto.setPassword(updateChatUserDetails(userdomain, registerDto, chatUser));
 
-		String deviceIdprefix = "";
+		String deviceIdPrefix;
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-			deviceIdprefix = "-web";
+            deviceIdPrefix = "-web";
 		} else {
-			deviceIdprefix = "-mobile";
+            deviceIdPrefix = "-mobile";
 		}
-		String deviceId = StringUtils.isNotBlank(registerDto.getDeviceId()) ? registerDto.getDeviceId()
-				: "MF-01" + deviceIdprefix;
+		String deviceId = StringUtils.isNotBlank(registerDto.getDeviceId()) ? registerDto.getDeviceId() : "MF-01" + deviceIdPrefix;
 
 		registerResponseDto.setToken(tokenService.getToken(userdomain, registerDto.getUserIdentifier(), deviceId, ""));
 		registerResponseDto.setUsername(user.getUsername());
@@ -285,9 +238,10 @@ public class RegisterService {
 
 	public String updateChatUserDetails(String userdomain, RegisterDto registerDto, ChatUser chatUser) {
 		String deviceIdprefix = "";
-		String pushServerType = "";
+		String pushServerType;
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-			deviceIdprefix = "-web";
+            pushServerType = "";
+            deviceIdprefix = "-web";
 		} else {
 			deviceIdprefix = "-mobile";
 			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().isEmpty()) {
@@ -310,81 +264,43 @@ public class RegisterService {
 				}
 			}
 		}
-		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
-				? registerDto.getDeviceId()
-				: "MF-01" + deviceIdprefix;
-		ChatUserDetails user = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
+		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty() ? registerDto.getDeviceId() : "MF-01" + deviceIdprefix;
 
-		String password = passwordService.generateRandomPassword();
-		if (user == null) {
+        String password = passwordService.generateRandomPassword();
 
-			int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "userMaxSessions");
+        ChatUserDetails chatUserDetails = Optional.ofNullable(chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId)).map(user -> {
+            user.setMode(registerDto.getMode());
+            user.setPushServerType(pushServerType);
+            user.setLastLoggedInAt(LocalDateTime.now());
+            user.setDeviceType(registerDto.getDeviceType());
+            user.setDeviceToken(registerDto.getDeviceToken());
+            user.setPassword(GatewayUtil.getMd5String(password));
+            user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+            user.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+            return user;
+        }).orElseGet(() -> {
+            ChatUserDetails userDetails = new ChatUserDetails();
+            userDetails.setDeviceId(deviceId);
+            userDetails.setMode(registerDto.getMode());
+            userDetails.setPushServerType(pushServerType);
+            userDetails.setCreatedAt(LocalDateTime.now());
+            userDetails.setUsername(chatUser.getUsername());
+            userDetails.setLastLoggedInAt(LocalDateTime.now());
+            userDetails.setDeviceType(registerDto.getDeviceType());
+            userDetails.setDeviceToken(registerDto.getDeviceToken());
+            userDetails.setPassword(GatewayUtil.getMd5String(password));
+            userDetails.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+            userDetails.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+            userDetails.setUserType(applicationProperties.getDefaultUserType());
+            return userDetails;
+        });
 
-			List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
-					.findByUsername(chatUser.getUsername());
-
-			/*
-			 * 1. Check if User Max-Session Exceeded if yes fetch the user session and find
-			 * the session needs to be deleted.
-			 * 
-			 * 2. If the found session is Web and Logged in via QR-Code (SocketId). Then
-			 * Send session logged-out IQ to the devices
-			 */
-			if (existingChatUsersDetails.size() >= maxSessions) {
-				ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
-						registerDto.getDeviceType());
-				if (deletableRecord != null) {
-
-					chatUsersDetailsRepo.delete(deletableRecord);
-					spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
-							deletableRecord.getDeviceId());
-
-					if (deletableRecord.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
-							&& StringUtils.isNotBlank(deletableRecord.getSocketId())) {
-						try {
-							queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
-									chatUser.getUsername(), Collections.singleton(deletableRecord.getSocketId())));
-						} catch (JsonProcessingException e) {
-							log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
-									userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
-						}
-					}
-				}
-			}
-			user = new ChatUserDetails();
-			user.setCreatedAt(LocalDateTime.now());
-			user.setDeviceId(deviceId);
-			user.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-			user.setDeviceToken(registerDto.getDeviceToken());
-			user.setDeviceType(registerDto.getDeviceType());
-			user.setLastLoggedInAt(LocalDateTime.now());
-			user.setMode(registerDto.getMode());
-			user.setPassword(GatewayUtil.getMd5String(password));
-			user.setUsername(chatUser.getUsername());
-			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-			user.setPushServerType(pushServerType);
-			user.setUserType(applicationProperties.getDefaultUserType());
-			if (StringUtils.isNotBlank(registerDto.getUserType())) {
-				user.setUserType(registerDto.getUserType().trim());
-			}
-			chatUsersDetailsRepo.save(user);
-			return password;
-		} else {
-			user.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-			user.setDeviceToken(registerDto.getDeviceToken());
-			user.setDeviceType(registerDto.getDeviceType());
-			user.setLastLoggedInAt(LocalDateTime.now());
-			user.setMode(registerDto.getMode());
-			user.setPassword(GatewayUtil.getMd5String(password));
-			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-			user.setPushServerType(pushServerType);
-			if (StringUtils.isNotBlank(registerDto.getUserType())) {
-				user.setUserType(registerDto.getUserType().trim());
-			}
-			chatUsersDetailsRepo.save(user);
-			return password;
-		}
-	}
+        if (StringUtils.isNotBlank(registerDto.getUserType())) {
+            chatUserDetails.setUserType(registerDto.getUserType().trim());
+        }
+        chatUsersDetailsRepo.save(chatUserDetails);
+        return password;
+    }
 
 	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> existingChatUsersDetails,
 			String deviceType) {
@@ -403,7 +319,7 @@ public class RegisterService {
 	}
 
 	@SwitchDataSource(value = "[0]")
-	public void inputDataValidation(String userdomain, SanboxUserRegisterDto registerDto) {
+	public void inputDataValidation(SanboxUserRegisterDto registerDto) {
 		RegisterDto registerData = new RegisterDto();
 		registerData.setDeviceId(registerDto.getDeviceId());
 		registerData.setDeviceOsVersion(registerDto.getDeviceOsVersion());
@@ -418,10 +334,10 @@ public class RegisterService {
 		registerData.setPushServerType(registerDto.getPushServerType());
 		registerData.setMetaData(registerDto.getMetaData());
 		registerData.setUserType(registerDto.getUserType());
-		inputDataValidation(userdomain, registerData);
+		inputDataValidation(registerData);
 	}
 
-	private void inputDataValidation(String userdomain, RegisterDto registerDto) {
+	private void inputDataValidation(RegisterDto registerDto) {
 		String userIdentifier = registerDto.getUserIdentifier();
 		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
@@ -449,15 +365,46 @@ public class RegisterService {
 		}
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
 		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
-		int maxSessions = (int) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "userMaxSessions");
-		List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
-				.findByUsername(registerDto.getUserIdentifier());
-		if (existingChatUsersDetails.size() >= maxSessions && Boolean.FALSE.equals(registerDto.getForceRegister())) {
-			throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
-		}
+
 	}
 
-	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
+    private void mobileSession(String userDomain, String userIdentifier, String deviceType){
+
+        int maxSessions = ( int ) dataStore.getConnectionConfigDataByDomainAndKey(userDomain, "userMaxSessions");
+
+        List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo.findByUsername(userIdentifier);
+
+        log.info("Max Session From DB.. {}, Existing User Session Records Size :: {}", maxSessions, existingChatUsersDetails.size());
+
+        ChatUserDetails earliestSession = getEarliestSession(existingChatUsersDetails, deviceType);
+
+        if ( earliestSession != null ){
+            if ( existingChatUsersDetails.size() >= maxSessions ) {
+
+                try {
+                    boolean boolStatus = queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userDomain, earliestSession.getUsername(), Collections.singleton(earliestSession.getSocketId() != null ? earliestSession.getSocketId() : ""), earliestSession.getDeviceId() != null ? earliestSession.getDeviceId() : ""));
+                    log.info("Session Logout IQ Status :: {}", boolStatus);
+                } catch (Exception ex){
+                    throw new BadDataException("Error While Session Logout IQ :: " + ex.getMessage());
+                }
+
+                chatUsersDetailsRepo.delete(earliestSession);
+
+                throw new ForbiddenException(GatewayConstants.USER_REGISTRATION_MAX_SESSIONS_REACHED);
+            }
+        }
+
+    }
+
+    private ChatUserDetails getEarliestSession(List<ChatUserDetails> chatUserDetails, String deviceType) {
+
+        if (deviceType.equalsIgnoreCase("WEB")) { return null; }
+
+        return chatUserDetails.stream().filter(user -> user.getDeviceType().equalsIgnoreCase("IOS") || user.getDeviceType().equalsIgnoreCase("ANDROID")).min(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).orElse(null);
+
+    }
+
+    private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
 		String responseBody = e.getResponseBodyAsString();
 		try {
 			Response<?> r = MAPPER.readValue(responseBody, Response.class);
