@@ -188,6 +188,8 @@ public class SandboxUserService {
 		Response<String> response = new Response<>();
 		response.setData(AESEncryption.encryptString(jsonString,
 				registerDto.getLicenseKey() + registerDto.getLicenseKey() + registerDto.getLicenseKey()));
+        log.info("register response : "+ registerResponseDto.toString());
+        log.info("register response encrypted value: "+response.getData());
 		response.setStatus(HttpStatus.OK.value());
 		response.setMessage(GatewayConstants.USER_ADD_SUCCESS);
 		return response;
