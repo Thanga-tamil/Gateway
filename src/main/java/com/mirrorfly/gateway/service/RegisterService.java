@@ -121,8 +121,10 @@ public class RegisterService {
 		}
 
         asyncService.updateRosters(userdomain, registerResponseDto.getUsername(), contactNo, xmppDomain);
-
-        return new Response<>(HttpStatus.OK.value(), AESEncryption.encryptString(jsonString, licenseKey.repeat(3)), GatewayConstants.DATA_RETRIEVED);
+        String encryptedString = AESEncryption.encryptString(jsonString, licenseKey.repeat(3));
+        log.info("register response : "+ registerResponseDto.toString());
+        log.info("register response encrypted value: "+ encryptedString);
+        return new Response<>(HttpStatus.OK.value(), encryptedString, GatewayConstants.DATA_RETRIEVED);
 
 	}
 
