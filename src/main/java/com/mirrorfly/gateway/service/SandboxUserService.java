@@ -76,7 +76,7 @@ public class SandboxUserService {
 		String contactNo = registerDto.getMobileNumber();
 		registerDto.setMobileNumber(registerDto.getCountryCode() + contactNo);
 
-		registerService.inputDataValidation(registerDto);
+		registerService.inputDataValidation(userdomain, registerDto);
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		
 		Users users = new Users();

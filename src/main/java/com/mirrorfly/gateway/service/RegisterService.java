@@ -142,8 +142,7 @@ public class RegisterService {
 	private RegisterResponseDto registerUser(String userdomain, RegisterDto registerDto) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
         RegisterResponseDto registerResponseDto = new RegisterResponseDto();
-        inputDataValidation(registerDto);
-        mobileSession(userdomain, registerDto.getUserIdentifier(), registerDto.getDeviceType());
+        inputDataValidation(userdomain, registerDto);
         Users user = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
 		if (chatUser == null) {
@@ -319,7 +318,8 @@ public class RegisterService {
 	}
 
 	@SwitchDataSource(value = "[0]")
-	public void inputDataValidation(SanboxUserRegisterDto registerDto) {
+	public void inputDataValidation(String userdomain, SanboxUserRegisterDto registerDto) {
+        AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		RegisterDto registerData = new RegisterDto();
 		registerData.setDeviceId(registerDto.getDeviceId());
 		registerData.setDeviceOsVersion(registerDto.getDeviceOsVersion());
@@ -334,10 +334,10 @@ public class RegisterService {
 		registerData.setPushServerType(registerDto.getPushServerType());
 		registerData.setMetaData(registerDto.getMetaData());
 		registerData.setUserType(registerDto.getUserType());
-		inputDataValidation(registerData);
+		inputDataValidation(userdomain, registerData);
 	}
 
-	private void inputDataValidation(RegisterDto registerDto) {
+	private void inputDataValidation(String userdomain, RegisterDto registerDto) {
 		String userIdentifier = registerDto.getUserIdentifier();
 		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
@@ -366,6 +366,7 @@ public class RegisterService {
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
 		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
 
+        mobileSession(userdomain, registerDto.getUserIdentifier(), registerDto.getDeviceType());
 	}
 
     private void mobileSession(String userDomain, String userIdentifier, String deviceType){
