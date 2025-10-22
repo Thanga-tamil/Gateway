@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -43,13 +45,14 @@ public class AsyncService {
 
         List<UserContact> usersContacts = userContactRepo.findByMobileNumber(contactNo);
 
+        Set<String> usernames = usersContacts.stream().map(UserContact::getUsername).collect(Collectors.toSet());
+
+        List<String> rosters = rosterUserRepo.findAllRosters(usernames, username + "@" + xmppDomain);
+
         List<RosterUser> rosterUsers = usersContacts.stream()
-                .filter(contact -> rosterUserRepo.findById(new RosterUserKey(contact.getUsername(), username + "@" + xmppDomain)).isEmpty())
-                .map(contact -> {
-                    RosterUserKey key = new RosterUserKey(contact.getUsername(), username + "@" + xmppDomain);
-                    // Exclude Existing Records Using "UNIQUE KEY i_rosteru_sh_user_jid".. ( RosterUserKey )
-                    return (new RosterUser(key, 'N', 'N', username, contact.getName(), 'B', "item", contact.getLicenseKey()));
-                }).toList();
+                .filter(contact -> !rosters.contains(contact.getUsername()))
+                .map(contact -> (new RosterUser(new RosterUserKey(contact.getUsername(), username + "@" + xmppDomain), 'N', 'N', username, contact.getName(), 'B', "item", contact.getLicenseKey())))
+                .toList();
 
         rosterUserRepo.saveAll(rosterUsers);
         userContactRepo.deleteAll(usersContacts);
