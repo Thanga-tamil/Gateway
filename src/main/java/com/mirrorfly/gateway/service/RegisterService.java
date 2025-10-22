@@ -121,10 +121,8 @@ public class RegisterService {
 		}
 
         asyncService.updateRosters(userdomain, registerResponseDto.getUsername(), contactNo, xmppDomain);
-        String encryptedString = AESEncryption.encryptString(jsonString, licenseKey.repeat(3));
-        log.info("register response : "+ registerResponseDto.toString());
-        log.info("register response encrypted value: "+ encryptedString);
-        return new Response<>(HttpStatus.OK.value(), encryptedString, GatewayConstants.DATA_RETRIEVED);
+
+        return new Response<>(HttpStatus.OK.value(), AESEncryption.encryptString(jsonString, licenseKey.repeat(3)), GatewayConstants.DATA_RETRIEVED);
 
 	}
 
@@ -416,5 +414,24 @@ public class RegisterService {
 			throw new BadDataException("Error in registration. Please try again later");
 		}
 	}
+    @SwitchDataSource(value = "[0]")
+    public Response<RegisterResponseDto> decryptRegisterData(String userdomain, RegisterRequestDto registerRequestDto) {
+        String licenseKey       = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
+        String decyptedString   = Optional.ofNullable(AESEncryption.decryptString(registerRequestDto.getRegisterData(), licenseKey.repeat(3))).filter(s -> !s.isBlank()).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSEKEY_INVALID));
+        RegisterResponseDto registerResponseDto;
 
+        try {
+            registerResponseDto = MAPPER.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8), RegisterResponseDto.class);
+        } catch (JsonProcessingException e) {
+            log.error("Register Payload Are Not Readable :: {}", e.getMessage());
+            throw new BadDataException(GatewayConstants.INVALID_ERROR);
+        }
+        registerResponseDto.setConfig(null);
+        Response<RegisterResponseDto> response = new Response<>();
+        response.setStatus(HttpStatus.OK.value());
+        response.setData(registerResponseDto);
+        response.setMessage(GatewayConstants.DATA_RETRIEVED);
+        return response;
+
+    }
 }
