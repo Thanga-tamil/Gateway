@@ -41,6 +41,20 @@ public class Response<T> {
 	/**
 	 * Constructor of List Response which can invoke the method directly to activity
 	 * 
+	 * @param status  get the status of processing
+	 * @param data    get the data in json format
+	 * @param message get the message in string format
+	 */
+	public Response(Integer status, T data, String message) {
+		super();
+		this.status = status;
+		this.data = data;
+		this.message = message;
+	}
+
+	/**
+	 * Constructor of List Response which can invoke the method directly to activity
+	 * 
 	 * @param data
 	 */
 	public Response(T data) {
