@@ -1,6 +1,5 @@
 package com.mirrorfly.gateway.controller;
 
-import com.mirrorfly.gateway.dto.RegisterResponseDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,13 +49,5 @@ public class RegisterController {
 			@RequestHeader String userdomain) {
 		return registerService.registerNewUser(userdomain, registerRequestDto);
 	}
-
-    @PostMapping("/decrypt")
-    public Response<RegisterResponseDto> decryptRegisterData(@Validated @RequestBody RegisterRequestDto registerRequestDto,
-                                                             @RequestHeader String userdomain) {
-        return registerService.decryptRegisterData(userdomain, registerRequestDto);
-    }
-
-
 
 }
