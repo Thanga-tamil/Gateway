@@ -54,7 +54,7 @@ public class RegisterController {
     @PostMapping("/decrypt")
     public Response<RegisterResponseDto> decryptRegisterData(@Validated @RequestBody RegisterRequestDto registerRequestDto,
                                                              @RequestHeader String userdomain) {
-        return registerService.decryptRegisterData("http://api-dev-hawkeye.contus.us", registerRequestDto);
+        return registerService.decryptRegisterData(userdomain, registerRequestDto);
     }
 
 
