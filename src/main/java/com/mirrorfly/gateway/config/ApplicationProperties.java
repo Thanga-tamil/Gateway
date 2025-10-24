@@ -132,11 +132,5 @@ public class ApplicationProperties {
 		return env.getProperty("caffeine.totallimit");
 	}
 
-	public String getMailSourceType() {
-		return env.getProperty("mail.source.type");
-	}
-
-	public String getMailSource() {
-		return env.getProperty("mail.source.address");
-	}
+    public Boolean getActuatorLogBool() { return Boolean.valueOf(env.getProperty("actuator_log")); }
 }
