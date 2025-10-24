@@ -10,7 +10,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.1.2</version>
+		<version>3.1.12</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 
@@ -22,7 +22,6 @@
 		<project.http.version>1.23.0</project.http.version>
 		<spring-boot-admin.version>2.0.3</spring-boot-admin.version>
 		<jackson.version>2.11.0</jackson.version>
-		<log4j2.version>2.17.0</log4j2.version>
 	</properties>
 
 	<dependencies>
@@ -130,20 +129,8 @@
 		</dependency>
 
 		<dependency>
-			<groupId>net.logstash.logback</groupId>
-			<artifactId>logstash-logback-encoder</artifactId>
-			<version>6.3</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
 		</dependency>
 
 		<dependency>
@@ -183,6 +170,12 @@
 			<groupId>io.hypersistence</groupId>
 			<artifactId>hypersistence-utils-hibernate-62</artifactId>
 			<version>3.5.2</version>
+		</dependency>
+		
+		<!-- SMTP dependency -->
+		<dependency>
+    		<groupId>org.springframework.boot</groupId>
+    		<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 
 	</dependencies>
@@ -227,18 +220,9 @@
 	<build>
 		<finalName>gatewayservice</finalName>
 		<plugins>
-			<!-- Package as an executable jar/war -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-failsafe-plugin</artifactId>
 			</plugin>
 		</plugins>
 	</build>

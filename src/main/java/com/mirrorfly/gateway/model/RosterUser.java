@@ -1,10 +1,11 @@
 package com.mirrorfly.gateway.model;
 
+import java.util.Objects;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-
 import lombok.Data;
 import java.util.Objects;
 

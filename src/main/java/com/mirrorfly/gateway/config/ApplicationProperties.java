@@ -127,7 +127,7 @@ public class ApplicationProperties {
 	public String getCaffeineTtl() {
 		return env.getProperty("caffeine.ttl");
 	}
-	
+
 	public String getCaffeineTotalLimit() {
 		return env.getProperty("caffeine.totallimit");
 	}
