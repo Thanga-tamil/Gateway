@@ -89,7 +89,7 @@ public class RegisterService {
 	@SwitchDataSource(value = "[0]")
 	public Response<String> registerNewUser(String userdomain, RegisterRequestDto registerRequestDto) {
 
-        String licenseKey       = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
+    String licenseKey       = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
 		String xmppDomain       = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain")).orElseThrow(() -> new BadDataException("Xmpp Domain not found"));
 		String decyptedString   = Optional.ofNullable(AESEncryption.decryptString(registerRequestDto.getRegisterData(), licenseKey.repeat(3))).filter(s -> !s.isBlank()).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSEKEY_INVALID));
 
@@ -110,7 +110,7 @@ public class RegisterService {
 
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
-        registerResponseDto.setConfig(configService.getConfigData(licenseKey));
+    registerResponseDto.setConfig(configService.getConfigData(licenseKey));
 
 		String jsonString;
 
