@@ -13,8 +13,6 @@ public class RegisterDto {
 
 	private String countryCode = "";
 
-	private String countryCode = "";
-
 	private String deviceType;
 
 	private Integer mode = 0;

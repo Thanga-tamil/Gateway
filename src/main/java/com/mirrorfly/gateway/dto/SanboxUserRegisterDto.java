@@ -11,8 +11,6 @@ public class SanboxUserRegisterDto {
 
 	private String countryCode = "";
 
-	private String countryCode = "";
-
 	private String deviceType;
 	
 	private String deviceId = "";
