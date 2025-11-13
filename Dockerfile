@@ -1,4 +1,4 @@
-# Start with a base image containing Java runtime
+# Start with base image containing Java runtime
 FROM openjdk:24-slim-bullseye
 
 RUN apt-get update
