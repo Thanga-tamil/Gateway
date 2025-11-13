@@ -10,10 +10,7 @@ on:
 jobs:
   build:
     name: Build and Deploy on Self-hosted Runner
-    runs-on: 
-      labels:
-        - self-hosted
-        - docker
+    runs-on: self-hosted
 
     steps:
       - name: Checkout repository
