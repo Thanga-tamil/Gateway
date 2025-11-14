@@ -72,10 +72,16 @@ public class DataSourceAspect {
                             applicationContext.getAutowireCapableBeanFactory().autowireBean(instantRefresh);
                         }
 
-                        Map<String, DataSource> newDataSources = instantRefresh.refresh(
-                                AbstractRoutingDataSourceImpl.getDefaultDataSource(),
-                                AbstractRoutingDataSourceImpl.getAvailableDataSourcesKeys());
-                        AbstractRoutingDataSourceImpl.updateDataSources(newDataSources);
+                        try {
+                            Map<String, DataSource> newDataSources = instantRefresh.refresh(
+                                    AbstractRoutingDataSourceImpl.getDefaultDataSource(),
+                                    AbstractRoutingDataSourceImpl.getAvailableDataSourcesKeys());
+                            AbstractRoutingDataSourceImpl.updateDataSources(newDataSources);
+                        } catch (Exception ex) {
+                            log.error("Failed refreshing datasource for domain {}", targetDs, ex);
+                            domainLocks.remove(targetDs);   // cleanup lock on failure
+                            throw ex;
+                        }
 
                         ds = AbstractRoutingDataSourceImpl.getActiveDataSource();
 
