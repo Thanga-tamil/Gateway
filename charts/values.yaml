@@ -96,3 +96,20 @@ extraEnv:
     value: "consul-server"
   - name: CONSUL_PORT
     value: 8500
+
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: 8080
+  initialDelaySeconds: 90
+  periodSeconds: 5
+  timeoutSeconds: 15
+  failureThreshold: 2
+readinessProbe:
+  httpGet:
+    path: /actuator/health
+    port: 8080
+    initialDelaySeconds: 120
+    periodSeconds: 5
+    timeoutSeconds: 15
+    failureThreshold: 2
