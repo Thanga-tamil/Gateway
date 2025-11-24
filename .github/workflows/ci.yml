@@ -1,0 +1,30 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    # branches: [ "staging", "production" ]
+    branches: ["feature/preprod"]
+
+permissions:
+  id-token: write
+  contents: read
+  
+jobs:
+  build:
+    name: Build
+    runs-on: 
+      group: tm-runner-group
+      labels: arc-runner-set
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build
+        uses: docker/build-push-action@v5
+        with:
+          push: false
+          provenance: false
+          platforms: linux/amd64
+          tags: ${{ github.sha }}
