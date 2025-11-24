@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   pull_request:
     # branches: [ "staging", "production" ]
-    branches: ["feature/preprod"]
+    branches: ["feature/gateway"]
 
 permissions:
   id-token: write
