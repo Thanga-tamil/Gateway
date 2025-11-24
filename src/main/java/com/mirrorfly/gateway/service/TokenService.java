@@ -62,12 +62,12 @@ public class TokenService {
 		tokenDetail.setClientIp(clientIp);
 		tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
 		tokenDetail.setDevicetype(devicetype);
-		tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusMinutes(15l));
+		tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(24l));
 		tokenDetail.setToken(GenerateToken.generateToken(tokenDetail));
 		tokenDetail.setUsername(username);
 		tokenRepo.save(tokenDetail);
 		try {
-			stringRedisTemplate.opsForValue().set(tokenDetail.getToken(), username, 15, TimeUnit.MINUTES);
+			stringRedisTemplate.opsForValue().set(tokenDetail.getToken(), username, 24, TimeUnit.HOURS);
 		} catch (Exception e) {
 			log.error("Error in redis connection ", e);
 			return tokenDetail.getToken();
