@@ -1,30 +1,25 @@
 on:
   push:
-    branches: ["feature/preprod", "development"]
-
+    branches: ["feature/gateway", "development"]
 env:
   IMAGE_TAG: ${{ github.sha }}
   GCP_PROJECT: "ting-messenger"
   GCP_REGION: "asia-south1"
   ARTIFACT_REGISTRY_NAME: "tm-artifact-registry"
   GCP_CLUSTER_NAME: "tm-cluster"
-
 permissions:
   id-token: write
   contents: read
-
 jobs:
   build-deploy:
-    if: github.ref_name == 'feature/preprod'
+    if: github.ref_name == 'feature/gateway'
     name: Build and deploy to Kubernetes Cluster
     runs-on:
       group: tm-runner-group
       labels: arc-runner-set
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Authenticate to Google Cloud
         id: gcp-auth
         uses: google-github-actions/auth@v2
@@ -32,22 +27,18 @@ jobs:
           project_id: ${{ env.GCP_PROJECT }}
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY_JSON }}
           export_environment_variables: true
-
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v2
         with:
           version: 'latest'
           install_components: 'gke-gcloud-auth-plugin'
-
       - name: Configure Docker for Artifact Registry
         run: |
           gcloud auth configure-docker $GCP_REGION-docker.pkg.dev --quiet
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker-container
-
       - name: Build and Push Docker image
         id: docker_build
         uses: docker/build-push-action@v5
@@ -57,20 +48,16 @@ jobs:
           tags: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/${{ env.ARTIFACT_REGISTRY_NAME }}/${{ github.event.repository.name }}:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
       - name: Get GKE credentials
         run: |
           gcloud container clusters get-credentials $GCP_CLUSTER_NAME --region $GCP_REGION --project $GCP_PROJECT
-
       - name: Install Helm
         uses: azure/setup-helm@v4
-
       - name: Get chart name
         id: chart_name
         run: |
           CHART_NAME=$(grep '^name:' charts/Chart.yaml | awk '{print $2}')
           echo "chart_name=${CHART_NAME}" >> "$GITHUB_OUTPUT"
-
       - name: Helm upgrade/install
         run: |
           RELEASE_NAME=${{ steps.chart_name.outputs.chart_name }}
@@ -79,7 +66,6 @@ jobs:
             --create-namespace \
             --set image.repository=${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT}/${ARTIFACT_REGISTRY_NAME}/${{ github.event.repository.name }} \
             --set image.tag=${IMAGE_TAG}
-
   #########################################################################
   # 2 JOB FOR DEVELOPMENT (Self-hosted runner + local deploy script)
   #########################################################################
@@ -90,10 +76,8 @@ jobs:
       labels:
         - self-hosted
         - docker
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Map repo to service
         id: map
         env:
@@ -111,7 +95,7 @@ jobs:
             ["tm-backend-notification-service"]="notificationservice"
             ["tm-backend-signal-service"]="signalservice"
             ["tm-backend-scheduler-service"]="schedulerservice"
-            ["tm-backend-frontend-chat"]="webchat"
+            ["tm-frontend-chat"]="webchat"
             ["tm-backend-webadmin-gateway-service"]="webgatewayservice"
             ["tm-backend-webadmin-customer-service"]="webcustomerservice"
             ["tm-backend-webadmin-metric-service"]="webmetricservice"
@@ -131,88 +115,5 @@ jobs:
           fi
 
           echo "service_name=$SERVICE" >> $GITHUB_OUTPUT
-
       - name: Deploy service
         run: ~/deploy.sh "${{ steps.map.outputs.service_name }}"
-
-
-# on:
-#   push:
-#     branches: ["feature/preprod"]
-
-# env:
-#   IMAGE_TAG: ${{ github.sha }}
-#   GCP_PROJECT: "ting-messenger"
-#   GCP_REGION: "asia-south1"
-#   ARTIFACT_REGISTRY_NAME: "tm-artifact-registry"
-#   GCP_CLUSTER_NAME: "tm-cluster"
-
-# permissions:
-#   id-token: write
-#   contents: read
-
-# jobs:
-#   build-deploy:
-#     name: build-deploy
-#     runs-on:
-#       group: tm-runner-group
-#       labels: arc-runner-set
-
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
-
-#       - name: Authenticate to Google Cloud
-#         id: gcp-auth
-#         uses: google-github-actions/auth@v2
-#         with:
-#           project_id: ${{ env.GCP_PROJECT }}
-#           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY_JSON }}
-#           export_environment_variables: true
-
-#       - name: Setup gcloud CLI
-#         uses: google-github-actions/setup-gcloud@v2
-#         with:
-#           version: 'latest'
-#           install_components: 'gke-gcloud-auth-plugin'
-
-#       - name: Configure Docker for Artifact Registry
-#         run: |
-#           gcloud auth configure-docker $GCP_REGION-docker.pkg.dev --quiet
-
-#       - name: Set up Docker Buildx
-#         uses: docker/setup-buildx-action@v3
-#         with:
-#           driver: docker-container
-
-#       - name: Build and Push Docker image
-#         id: docker_build
-#         uses: docker/build-push-action@v5
-#         with:
-#           push: true
-#           provenance: false
-#           tags: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/${{ env.ARTIFACT_REGISTRY_NAME }}/${{ github.event.repository.name }}:${{ env.IMAGE_TAG }}
-#           cache-from: type=gha
-#           cache-to: type=gha,mode=max
-
-#       - name: Get GKE credentials
-#         run: |
-#           gcloud container clusters get-credentials $GCP_CLUSTER_NAME --region $GCP_REGION --project $GCP_PROJECT
-
-#       - name: Install Helm
-#         uses: azure/setup-helm@v4
-
-#       - name: Get chart name
-#         id: chart_name
-#         run: |
-#           CHART_NAME=$(grep '^name:' charts/Chart.yaml | awk '{print $2}')
-#           echo "chart_name=${CHART_NAME}" >> "$GITHUB_OUTPUT"
-
-#       - name: Helm upgrade/install
-#         run: |
-#           RELEASE_NAME=${{ steps.chart_name.outputs.chart_name }}
-#           helm upgrade --install "$RELEASE_NAME" ./charts \
-#             --namespace production \
-#             --create-namespace \
-#             --set image.repository=${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT}/${ARTIFACT_REGISTRY_NAME}/${{ github.event.repository.name }} \
-#             --set image.tag=${IMAGE_TAG}
