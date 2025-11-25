@@ -1,7 +1,7 @@
 package com.mirrorfly.gateway.service;
 
 import java.time.Duration;
-
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -13,7 +13,6 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.exception.BadDataException;
@@ -37,13 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class MailAuthService {
-	
-	@Autowired
-	private ApplicationProperties applicationProperties;
-	
-	@Autowired
-	private SMTPMailService mailService;
-	
+
 	@Autowired
 	private AWSEmailService awsEmailService;
 
@@ -54,15 +47,13 @@ public class MailAuthService {
 	private VcardSearchRepo vcardSearchRepo;
 
 	@Autowired
-	private DataStore dataStore;
-
-	@Autowired
 	private ConfigService configService;
 
 	@Autowired
+	private DataStore dataStore;
+
+	@Autowired
 	private CommonService commonService;
-	
-	private static final String MAIL_SOURCE_TYPE = "smtp";
 
 	@Transactional
 	@SwitchDataSource(value = "[0]")
@@ -72,7 +63,7 @@ public class MailAuthService {
 		validateEmail(email);
 
 		// Fetch connection configuration from the data store
-		ConnectionConfig config = getConnectionConfigByDomain(userdomain);
+		ConnectionConfig config = commonService.getConnectionConfigByDomain(userdomain);
 
 		EmailConfig emailConfig = Optional.ofNullable(config.getEmailConfig()).orElseGet(() -> {
 			log.warn("EmailConfig is null for domain '{}'. Current ConnectionConfig: {}", userdomain, config);
@@ -95,15 +86,10 @@ public class MailAuthService {
 		String otpToken = saveOrUpdateOtpInDb(email, config.getLicenseKey());
 		// Send Mail with the generated 6-digit OTP
 		try {
-			if (applicationProperties.getMailSourceType().equalsIgnoreCase(MAIL_SOURCE_TYPE)) {
-				mailService.sendSMTPMails(emailConfig, email, otpToken);
-				log.info("OTP sent successfully to email: {}", email);
-				return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS, "OTP sent successfully to: " + email);
-			} else {
-				awsEmailService.sendAWSSES(emailConfig, email, otpToken);
-				log.info("OTP sent successfully to email: {}", email);
-				return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS, "OTP sent successfully to: " + email);
-			}
+			awsEmailService.sendAWSSES(emailConfig, email, otpToken);
+			log.info("OTP sent successfully to email: {}", email);
+			return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS,
+					"OTP sent successfully to: " + email);
 		} catch (MessagingException e) {
 			log.error("Error occurred while sending OTP email: " + e.getMessage());
 			// Roll-back transaction if sending email fails
@@ -157,7 +143,7 @@ public class MailAuthService {
 		log.info("Starting OTP validation for email: {}", email);
 		validateInputs(email, otp);
 
-		ConnectionConfig config = getConnectionConfigByDomain(userdomain);
+		ConnectionConfig config = commonService.getConnectionConfigByDomain(userdomain);
 
 		EmailConfig emailConfig = Optional.ofNullable(config.getEmailConfig()).orElseGet(() -> {
 			log.warn("EmailConfig is null for domain '{}'. Current ConnectionConfig: {}", userdomain, config);
@@ -173,7 +159,7 @@ public class MailAuthService {
 		if (isStaticEmail(emailConfig, email) && otp.equals(emailConfig.getStaticMetadata().getStaticOtp())) {
 			log.info("Static email and OTP detected, skipping validation for email: {}", email);
 			Map<String, Object> responseData = new HashMap<>();
-			responseData.put("username", emailConfig.getStaticMetadata().getStaticUserId());
+			responseData.put("username", email.contains("@") ? email.substring(0, email.indexOf("@")) : email);
 			responseData.put("email", email);
 			return buildResponse(HttpStatus.OK, GatewayConstants.OTP_VERIFIED_SUCCESS, responseData);
 		}
@@ -217,20 +203,12 @@ public class MailAuthService {
 			throw new BadDataException(GatewayConstants.INVALID_OTP);
 	}
 
-	private ConnectionConfig getConnectionConfigByDomain(String userdomain) {
-		return Optional.ofNullable(dataStore.getConnectionConfigByDomain(userdomain)).orElseThrow(() -> {
-			log.warn("No connection configuration found for domain: {}", userdomain);
-			return new IllegalArgumentException("No connection configuration found for domain: " + userdomain);
-		});
-	}
-
 	private EmailConfig fetchEmailConfig(String userdomain) {
 
 		EntityManagerFactory entityManagerFactory = null;
 		EntityManager entityManager = null;
 
 		try {
-			// Set the database to default
 			entityManagerFactory = dataStore.createMasterEntityManagerFactory();
 			entityManager = entityManagerFactory.createEntityManager();
 
@@ -255,8 +233,9 @@ public class MailAuthService {
 	}
 
 	private boolean isStaticEmail(EmailConfig emailConfig, String email) {
-		return emailConfig != null && emailConfig.getStaticMetadata() != null
-				&& email.equalsIgnoreCase(emailConfig.getStaticMetadata().getStaticEmail());
+		return emailConfig != null && emailConfig.getStaticMetadata() != null && email != null
+				&& Arrays.stream(emailConfig.getStaticMetadata().getStaticEmail().split(",")).map(String::trim)
+						.anyMatch(e -> email.equalsIgnoreCase(e));
 	}
 
 	private ChatEmailTokens findOtpToken(String email) {

@@ -1,0 +1,62 @@
+#Development build workflow
+name: Build and Deploy Service
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - development
+
+jobs:
+  build:
+    name: Build and Deploy on Self-hosted Runner
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Map repository to service name
+        id: map
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          declare -A SERVICE_MAP=(
+            ["https://github.com/x-arterian/tm-backend-gateway-service"]="gatewayservice"
+            ["https://github.com/x-arterian/tm-backend-user-service"]="userservice"
+            ["https://github.com/x-arterian/tm-backend-contact-service"]="contactservice"
+            ["https://github.com/x-arterian/tm-backend-media-service"]="mediaservice"
+            ["https://github.com/x-arterian/tm-backend-xmpp-service"]="xmppservice"
+            ["https://github.com/x-arterian/tm-backend-chat-service"]="chatapiservice"
+            ["https://github.com/x-arterian/tm-backend-group-service"]="groupservice"
+            ["https://github.com/x-arterian/tm-backend-moderator-service"]="moderationservice"
+            ["https://github.com/x-arterian/tm-backend-notification-service"]="notificationservice"
+            ["https://github.com/x-arterian/tm-backend-signal-service"]="signalservice"
+            ["https://github.com/x-arterian/tm-backend-scheduler-service"]="schedulerservice"
+            ["https://github.com/x-arterian/tm-backend-frontend-chat"]="webchat"
+            ["https://github.com/x-arterian/tm-backend-webadmin-gateway-service"]="webgatewayservice"
+            ["https://github.com/x-arterian/tm-backend-webadmin-customer-service"]="webcustomerservice"
+            ["https://github.com/x-arterian/tm-backend-webadmin-metric-service"]="webmetricservice"
+            ["https://github.com/x-arterian/tm-backend-webadmin-metric-service"]="webmetricservice"
+            ["https://github.com/x-arterian/tm-backend-webadmin-moderator-service"]="webmoderationservice"
+            ["https://github.com/x-arterian/tm-backend-webadmin-notification-service"]="webnotificationservice"
+            ["https://github.com/x-arterian/tm-frontend-admin"]="webadmin-react"
+            ["https://github.com/x-arterian/tm-backend-channel-service"]="channelservice"
+            ["https://github.com/x-arterian/tm-backend-consumer-service"]="consumerservice"
+            ["https://github.com/x-arterian/tm-backend-centrifugo-service.git"]="go-chatservice"
+          )
+
+          #REPO_NAME="${{ github.event.repository.name }}"
+          SERVICE_NAME="${SERVICE_MAP[$REPO_NAME]:-}"
+
+          if [ -z "$SERVICE_NAME" ]; then
+            echo "❌ No mapping found for repository: $REPO_NAME"
+            exit 1
+          fi
+
+          echo "Service mapped: $SERVICE_NAME"
+          echo "service_name=$SERVICE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Build and deploy service
+        run: ~/deploy.sh "${{ steps.map.outputs.service_name }}"

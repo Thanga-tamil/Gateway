@@ -8,7 +8,7 @@ import lombok.Data;
 public class SanboxUserRegisterDto {
 
 	private String mobileNumber;
-	
+
 	private String countryCode = "";
 
 	private String deviceType;
@@ -34,5 +34,5 @@ public class SanboxUserRegisterDto {
 	private String pushServerType = "";
 	
 	private String userType;
-		
+
 }

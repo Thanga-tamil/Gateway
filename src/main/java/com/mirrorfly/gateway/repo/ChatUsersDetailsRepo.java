@@ -17,8 +17,7 @@ public interface ChatUsersDetailsRepo extends JpaRepository<ChatUserDetails, Str
 	public List<ChatUserDetails> findByUsername(@Param("username") String username);
 
 	@Query("Select c from ChatUserDetails  c where c.username = :username and c.password = :password")
-	public ChatUserDetails findByUsernameAndPassword(@Param("username") String username,
-			@Param("password") String password);
+	public ChatUserDetails findByUsernameAndPassword(@Param("username") String username, @Param("password") String password);
 
 	@Query("Select c from ChatUserDetails  c where c.username = :username and c.deviceId = :deviceId")
 	public ChatUserDetails findByUsernameAndDeviceId(@Param("username") String username,
