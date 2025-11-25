@@ -1,29 +1,28 @@
-# Start with a base image containing Java runtime
-FROM openjdk:24-slim-bullseye
+FROM maven:3.9.9-eclipse-temurin-17 AS builder
 
-RUN apt-get update
-RUN apt-get install libgnutls30:amd64 systemd -y
+WORKDIR /build
+COPY pom.xml .
+RUN mvn dependency:go-offline --no-transfer-progress
 
-RUN chmod 600 /etc/passwd && chmod 600 /etc/shadow && chmod 600 /etc/group
+COPY src ./src
 
-# Creating appuser and login as appuser
-RUN addgroup   --system --gid 1001 appuser
-RUN adduser  --system --uid  1001   --group appuser
-RUN  chown -R appuser:appuser /opt
-RUN  chown -R appuser:appuser /opt
+# Use --no-transfer-progress to cut network chatter and size
+RUN mvn -B clean package -DskipTests
+
+
+# ---------- Stage 2: Runtime ----------
+FROM eclipse-temurin:17-jre-alpine AS runtime
+# alpine is ~80 MB smaller than slim-bullseye
+
+# Add system dependencies only if your app truly needs them
+# libgnutls is usually not required for most Java apps; include only if necessary
+RUN addgroup -S appuser && adduser -S appuser -G appuser
+
 USER appuser
 
-# Add a volume pointing to /tmp
-VOLUME /tmp
+WORKDIR /app
+COPY --from=builder /build/target/gatewayservice.jar ./gatewayservice.jar
 
-# Make port 8080 available to the world outside this container
 EXPOSE 8080
 
-# The application's jar file
-ARG JAR_FILE=target/gatewayservice.jar
-
-# Add the application's jar to the container
-ADD ${JAR_FILE} gatewayservice.jar
-
-# Run the jar file
-ENTRYPOINT exec java $JAVA_OPTS -jar /gatewayservice.jar
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar gatewayservice.jar"]

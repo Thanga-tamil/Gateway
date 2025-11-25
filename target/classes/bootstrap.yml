@@ -3,8 +3,8 @@ spring:
     name: gatewayservice
   cloud:
     consul:
-      host: dev-consul
-      port: 8500
+      host: ${CONSUL_HOST}
+      port: ${CONSUL_PORT}
       config:
         format: YAML
 management:
