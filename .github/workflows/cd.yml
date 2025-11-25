@@ -1,6 +1,6 @@
 on:
   push:
-    branches: ["production"]
+    branches: ["production", "development"]
 env:
   IMAGE_TAG: ${{ github.sha }}
   GCP_PROJECT: "ting-messenger"
@@ -12,7 +12,7 @@ permissions:
   contents: read
 jobs:
   build-deploy:
-    if: github.ref_name == 'feature/gateway'
+    if: github.ref_name == 'production'
     name: Build and deploy to Kubernetes Cluster
     runs-on:
       group: tm-runner-group
