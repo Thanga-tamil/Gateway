@@ -1,6 +1,6 @@
 on:
   push:
-    branches: ["feature/gateway", "development"]
+    branches: ["production"]
 env:
   IMAGE_TAG: ${{ github.sha }}
   GCP_PROJECT: "ting-messenger"
