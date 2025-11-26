@@ -1,7 +1,5 @@
 package com.mirrorfly.gateway.model;
 
-import java.util.Objects;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -39,6 +37,7 @@ public class RosterUser extends AbstractEntity<RosterUserKey> {
 
 	@Column(name = "jid_username")
 	private String jidUsername;
+  
 	@Column(name = "license_key")
 	private String licenseKey;
 

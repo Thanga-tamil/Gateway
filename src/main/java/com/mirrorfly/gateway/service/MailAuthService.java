@@ -13,7 +13,6 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.exception.BadDataException;
@@ -37,13 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class MailAuthService {
-	
-	@Autowired
-	private ApplicationProperties applicationProperties;
-	
-	@Autowired
-	private SMTPMailService mailService;
-	
+
 	@Autowired
 	private AWSEmailService awsEmailService;
 
@@ -61,8 +54,6 @@ public class MailAuthService {
 
 	@Autowired
 	private CommonService commonService;
-	
-	private static final String MAIL_SOURCE_TYPE = "smtp";
 
 	@Transactional
 	@SwitchDataSource(value = "[0]")
@@ -95,15 +86,10 @@ public class MailAuthService {
 		String otpToken = saveOrUpdateOtpInDb(email, config.getLicenseKey());
 		// Send Mail with the generated 6-digit OTP
 		try {
-			if (applicationProperties.getMailSourceType().equalsIgnoreCase(MAIL_SOURCE_TYPE)) {
-				mailService.sendSMTPMails(emailConfig, email, otpToken);
-				log.info("OTP sent successfully to email: {}", email);
-				return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS, "OTP sent successfully to: " + email);
-			} else {
-				awsEmailService.sendAWSSES(emailConfig, email, otpToken);
-				log.info("OTP sent successfully to email: {}", email);
-				return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS, "OTP sent successfully to: " + email);
-			}
+			awsEmailService.sendAWSSES(emailConfig, email, otpToken);
+			log.info("OTP sent successfully to email: {}", email);
+			return buildResponse(HttpStatus.OK, GatewayConstants.OTP_SENT_SUCCESS,
+					"OTP sent successfully to: " + email);
 		} catch (MessagingException e) {
 			log.error("Error occurred while sending OTP email: " + e.getMessage());
 			// Roll-back transaction if sending email fails

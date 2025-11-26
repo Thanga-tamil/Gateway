@@ -89,7 +89,7 @@ public class RegisterService {
 	@SwitchDataSource(value = "[0]")
 	public Response<String> registerNewUser(String userdomain, RegisterRequestDto registerRequestDto) {
 
-        String licenseKey       = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
+    String licenseKey       = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
 		String xmppDomain       = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain")).orElseThrow(() -> new BadDataException("Xmpp Domain not found"));
 		String decyptedString   = Optional.ofNullable(AESEncryption.decryptString(registerRequestDto.getRegisterData(), licenseKey.repeat(3))).filter(s -> !s.isBlank()).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSEKEY_INVALID));
 
@@ -110,7 +110,7 @@ public class RegisterService {
 
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
-        registerResponseDto.setConfig(configService.getConfigData(licenseKey));
+    registerResponseDto.setConfig(configService.getConfigData(licenseKey));
 
 		String jsonString;
 
@@ -145,8 +145,6 @@ public class RegisterService {
         inputDataValidation(userdomain, registerDto);
         Users user = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
-		inputDataValidation(userdomain, registerDto, chatUser);
-		Users user = new Users();
 		if (chatUser == null) {
 			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
 			try {
@@ -160,7 +158,7 @@ public class RegisterService {
 			}
 			chatUser = new ChatUser();
 			chatUser.setUsername(registerDto.getUserIdentifier());
-			chatUser.setMobileNumber(registerDto.getMobileNumber().trim());
+			chatUser.setMobileNumber(registerDto.getMobileNumber());
 			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
 			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
 			chatUser.setLicenseKey(registerDto.getLicenseKey());
@@ -227,7 +225,7 @@ public class RegisterService {
 		data.setDeviceToken(registerDto.getDeviceToken());
 		data.setDeviceType(registerDto.getDeviceType());
 		data.setLicenseKey(registerDto.getLicenseKey());
-		data.setMobileNumber(registerDto.getMobileNumber().trim());
+		data.setMobileNumber(registerDto.getMobileNumber());
 		data.setMode(registerDto.getMode());
 		data.setUserIdentifier(registerDto.getUserIdentifier());
 		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
@@ -304,62 +302,20 @@ public class RegisterService {
     }
 
 	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> existingChatUsersDetails,
-														  String deviceType) {
-		List<ChatUserDetails> filtered;
-
+			String deviceType) {
 		if (deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-			// Only filter WEB devices
-			filtered = existingChatUsersDetails.stream()
-					.filter(user -> user.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
-					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt))
-					.collect(Collectors.toList());
-			log.info(":: Deletable Record Found DEVICE_WEB ::");
-		} else {
-			// Treat both ANDROID and IOS as mobile
-			filtered = existingChatUsersDetails.stream()
-					.filter(user -> user.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
-							|| user.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS))
-					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt))
-					.collect(Collectors.toList());
+			List<ChatUserDetails> samePlatformDevices = existingChatUsersDetails.stream()
+					.filter(p -> p.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
+					.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).collect(Collectors.toList());
+			if (!samePlatformDevices.isEmpty()) {
+				// need to delete first logged in web device
+				return samePlatformDevices.get(0);
+			}
 		}
-
-		if (!filtered.isEmpty()) {
-			log.info("filtered list is not empty!");
-			return filtered.get(0); // Earliest login among filtered
-		}else{
-			log.info("Returning (Null) Deletable Record Not Found.");
-			return null;
-		}
+		// need to delete first logged in record irrespective to platform
+		Collections.sort(existingChatUsersDetails, Comparator.comparing(ChatUserDetails::getLastLoggedInAt));
+		return existingChatUsersDetails.get(0);
 	}
-
-	@Async
-	public void updateRosters(String username, String contactNo, String xmppDomain) {
-		
-		CompletableFuture.supplyAsync(() -> userContactRepo.findByMobileNumber(contactNo)).thenApply(usersContacts -> {
-		
-			if (usersContacts == null || usersContacts.isEmpty())
-				return Collections.emptyList();
-
-			List<RosterUser> rosters = usersContacts.parallelStream().map(contact -> {
-				String fullJid = username + "@" + xmppDomain;
-				RosterUserKey rosterKey = new RosterUserKey(contact.getUsername(), fullJid);
-				return new RosterUser(rosterKey, 'N', 'N', username, contact.getName(), 'B', "item", contact.getLicenseKey());
-			}).collect(Collectors.toList());
-
-			saveAndDeleteRosters(rosters, usersContacts);
-			return usersContacts;
-		}).exceptionally(ex -> {
-			log.error("Roster update failed", ex.getMessage());
-			return null;
-		});
-	}
-
-	@Transactional
-	public void saveAndDeleteRosters(List<RosterUser> rosters, List<UserContact> contacts) {
-	    rosterUserRepo.saveAll(rosters);
-	    userContactRepo.deleteAll(contacts);
-	}
-
 
 	@SwitchDataSource(value = "[0]")
 	public void inputDataValidation(String userdomain, SanboxUserRegisterDto registerDto) {
@@ -370,7 +326,7 @@ public class RegisterService {
 		registerData.setDeviceToken(registerDto.getDeviceToken());
 		registerData.setDeviceType(registerDto.getDeviceType());
 		registerData.setLicenseKey(registerDto.getLicenseKey());
-		registerData.setMobileNumber(registerDto.getMobileNumber().trim());
+		registerData.setMobileNumber(registerDto.getMobileNumber());
 		registerData.setMode(registerDto.getMode());
 		registerData.setUserIdentifier(registerDto.getUserIdentifier());
 		registerData.setVoipDeviceToken(registerDto.getVoipDeviceToken());
@@ -378,10 +334,10 @@ public class RegisterService {
 		registerData.setPushServerType(registerDto.getPushServerType());
 		registerData.setMetaData(registerDto.getMetaData());
 		registerData.setUserType(registerDto.getUserType());
-		inputDataValidation(userdomain, registerData, chatUser);
+		inputDataValidation(userdomain, registerData);
 	}
 
-	private void inputDataValidation(String userdomain, RegisterDto registerDto, ChatUser chatUser) {
+	private void inputDataValidation(String userdomain, RegisterDto registerDto) {
 		String userIdentifier = registerDto.getUserIdentifier();
 		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
@@ -458,4 +414,24 @@ public class RegisterService {
 			throw new BadDataException("Error in registration. Please try again later");
 		}
 	}
+    @SwitchDataSource(value = "[0]")
+    public Response<RegisterResponseDto> decryptRegisterData(String userdomain, RegisterRequestDto registerRequestDto) {
+        String licenseKey       = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
+        String decyptedString   = Optional.ofNullable(AESEncryption.decryptString(registerRequestDto.getRegisterData(), licenseKey.repeat(3))).filter(s -> !s.isBlank()).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSEKEY_INVALID));
+        RegisterResponseDto registerResponseDto;
+
+        try {
+            registerResponseDto = MAPPER.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8), RegisterResponseDto.class);
+        } catch (JsonProcessingException e) {
+            log.error("Register Payload Are Not Readable :: {}", e.getMessage());
+            throw new BadDataException(GatewayConstants.INVALID_ERROR);
+        }
+        registerResponseDto.setConfig(null);
+        Response<RegisterResponseDto> response = new Response<>();
+        response.setStatus(HttpStatus.OK.value());
+        response.setData(registerResponseDto);
+        response.setMessage(GatewayConstants.DATA_RETRIEVED);
+        return response;
+
+    }
 }

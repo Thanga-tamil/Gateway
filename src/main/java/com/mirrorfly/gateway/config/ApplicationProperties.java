@@ -133,4 +133,17 @@ public class ApplicationProperties {
 	}
 
     public Boolean getActuatorLogBool() { return Boolean.valueOf(env.getProperty("actuator_log")); }
+	
+	public String getMailSourceType() {
+		return env.getProperty("mail.source.type");
+	}
+
+	public String getMailSource() {
+		return env.getProperty("mail.source.address");
+	}
+
+	public String getSkipOTPMobileNumbers() {
+		return env.getProperty("skip_otp_mobile_numbers");
+	}
+
 }
