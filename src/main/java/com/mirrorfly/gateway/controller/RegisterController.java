@@ -51,12 +51,4 @@ public class RegisterController {
 		return registerService.registerNewUser(userdomain, registerRequestDto);
 	}
 
-    @PostMapping("/decrypt")
-    public Response<RegisterResponseDto> decryptRegisterData(@Validated @RequestBody RegisterRequestDto registerRequestDto,
-                                                             @RequestHeader String userdomain) {
-        return registerService.decryptRegisterData(userdomain, registerRequestDto);
-    }
-
-
-
 }

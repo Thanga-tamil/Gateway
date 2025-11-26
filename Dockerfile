@@ -1,5 +1,5 @@
-# Start with base image containing Java runtime
-FROM openjdk:24-slim-bullseye
+# Start with a base image containing Java runtime
+FROM eclipse-temurin:24-jre
 
 RUN apt-get update
 RUN apt-get install libgnutls30:amd64 systemd -y
