@@ -13,17 +13,11 @@ RUN  chown -R appuser:appuser /opt
 RUN  chown -R appuser:appuser /opt
 USER appuser
 
-# Add a volume pointing to /tmp
-VOLUME /tmp
+WORKDIR /app
+COPY --from=builder /build/target/gatewayservice.jar ./gatewayservice.jar
 
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
 
-# The application's jar file
-ARG JAR_FILE=target/gatewayservice.jar
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar gatewayservice.jar"]
 
-# Add the application's jar to the container
-ADD ${JAR_FILE} gatewayservice.jar
-
-# Run the jar file
-ENTRYPOINT exec java $JAVA_OPTS -jar /gatewayservice.jar
