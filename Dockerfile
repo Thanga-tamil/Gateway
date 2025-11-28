@@ -1,32 +1,27 @@
-FROM maven:3.9-eclipse-temurin-17 AS builder
+FROM maven:3.9.9-eclipse-temurin-17 AS builder
 
 WORKDIR /build
-
-# Copy only pom first for faster dependency caching
 COPY pom.xml .
 RUN mvn dependency:go-offline --no-transfer-progress
 
-# Copy source code
 COPY src ./src
 
-# Build the JAR
+# Use --no-transfer-progress to cut network chatter and size
 RUN mvn -B clean package -DskipTests
 
-FROM eclipse-temurin:17-jre-alpine AS runtime
 
-# Create a non-root user
+# ---------- Stage 2: Runtime ----------
+FROM eclipse-temurin:17-jre-alpine AS runtime
+# alpine is ~80 MB smaller than slim-bullseye
+
+# Add system dependencies only if your app truly needs them
+# libgnutls is usually not required for most Java apps; include only if necessary
 RUN addgroup -S appuser && adduser -S appuser -G appuser
 
 USER appuser
 
 WORKDIR /app
-
-# Copy compiled JAR from builder stage
 COPY --from=builder /build/target/gatewayservice.jar ./gatewayservice.jar
 
-# Expose application port
 EXPOSE 8080
-
-# Run the Spring Boot app
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar gatewayservice.jar"]
-
+ENTRYPOINT ["java", "-jar", "gatewayservice.jar"]
