@@ -1,23 +1,32 @@
-# Start with a base image containing Java runtime
-FROM eclipse-temurin:24-jre
+FROM maven:3.9-eclipse-temurin-17 AS builder
 
-RUN apt-get update
-RUN apt-get install libgnutls30:amd64 systemd -y
+WORKDIR /build
 
-RUN chmod 600 /etc/passwd && chmod 600 /etc/shadow && chmod 600 /etc/group
+# Copy only pom first for faster dependency caching
+COPY pom.xml .
+RUN mvn dependency:go-offline --no-transfer-progress
 
-# Creating appuser and login as appuser
-RUN addgroup   --system --gid 1001 appuser
-RUN adduser  --system --uid  1001   --group appuser
-RUN  chown -R appuser:appuser /opt
-RUN  chown -R appuser:appuser /opt
+# Copy source code
+COPY src ./src
+
+# Build the JAR
+RUN mvn -B clean package -DskipTests
+
+FROM eclipse-temurin:17-jre-alpine AS runtime
+
+# Create a non-root user
+RUN addgroup -S appuser && adduser -S appuser -G appuser
+
 USER appuser
 
 WORKDIR /app
+
+# Copy compiled JAR from builder stage
 COPY --from=builder /build/target/gatewayservice.jar ./gatewayservice.jar
 
-# Make port 8080 available to the world outside this container
+# Expose application port
 EXPOSE 8080
 
+# Run the Spring Boot app
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar gatewayservice.jar"]
 
