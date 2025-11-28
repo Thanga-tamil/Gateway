@@ -50,4 +50,5 @@ public class RegisterController {
 			@RequestHeader String userdomain) {
 		return registerService.registerNewUser(userdomain, registerRequestDto);
 	}
+
 }
