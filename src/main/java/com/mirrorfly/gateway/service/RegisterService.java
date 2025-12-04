@@ -70,6 +70,10 @@ public class RegisterService {
 
     private final AsyncService asyncService;
 
+    private final UserContactRepo userContactRepo;
+
+    private final RosterUserRepo  rosterUserRepo;
+
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
 	@SwitchDataSource(value = "[0]")
@@ -120,11 +124,45 @@ public class RegisterService {
 			throw new BadDataException("Json Parsing Error");
 		}
 
-        asyncService.updateRosters(userdomain, registerResponseDto.getUsername(), contactNo, xmppDomain);
-
-        return new Response<>(HttpStatus.OK.value(), AESEncryption.encryptString(jsonString, licenseKey.repeat(3)), GatewayConstants.DATA_RETRIEVED);
-
+        // Update the Rosters
+        if (StringUtils.isNotBlank(contactNo)) {
+            updateRosters(registerResponseDto.getUsername(), contactNo, xmppDomain);
+        }
+		Response<String> response = new Response<>();
+		response.setData(AESEncryption.encryptString(jsonString, licenseKey + licenseKey + licenseKey));
+		response.setStatus(HttpStatus.OK.value());
+		response.setMessage(GatewayConstants.DATA_RETRIEVED);
+		return response;
 	}
+
+    @Async
+    @SwitchDataSource("[0]")
+    @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void updateRosters(String username, String contactNo, String xmppDomain) {
+        try {
+            List<UserContact> usersContacts = userContactRepo.findByMobileNumber(contactNo);
+
+            if (usersContacts == null || usersContacts.isEmpty()) {
+                return;
+            }
+            List<RosterUser> rosters = usersContacts.parallelStream().map(contact -> {
+                String fullJid = username + "@" + xmppDomain;
+                RosterUserKey rosterKey = new RosterUserKey(contact.getUsername(), fullJid);
+                return new RosterUser(rosterKey, 'N', 'N', username, contact.getName(), 'B', "item", contact.getLicenseKey());
+            }).collect(Collectors.toList());
+            saveAndDeleteRosters(rosters, usersContacts);
+        } catch (Exception ex) {
+            log.error("Roster update failed for user: {} with contact: {}", username, contactNo, ex);
+            throw new RuntimeException("Failed to update rosters", ex);
+        }
+    }
+
+    @Transactional
+    @SwitchDataSource("[0]")
+    public void saveAndDeleteRosters(List<RosterUser> rosters, List<UserContact> contacts) {
+        rosterUserRepo.saveAll(rosters);
+        userContactRepo.deleteAll(contacts);
+    }
 
 	public void registerLoginTime(String username) {
 		Last last = new Last();
