@@ -140,27 +140,26 @@ public class RegisterService {
     @SwitchDataSource("[0]")
     @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateRosters(String username, String contactNo, String xmppDomain) {
+        try {
+            List<UserContact> usersContacts = userContactRepo.findByMobileNumber(contactNo);
 
-        CompletableFuture.supplyAsync(() -> userContactRepo.findByMobileNumber(contactNo)).thenApply(usersContacts -> {
-
-            if (usersContacts == null || usersContacts.isEmpty())
-                return Collections.emptyList();
-
+            if (usersContacts == null || usersContacts.isEmpty()) {
+                return;
+            }
             List<RosterUser> rosters = usersContacts.parallelStream().map(contact -> {
                 String fullJid = username + "@" + xmppDomain;
                 RosterUserKey rosterKey = new RosterUserKey(contact.getUsername(), fullJid);
                 return new RosterUser(rosterKey, 'N', 'N', username, contact.getName(), 'B', "item", contact.getLicenseKey());
             }).collect(Collectors.toList());
-
             saveAndDeleteRosters(rosters, usersContacts);
-            return usersContacts;
-        }).exceptionally(ex -> {
-            log.error("Roster update failed", ex.getMessage());
-            return null;
-        });
+        } catch (Exception ex) {
+            log.error("Roster update failed for user: {} with contact: {}", username, contactNo, ex);
+            throw new RuntimeException("Failed to update rosters", ex);
+        }
     }
 
     @Transactional
+    @SwitchDataSource("[0]")
     public void saveAndDeleteRosters(List<RosterUser> rosters, List<UserContact> contacts) {
         rosterUserRepo.saveAll(rosters);
         userContactRepo.deleteAll(contacts);
