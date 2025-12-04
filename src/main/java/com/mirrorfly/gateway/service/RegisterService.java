@@ -35,6 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -69,6 +70,10 @@ public class RegisterService {
 	private final QueueService queueService;
 
     private final AsyncService asyncService;
+
+    private final UserContactRepo userContactRepo;
+
+    private final RosterUserRepo  rosterUserRepo;
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -120,11 +125,46 @@ public class RegisterService {
 			throw new BadDataException("Json Parsing Error");
 		}
 
-        asyncService.updateRosters(userdomain, registerResponseDto.getUsername(), contactNo, xmppDomain);
-
-        return new Response<>(HttpStatus.OK.value(), AESEncryption.encryptString(jsonString, licenseKey.repeat(3)), GatewayConstants.DATA_RETRIEVED);
-
+        // Update the Rosters
+        if (StringUtils.isNotBlank(contactNo)) {
+            updateRosters(registerResponseDto.getUsername(), contactNo, xmppDomain);
+        }
+		Response<String> response = new Response<>();
+		response.setData(AESEncryption.encryptString(jsonString, licenseKey + licenseKey + licenseKey));
+		response.setStatus(HttpStatus.OK.value());
+		response.setMessage(GatewayConstants.DATA_RETRIEVED);
+		return response;
 	}
+
+    @Async
+    @SwitchDataSource("[0]")
+    @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void updateRosters(String username, String contactNo, String xmppDomain) {
+
+        CompletableFuture.supplyAsync(() -> userContactRepo.findByMobileNumber(contactNo)).thenApply(usersContacts -> {
+
+            if (usersContacts == null || usersContacts.isEmpty())
+                return Collections.emptyList();
+
+            List<RosterUser> rosters = usersContacts.parallelStream().map(contact -> {
+                String fullJid = username + "@" + xmppDomain;
+                RosterUserKey rosterKey = new RosterUserKey(contact.getUsername(), fullJid);
+                return new RosterUser(rosterKey, 'N', 'N', username, contact.getName(), 'B', "item", contact.getLicenseKey());
+            }).collect(Collectors.toList());
+
+            saveAndDeleteRosters(rosters, usersContacts);
+            return usersContacts;
+        }).exceptionally(ex -> {
+            log.error("Roster update failed", ex.getMessage());
+            return null;
+        });
+    }
+
+    @Transactional
+    public void saveAndDeleteRosters(List<RosterUser> rosters, List<UserContact> contacts) {
+        rosterUserRepo.saveAll(rosters);
+        userContactRepo.deleteAll(contacts);
+    }
 
 	public void registerLoginTime(String username) {
 		Last last = new Last();
