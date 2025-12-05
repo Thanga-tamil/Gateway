@@ -164,7 +164,6 @@ public class RegisterService {
 	}
 
     @Async
-    @SwitchDataSource("[0]")
     @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateRosters(String username, String contactNo, String xmppDomain) {
 
