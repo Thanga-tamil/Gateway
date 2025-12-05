@@ -1,5 +1,33 @@
 package com.mirrorfly.gateway.service;
 
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
+import com.mirrorfly.gateway.model.*;
+import com.mirrorfly.gateway.repo.*;
+import jakarta.transaction.Transactional;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
@@ -139,26 +167,27 @@ public class RegisterService {
     @SwitchDataSource("[0]")
     @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateRosters(String username, String contactNo, String xmppDomain) {
-        try {
-            List<UserContact> usersContacts = userContactRepo.findByMobileNumber(contactNo);
 
-            if (usersContacts == null || usersContacts.isEmpty()) {
-                return;
-            }
+        CompletableFuture.supplyAsync(() -> userContactRepo.findByMobileNumber(contactNo)).thenApply(usersContacts -> {
+
+            if (usersContacts == null || usersContacts.isEmpty())
+                return Collections.emptyList();
+
             List<RosterUser> rosters = usersContacts.parallelStream().map(contact -> {
                 String fullJid = username + "@" + xmppDomain;
                 RosterUserKey rosterKey = new RosterUserKey(contact.getUsername(), fullJid);
                 return new RosterUser(rosterKey, 'N', 'N', username, contact.getName(), 'B', "item", contact.getLicenseKey());
             }).collect(Collectors.toList());
+
             saveAndDeleteRosters(rosters, usersContacts);
-        } catch (Exception ex) {
-            log.error("Roster update failed for user: {} with contact: {}", username, contactNo, ex);
-            throw new RuntimeException("Failed to update rosters", ex);
-        }
+            return usersContacts;
+        }).exceptionally(ex -> {
+            log.error("Roster update failed", ex.getMessage());
+            return null;
+        });
     }
 
     @Transactional
-    @SwitchDataSource("[0]")
     public void saveAndDeleteRosters(List<RosterUser> rosters, List<UserContact> contacts) {
         rosterUserRepo.saveAll(rosters);
         userContactRepo.deleteAll(contacts);
