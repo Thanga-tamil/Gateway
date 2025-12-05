@@ -1,6 +1,6 @@
 package com.mirrorfly.gateway.service;
 
-import java.io.UnsupportedEncodingException;
+
 import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 
 import com.mirrorfly.gateway.model.*;
 import com.mirrorfly.gateway.repo.*;
-import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -24,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -44,26 +44,11 @@ import com.mirrorfly.gateway.util.AESEncryption;
 import com.mirrorfly.gateway.util.DataHelperUtils;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
-import org.springframework.web.client.HttpStatusCodeException;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import java.math.BigInteger;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
