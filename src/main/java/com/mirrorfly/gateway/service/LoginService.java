@@ -1,13 +1,11 @@
 package com.mirrorfly.gateway.service;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Optional;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -29,7 +27,6 @@ import com.mirrorfly.gateway.model.AdminUser;
 import com.mirrorfly.gateway.model.ChatUserDetails;
 import com.mirrorfly.gateway.model.EmailToken;
 import com.mirrorfly.gateway.model.TokenDetail;
-import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.queue.MailPayload;
 import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.AdminUserRepo;
@@ -85,36 +82,50 @@ public class LoginService {
 		// field to find the original password
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
-		String licenseKey = Optional.ofNullable((String)dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
+		String licenseKey = Optional
+				.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey"))
+				.orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
 
+		ObjectMapper mapper = new ObjectMapper();
+		String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(), licenseKey.repeat(3));
 
-        ObjectMapper mapper     = new ObjectMapper();
-        String decyptedString   = AESEncryption.decryptString(loginRequestDto.getPassword(), licenseKey.repeat(3));
+		String password;
+		LoginRequestDto login;
 
-        String password;
-        LoginRequestDto login;
-
-        try {
-			login       = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8), LoginRequestDto.class);
-			password    = login.getPassword();
+		try {
+			login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8), LoginRequestDto.class);
+			password = login.getPassword();
 		} catch (JsonProcessingException e) {
-            log.error("Unable to unserialize the password field {}, continuing assuming the password is plain", e.getMessage());
+			log.error("Unable to unserialize the password field {}, continuing assuming the password is plain",
+					e.getMessage());
 			password = loginRequestDto.getPassword();
 		}
 
 		// Validating the password against the data in DB
-        ChatUserDetails chatUserDetails = Optional.ofNullable(chatUsersDetailsRepo.findByUsernameAndPassword(loginRequestDto.getUsername(), GatewayUtil.getMd5String(password)))
-                .map(chatUserDetail -> {
+		ChatUserDetails chatUserDetails = Optional.ofNullable(chatUsersDetailsRepo
+				.findByUsernameAndPassword(loginRequestDto.getUsername(), GatewayUtil.getMd5String(password)))
+				.map(chatUserDetail -> {
 
-                    Optional.ofNullable(vcardSearchRepo.findByUsername(chatUserDetail.getUsername())).ifPresent(vcard -> { if (vcard.getIsBlock() == 1) { throw new ForbiddenException(GatewayConstants.BLOCK_USER); } });
+					Optional.ofNullable(vcardSearchRepo.findByUsername(chatUserDetail.getUsername()))
+							.ifPresent(vcard -> {
+								if (vcard.getIsBlock() == 1) {
+									throw new ForbiddenException(GatewayConstants.BLOCK_USER);
+								}
+							});
 
-                    chatUserDetail.setLastLoggedInAt(LocalDateTime.now());
+					chatUserDetail.setLastLoggedInAt(LocalDateTime.now());
 
-                    return chatUsersDetailsRepo.save(chatUserDetail);
+					return chatUsersDetailsRepo.save(chatUserDetail);
 
-                }).orElseThrow(() -> new BadDataException(GatewayConstants.BAD_CREDENTIALS));
+				}).orElseThrow(() -> new BadDataException(GatewayConstants.BAD_CREDENTIALS));
 
-        return new Response<>(HttpStatus.OK.value(), new LoginDetailsDto(tokenService.getToken(userdomain, chatUserDetails.getUsername(), chatUserDetails.getDeviceId() != null && !chatUserDetails.getDeviceId().isEmpty() ? chatUserDetails.getDeviceId() : "MF-01", "")), GatewayConstants.DATA_RETRIEVED);
+		return new Response<>(HttpStatus.OK.value(),
+				new LoginDetailsDto(tokenService.getToken(userdomain, chatUserDetails.getUsername(),
+						chatUserDetails.getDeviceId() != null && !chatUserDetails.getDeviceId().isEmpty()
+								? chatUserDetails.getDeviceId()
+								: "MF-01",
+						"")),
+				GatewayConstants.DATA_RETRIEVED);
 
 	}
 
@@ -138,12 +149,18 @@ public class LoginService {
 				// If QR-Web session (SocketId) send session logged-out IQ to the devices
 //				if (chatUserDetail.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
 //						&& StringUtils.isNotBlank(chatUserDetail.getSocketId())) {
-					try {
-						queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain, chatUserDetail.getUsername(), Collections.singleton(chatUserDetail.getSocketId() != null ? chatUserDetail.getSocketId() : ""), chatUserDetail.getDeviceId() != null ? chatUserDetail.getDeviceId() : ""));
-					} catch (JsonProcessingException e) {
-						log.error("Failed to convert IQ payload to JSON: userDomain={}, username={}, sessionIds={}, Error.. {}", userdomain, chatUserDetail.getUsername(), chatUserDetail.getSocketId(), e.getMessage());
-					}
+				try {
+					queueService.sendUserSessionLogoutActivity(
+							DataHelperUtils.prepareIQPayload(userdomain, chatUserDetail.getUsername(),
+									chatUserDetail.getDeviceId() != null ? chatUserDetail.getDeviceId() : "",
+									Collections.singleton(
+											chatUserDetail.getSocketId() != null ? chatUserDetail.getSocketId() : "")));
+				} catch (JsonProcessingException e) {
+					log.error(
+							"Failed to convert IQ payload to JSON: userDomain={}, username={}, sessionIds={}, Error.. {}",
+							userdomain, chatUserDetail.getUsername(), chatUserDetail.getSocketId(), e.getMessage());
 				}
+			}
 
 //			}
 		}
