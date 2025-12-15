@@ -17,7 +17,8 @@ public interface ChatUsersDetailsRepo extends JpaRepository<ChatUserDetails, Str
 	public List<ChatUserDetails> findByUsername(@Param("username") String username);
 
 	@Query("Select c from ChatUserDetails  c where c.username = :username and c.password = :password")
-	public ChatUserDetails findByUsernameAndPassword(@Param("username") String username, @Param("password") String password);
+	public ChatUserDetails findByUsernameAndPassword(@Param("username") String username,
+			@Param("password") String password);
 
 	@Query("Select c from ChatUserDetails  c where c.username = :username and c.deviceId = :deviceId")
 	public ChatUserDetails findByUsernameAndDeviceId(@Param("username") String username,
@@ -28,22 +29,21 @@ public interface ChatUsersDetailsRepo extends JpaRepository<ChatUserDetails, Str
 	@Query("Update ChatUserDetails cud set cud.password = :password where cud.username = :username and cud.deviceId = :deviceId")
 	public void updatePasswordByUsernameAndDeviceId(@Param("password") String password,
 			@Param("username") String username, @Param("deviceId") String deviceId);
-	
+
 	@Query("Select c from ChatUserDetails  c where c.username = :username and c.deviceType = 'web'")
 	public List<ChatUserDetails> findByUsernameAndDeviceTypeWeb(@Param("username") String username);
-	
+
 	@Query("Select c from ChatUserDetails  c where c.username = :username and (c.deviceType = 'android' or c.deviceType = 'ios')")
 	public List<ChatUserDetails> findByUsernameAndDeviceTypeAndroidIos(@Param("username") String username);
-	
+
 	@Transactional
 	@Modifying
 	@Query("Update ChatUserDetails c set c.deviceToken='' where c.deviceToken = :deviceToken")
 	public void updateDeviceTokenAsEmpty(String deviceToken);
-	
+
 	@Transactional
 	@Modifying
 	@Query("Update ChatUserDetails c set c.voipDeviceToken='' where c.voipDeviceToken = :voipDeviceToken")
 	public void updateVoipDeviceTokenAsEmpty(String voipDeviceToken);
-	
 
 }
