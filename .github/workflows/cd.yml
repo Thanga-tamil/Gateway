@@ -117,3 +117,4 @@ jobs:
           echo "service_name=$SERVICE" >> $GITHUB_OUTPUT
       - name: Deploy service
         run: ~/deploy.sh "${{ steps.map.outputs.service_name }}"
+        
