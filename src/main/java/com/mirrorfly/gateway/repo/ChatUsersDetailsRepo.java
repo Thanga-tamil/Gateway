@@ -46,4 +46,9 @@ public interface ChatUsersDetailsRepo extends JpaRepository<ChatUserDetails, Str
 	@Query("Update ChatUserDetails c set c.voipDeviceToken='' where c.voipDeviceToken = :voipDeviceToken")
 	public void updateVoipDeviceTokenAsEmpty(String voipDeviceToken);
 
+    @Transactional
+    @Modifying
+    @Query("Update ChatUserDetails c set c.userIp = :userIp, c.countryCode = :countryCode where c.username = :username and c.deviceId = :deviceId")
+    int updateIp(@Param("userIp") String userIp, @Param("deviceId") String deviceId, @Param("username") String username, @Param("countryCode") String countryCode);
+
 }

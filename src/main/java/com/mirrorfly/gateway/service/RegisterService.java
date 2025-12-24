@@ -87,6 +87,8 @@ public class RegisterService {
 
 	private final ObjectMapper objectMapper;
 
+    private final PrivacySettingsRepo privacySettingsRepo;
+
 	@SwitchDataSource(value = "[0]")
 	public Response<RegisterInfoDto> getRegisterInfo(String userdomain) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
@@ -145,6 +147,9 @@ public class RegisterService {
 		if (StringUtils.isNotBlank(contactNo)) {
 			updateRosters(registerResponseDto.getUsername(), contactNo, xmppDomain);
 		}
+
+        //update Privacy settings for user.
+        updatePrivacySettings(userdomain, registerResponseDto.getUsername());
 		Response<String> response = new Response<>();
 		response.setData(AESEncryption.encryptString(jsonString, licenseKey + licenseKey + licenseKey));
 		response.setStatus(HttpStatus.OK.value());
@@ -152,7 +157,20 @@ public class RegisterService {
 		return response;
 	}
 
-	@Async
+
+    @Async
+    public void updatePrivacySettings(String userdomain, String userName) {
+        AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+        PrivacySettingsEntity privacySetting = privacySettingsRepo.findByUsername(userName);
+        if(privacySetting == null){
+            PrivacySettingsEntity privacySettingsEntity =  new PrivacySettingsEntity();
+            privacySettingsEntity.setUsername(userName);
+            privacySettingsEntity.setSeenReceipt(0);
+            privacySettingsRepo.save(privacySettingsEntity);
+        }
+    }
+
+    @Async
 	public void updateRosters(String username, String contactNo, String xmppDomain) {
 
 		CompletableFuture.supplyAsync(() -> userContactRepo.findByMobileNumber(contactNo)).thenApply(usersContacts -> {
