@@ -63,7 +63,7 @@ public class ChatUserDetails {
     @Column(name = "user_ip", length = 45)
     private String userIp;
 
-    @Column(name = "country_code", length = 45)
+    @Column(name = "country_code", length = 10)
     private String countryCode;
 
 }
