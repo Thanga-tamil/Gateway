@@ -60,4 +60,10 @@ public class ChatUserDetails {
 	@Column(name = "user_type")
 	private String userType;
 
+    @Column(name = "user_ip", length = 45)
+    private String userIp;
+
+    @Column(name = "country_code", length = 10)
+    private String countryCode;
+
 }

@@ -266,6 +266,10 @@ public class GatewayConstants {
 
 	public static final String SSO_TOKEN_NOT_FOUND = "SSO token cannot be null or empty";
 
+    public static final String IP_SAVED = "User IP saved successfuly";
+
+    public static final String DEVICE_ID_NOT_FOUNG = "Device ID not found. Please provide a valid device identifier";
+
 	private GatewayConstants() {
 	}
 }
