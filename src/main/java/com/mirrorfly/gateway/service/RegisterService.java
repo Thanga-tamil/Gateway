@@ -368,7 +368,7 @@ public class RegisterService {
 					try {
 						queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
 								deletableRecord.getUsername(), deletableRecord.getDeviceId(),
-								Collections.singleton(deletableRecord.getSocketId())));
+								Collections.singleton(deletableRecord.getSocketId()),Boolean.FALSE));
 					} catch (JsonProcessingException e) {
 						log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
 								userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
