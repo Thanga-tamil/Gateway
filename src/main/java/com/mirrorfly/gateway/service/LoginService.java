@@ -130,7 +130,7 @@ public class LoginService {
 	}
 
 	@SwitchDataSource(value = "[0]")
-	public Response<String> logout(String userdomain, String authorization) {
+	public Response<String> logout(String userdomain, String authorization, Boolean simBindLogout) {
 
 		TokenDetail tokenDetail = tokenService.getTokenDetail(userdomain, authorization);
 		tokenService.deleteToken(userdomain, authorization);
@@ -154,7 +154,7 @@ public class LoginService {
 							DataHelperUtils.prepareIQPayload(userdomain, chatUserDetail.getUsername(),
 									chatUserDetail.getDeviceId() != null ? chatUserDetail.getDeviceId() : "",
 									Collections.singleton(
-											chatUserDetail.getSocketId() != null ? chatUserDetail.getSocketId() : "")));
+											chatUserDetail.getSocketId() != null ? chatUserDetail.getSocketId() : ""), simBindLogout));
 				} catch (JsonProcessingException e) {
 					log.error(
 							"Failed to convert IQ payload to JSON: userDomain={}, username={}, sessionIds={}, Error.. {}",

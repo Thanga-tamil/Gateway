@@ -104,8 +104,9 @@ public class LoginController {
 
 	@GetMapping("/logout")
 	public Response<String> logout(@RequestHeader("Authorization") String authorization,
-			@RequestHeader String userdomain) {
-		return loginService.logout(userdomain, authorization);
+			@RequestHeader String userdomain, @RequestParam(required = false, defaultValue = "false") Boolean simBindLogout) {
+        // The simBindLogout flag is used to force logout from the web when an Android device SIM rejection occurs.
+		return loginService.logout(userdomain, authorization, simBindLogout);
 	}
 
 	@GetMapping("/admin/inmemory/refresh")

@@ -15,11 +15,12 @@ public class DataHelperUtils {
 	}
 
 	public static QueuePayloadDto prepareIQPayload(String userdomain, String username, String deviceId,
-			Set<String> sessionIds) throws JsonProcessingException {
+			Set<String> sessionIds, Boolean simBindLogout) throws JsonProcessingException {
 		Map<String, Object> iqPayloadMap = new HashMap<>();
 		iqPayloadMap.put("username", username);
 		iqPayloadMap.put("socket_id", String.join(",", sessionIds));
 		iqPayloadMap.put("device_id", deviceId);
+		iqPayloadMap.put("sim_bind_logout", simBindLogout);
 		return new QueuePayloadDto("logout_sessions", GatewayUtil.convertMapToJson(iqPayloadMap), userdomain);
 	}
 
