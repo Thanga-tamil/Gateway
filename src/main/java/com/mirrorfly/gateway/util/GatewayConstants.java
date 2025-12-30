@@ -270,6 +270,10 @@ public class GatewayConstants {
 
     public static final String DEVICE_ID_NOT_FOUNG = "Device ID not found. Please provide a valid device identifier";
 
+    public static final String DOMAIN_RETRIEVED = "Domain retrieved successfully.";
+
+    public static final String INVALID_DEVICE_TYPE = "Device type is invalid or unsupported";
+
 	private GatewayConstants() {
 	}
 }
