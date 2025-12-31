@@ -146,4 +146,12 @@ public class ApplicationProperties {
 		return env.getProperty("skip_otp_mobile_numbers");
 	}
 
+	public String getHikeDomain() {
+		return env.getProperty("domain.hike");
+	}
+
+	public String getTingDomain() {
+		return env.getProperty("domain.ting");
+	}
+
 }
