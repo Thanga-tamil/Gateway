@@ -12,6 +12,7 @@ import com.mirrorfly.gateway.service.TokenService;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import java.util.*;
@@ -48,31 +49,43 @@ public class IpServiceImpl implements IpService {
 
         try {
             String username = tokenService.getUserNameByToken(userdomain, authorization);
-            String ip = ipDto.getUserIp();
-            if (!isValidIp(ip)) {
-                log.error("Invalid IP received from client: {}", ip);
-                throw new BadDataException("Invalid IP address");
-            }
-
-            if(!isValidCountryCode(ipDto.getCountryCode())){
-                log.error("Invalid country code received from client: {}", ipDto.getCountryCode());
-                throw new BadDataException("Invalid country code received from client");
-            }
-            int result = 0;
-            if (username != null) {
-                 result = chatUsersDetailsRepo.updateIp(ip, ipDto.getDeviceId(), username, ipDto.getCountryCode());
-            }
-
             Response<IpUpdateResponse> response = new Response<>();
+            if (username != null) {
+                String ip = ipDto.getUserIp();
+                if (!isValidIp(ip)) {
+                    log.error("Invalid IP received from client: {}", ip);
+                    throw new BadDataException("Invalid IP address");
+                }
 
-            if(result == 0){
-                response.setStatus(HttpStatus.BAD_REQUEST.value());
-                response.setMessage(GatewayConstants.DEVICE_ID_NOT_FOUNG);
-                return response;
+                if(!isValidCountryCode(ipDto.getCountryCode())){
+                    log.error("Invalid country code received from client: {}", ipDto.getCountryCode());
+                    throw new BadDataException("Invalid country code received from client");
+                }
+                int result = 0;
+
+                        if(StringUtils.isNotBlank(ipDto.getSocketId())){
+                            if(StringUtils.isNotBlank(ipDto.getDeviceId())){
+                                result = chatUsersDetailsRepo.updateIpWithSocketIdAndDeviceId(ip, ipDto.getDeviceId(), username, ipDto.getCountryCode(), ipDto.getSocketId());
+                                if(result != 1){
+                                    return getIpUpdateResponseResponse(response, GatewayConstants.DEVICE_ID_AND_SOCKET_ID_NOT_FOUND);
+                                }
+                            }else {
+                                result = chatUsersDetailsRepo.updateIpWithSocketId(ip, ipDto.getSocketId(), username, ipDto.getCountryCode());
+                                if(result != 1){
+                                    return getIpUpdateResponseResponse(response, GatewayConstants.SOCKET_ID_NOT_FOUND);
+                                }
+                            }
+                        }else if(StringUtils.isNotBlank(ipDto.getDeviceId())) {
+                            result = chatUsersDetailsRepo.updateIpWithDeviceId(ip, ipDto.getDeviceId(), username, ipDto.getCountryCode());
+                            if(result != 1){
+                                return getIpUpdateResponseResponse(response, GatewayConstants.DEVICE_ID_NOT_FOUND);
+                            }
+                        }
+            }else {
+                return getIpUpdateResponseResponse(response, GatewayConstants.USER_NOT_FOUND);
             }
-
             IpUpdateResponse ipUpdateResponse = new IpUpdateResponse();
-            ipUpdateResponse.setIp(ip);
+            ipUpdateResponse.setIp(ipDto.getUserIp());
             response.setData(ipUpdateResponse);
             response.setStatus(HttpStatus.OK.value());
             response.setMessage(GatewayConstants.IP_SAVED);
@@ -86,6 +99,14 @@ public class IpServiceImpl implements IpService {
             throw e;
         }
     }
+
+    private Response<IpUpdateResponse> getIpUpdateResponseResponse(Response<IpUpdateResponse> response, String errorMessage) {
+         response.setStatus(HttpStatus.BAD_REQUEST.value());
+         response.setMessage(errorMessage);
+         return response;
+
+    }
+
 
     public static boolean isValidIp(String ip) {
         if (ip == null || ip.isBlank()) {

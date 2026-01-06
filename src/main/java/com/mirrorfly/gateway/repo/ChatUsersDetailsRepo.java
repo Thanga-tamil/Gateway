@@ -2,6 +2,9 @@ package com.mirrorfly.gateway.repo;
 
 import java.util.List;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -49,6 +52,15 @@ public interface ChatUsersDetailsRepo extends JpaRepository<ChatUserDetails, Str
     @Transactional
     @Modifying
     @Query("Update ChatUserDetails c set c.userIp = :userIp, c.countryCode = :countryCode where c.username = :username and c.deviceId = :deviceId")
-    int updateIp(@Param("userIp") String userIp, @Param("deviceId") String deviceId, @Param("username") String username, @Param("countryCode") String countryCode);
+    int updateIpWithDeviceId(@Param("userIp") String userIp, @Param("deviceId") String deviceId, @Param("username") String username, @Param("countryCode") String countryCode);
 
+	@Transactional
+	@Modifying
+	@Query("Update ChatUserDetails c set c.userIp = :userIp, c.countryCode = :countryCode, c.deviceId = :deviceId where c.username = :username and c.socketId = :socketId")
+	int updateIpWithSocketIdAndDeviceId(@Param("userIp") String ip,  @Param("deviceId") String deviceId, @Param("username") String username, @Param("countryCode") String countryCode, @Param("socketId")String socketId);
+
+	@Transactional
+	@Modifying
+	@Query("Update ChatUserDetails c set c.userIp = :userIp, c.countryCode = :countryCode where c.username = :username and c.socketId = :socketId")
+	int updateIpWithSocketId(@Param("userIp") String ip, @Param("socketId")String socketId, @Param("username") String username, @Param("countryCode") String countryCode);
 }
