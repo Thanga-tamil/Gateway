@@ -142,10 +142,6 @@ public class ApplicationProperties {
 		return env.getProperty("mail.source.address");
 	}
 
-	public String getSkipOTPMobileNumbers() {
-		return env.getProperty("skip_otp_mobile_numbers");
-	}
-
 	public String getHikeDomain() {
 		return env.getProperty("domain.hike");
 	}

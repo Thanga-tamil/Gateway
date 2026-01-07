@@ -7,6 +7,4 @@ public class VerifyUserResponse {
 
 	private String deviceToken;
 
-	private Boolean validateOTP;
-
 }
