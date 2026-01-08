@@ -268,11 +268,15 @@ public class GatewayConstants {
 
     public static final String IP_SAVED = "User IP saved successfuly";
 
-    public static final String DEVICE_ID_NOT_FOUNG = "Device ID not found. Please provide a valid device identifier";
+    public static final String DEVICE_ID_NOT_FOUND = "Device ID not found. Please provide a valid device identifier";
 
     public static final String DOMAIN_RETRIEVED = "Domain retrieved successfully.";
 
     public static final String INVALID_DEVICE_TYPE = "Device type is invalid or unsupported";
+
+    public static final String DEVICE_ID_AND_SOCKET_ID_NOT_FOUND = "Device Id or Socket Id invalid";
+
+    public static final String SOCKET_ID_NOT_FOUND = "Socket Id invalid";
 
 	private GatewayConstants() {
 	}
