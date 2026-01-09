@@ -38,9 +38,6 @@ public class OtpService {
 	@Autowired
 	private ChatSettingsRepo chatSettingsRepo;
 
-	@Autowired
-	private ApplicationProperties applicationProperties;
-	
 	@SwitchDataSource(value="[0]")
 	public Response<OtpResponseDto> requestOtp(String mobileNumber) {
 
@@ -80,12 +77,6 @@ public class OtpService {
 		if (chatUser != null) {
 			dto.setDeviceToken(chatUser.getDeviceToken());
 		}
-
-		dto.setValidateOTP(true);// validate OTP by default.
-		if(applicationProperties.getSkipOTPMobileNumbers() != null && applicationProperties.getSkipOTPMobileNumbers().contains(userDto.getMobileNumber())) {
-			dto.setValidateOTP(false);// skip OTP valiudation process in client applications.
-		}
-		
 		response.setMessage(GatewayConstants.AVAILABLE);
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(dto);
