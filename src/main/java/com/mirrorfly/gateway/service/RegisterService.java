@@ -89,6 +89,8 @@ public class RegisterService {
 
     private final PrivacySettingsRepo privacySettingsRepo;
 
+	private final AsyncService asyncService;
+
 	@SwitchDataSource(value = "[0]")
 	public Response<RegisterInfoDto> getRegisterInfo(String userdomain) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
@@ -145,7 +147,8 @@ public class RegisterService {
 
 		// Update the Rosters
 		if (StringUtils.isNotBlank(contactNo)) {
-			updateRosters(registerResponseDto.getUsername(), contactNo, xmppDomain);
+			asyncService.updateRosters(userdomain, registerResponseDto.getUsername(), contactNo, xmppDomain);
+//			updateRosters(registerResponseDto.getUsername(), contactNo, xmppDomain); // deviates in proxy level transaction
 		}
 
         //update Privacy settings for user.
