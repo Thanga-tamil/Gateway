@@ -41,8 +41,6 @@ public class AsyncService {
 
         AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
-        log.info("Using DB connection URL: {}", (Object) entityManager.unwrap(Session.class).doReturningWork(conn -> conn.getMetaData().getURL()));
-
         List<UserContact> usersContacts = userContactRepo.findByMobileNumber(contactNo);
 
         Set<String> usernames = usersContacts.stream().map(UserContact::getUsername).collect(Collectors.toSet());
