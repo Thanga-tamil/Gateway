@@ -148,7 +148,6 @@ public class RegisterService {
 		// Update the Rosters
 		if (StringUtils.isNotBlank(contactNo)) {
 			asyncService.updateRosters(userdomain, registerResponseDto.getUsername(), contactNo, xmppDomain);
-//			updateRosters(registerResponseDto.getUsername(), contactNo, xmppDomain); // deviates in proxy level transaction
 		}
 
         //update Privacy settings for user.
@@ -172,29 +171,6 @@ public class RegisterService {
             privacySettingsRepo.save(privacySettingsEntity);
         }
     }
-
-    @Async
-	public void updateRosters(String username, String contactNo, String xmppDomain) {
-
-		CompletableFuture.supplyAsync(() -> userContactRepo.findByMobileNumber(contactNo)).thenApply(usersContacts -> {
-
-			if (usersContacts == null || usersContacts.isEmpty())
-				return Collections.emptyList();
-
-			List<RosterUser> rosters = usersContacts.parallelStream().map(contact -> {
-				String fullJid = username + "@" + xmppDomain;
-				RosterUserKey rosterKey = new RosterUserKey(contact.getUsername(), fullJid);
-				return new RosterUser(rosterKey, 'N', 'N', username, contact.getName(), 'B', "item",
-						contact.getLicenseKey());
-			}).toList();
-
-			saveAndDeleteRosters(rosters, usersContacts);
-			return usersContacts;
-		}).exceptionally(ex -> {
-			log.error("Roster update failed", ex.getMessage());
-			return null;
-		});
-	}
 
 	@Transactional
 	public void saveAndDeleteRosters(List<RosterUser> rosters, List<UserContact> contacts) {
