@@ -14,9 +14,6 @@ import lombok.Data;
 @Data
 public class Users implements Serializable {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 6576324953564602096L;
 
 	@Id
@@ -28,7 +25,7 @@ public class Users implements Serializable {
 
 	@Column(name = "ws_password")
 	private String wsPassword;
-	
+
 	@Column(name = "is_admin")
 	private int isAdmin;
 

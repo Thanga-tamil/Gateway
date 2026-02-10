@@ -1,5 +1,7 @@
 package com.mirrorfly.gateway.service;
 
+import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +18,7 @@ public class VcardService {
 
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
-	
+
 	public VcardSearch findVcardSearchByUserName(String username) {
 		return vcardSearchRepo.findByUsername(username);
 	}
@@ -52,13 +54,30 @@ public class VcardService {
 		} else {
 			sb.append("<status/>");
 		}
-		if (vcardSearch.getStatus() != null) {
+		if (vcardSearch.getMobilenumber() != null) {
 			sb.append("<mobileNumber>");
-			sb.append(vcardSearch.getMobilenumber());
+			sb.append(vcardSearch.getMobilenumber().trim());
 			sb.append("</mobileNumber>");
 		} else {
 			sb.append("<mobileNumber/>");
 		}
+
+		if (vcardSearch.getMsgDisappear() != null) {
+			sb.append("<msgDisappear>");
+			sb.append(vcardSearch.getMsgDisappear());
+			sb.append("</msgDisappear>");
+		} else {
+			sb.append("<msgDisappear/>");
+		}
+
+		if (vcardSearch.getDispUpdatedAt() != null) {
+			sb.append("<dispUpdatedAt>");
+			sb.append(vcardSearch.getDispUpdatedAt());
+			sb.append("</dispUpdatedAt>");
+		} else {
+			sb.append("<dispUpdatedAt/>");
+		}
+
 		sb.append("</vCard>");
 		vcard.setUsername(vcardSearch.getUsername());
 		vcard.setVcardXml(sb.toString());
@@ -74,6 +93,7 @@ public class VcardService {
 		vcardSearch.setIsBlock(0);
 		vcardSearch.setNickname("");
 		vcardSearch.setLnickname("");
+		vcardSearch.setDispUpdatedAt(LocalDateTime.of(1970, 1, 1, 0, 0));
 		vcardSearch.setUsername(username);
 		vcardSearch.setLusername(username);
 		vcardSearchRepo.save(vcardSearch);

@@ -1,7 +1,11 @@
 package com.mirrorfly.gateway.service;
 
+import java.math.BigInteger;
 import java.net.URI;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,15 +21,20 @@ import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
 import com.mirrorfly.gateway.dto.AddUserDto;
 import com.mirrorfly.gateway.dto.LicenseValidateResponseDto;
+import com.mirrorfly.gateway.dto.RegisterDto;
 import com.mirrorfly.gateway.dto.SanboxUserRegisterDto;
 import com.mirrorfly.gateway.dto.SandboxRegisterResponseDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.ChatUser;
+import com.mirrorfly.gateway.model.ChatUserDetails;
+import com.mirrorfly.gateway.model.Last;
 import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.model.Vcard;
 import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.repo.ChatUserRepo;
+import com.mirrorfly.gateway.repo.ChatUsersDetailsRepo;
+import com.mirrorfly.gateway.repo.LastRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 import com.mirrorfly.gateway.repo.VcardSearchRepo;
 import com.mirrorfly.gateway.response.Response;
@@ -55,7 +64,7 @@ public class SandboxUserService {
 	private UserRepo userRepo;
 
 	@Autowired
-	private RegisterService registerService;
+	private LastRepo lastRepo;
 
 	@Autowired
 	private VcardSearchRepo vcardSearchRepo;
@@ -66,6 +75,12 @@ public class SandboxUserService {
 	@Autowired
 	private VcardService vcardService;
 
+	@Autowired
+	private ChatUsersDetailsRepo chatUsersDetailsRepo;
+
+	@Autowired
+	private PasswordService passwordService;
+
 	@SwitchDataSource(value = "[0]")
 	public Response<String> registerNewUser(String userdomain, SanboxUserRegisterDto registerDto)
 			throws JsonProcessingException {
@@ -73,7 +88,7 @@ public class SandboxUserService {
 		String jsonString = null;
 		String contactNo = registerDto.getMobileNumber();
 		registerDto.setMobileNumber(registerDto.getCountryCode() + contactNo);
-		registerService.inputDataValidation(registerDto);
+		inputDataValidation(registerDto);
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		Users users = new Users();
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
@@ -114,7 +129,7 @@ public class SandboxUserService {
 			URI url = UriComponentsBuilder
 					.fromUriString(applicationProperties.getWebportalApiBaseUrl() + "/license/addUserCount").build()
 					.toUri();
-			registerService.registerLogintime(registerDto.getUserIdentifier());// New entry in last login time
+			registerLogintime(registerDto.getUserIdentifier());// New entry in last login time
 			AddUserDto adduser = new AddUserDto();
 			adduser.setLicenseKey(registerDto.getLicenseKey());
 			try {
@@ -147,7 +162,7 @@ public class SandboxUserService {
 			vcardService.updateVcard(vcardSearch, new Vcard());
 			registerResponseDto.setIsProfileUpdated(false);
 		}
-		String password = registerService.updateChatUserDetails(userdomain, registerDto, chatUser);
+		String password = updateChatUserDetails(userdomain, registerDto, chatUser);
 		registerResponseDto.setPassword(password);
 
 		String deviceIdprefix = "";
@@ -239,6 +254,142 @@ public class SandboxUserService {
 			throw new BadDataException(r.getMessage());
 		} catch (JsonProcessingException ex) {
 			throw new BadDataException(GatewayConstants.ERROR_IN_REGISTRATION);
+		}
+	}
+
+	public void registerLogintime(String username) {
+		Last last = new Last();
+		last.setUsername(username);
+		last.setStatus(0);
+		last.setPresence(0);
+		last.setState("Stream reset by peer");
+		last.setSeconds(BigInteger.valueOf(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)));
+		lastRepo.save(last);
+	}
+
+	private void inputDataValidation(SanboxUserRegisterDto registerDto) {
+
+		String userIdentifier = registerDto.getUserIdentifier();
+
+		if (StringUtils.isBlank(userIdentifier)) {
+			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
+		}
+
+		if (userIdentifier.contains("\"") || userIdentifier.contains("&") || userIdentifier.contains("'")
+				|| userIdentifier.contains("/") || userIdentifier.contains(":") || userIdentifier.contains("<")
+				|| userIdentifier.contains(">") || userIdentifier.contains("@")) {
+			throw new BadDataException("User identifier should not contain (\",&,' ,/,:,<,>,@).");
+		}
+
+		if (StringUtils.isBlank(registerDto.getLicenseKey())) {
+			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
+		}
+
+		if (StringUtils.isBlank(registerDto.getDeviceType())) {
+			throw new BadDataException(GatewayConstants.DEVICE_TYPE_EMPTY);
+		}
+
+		if (!registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)
+				&& !registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
+				&& !registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
+			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
+		}
+
+		if (StringUtils.isNotBlank(registerDto.getPushServerType())
+				&& !registerDto.getPushServerType().equalsIgnoreCase("apns")
+				&& !registerDto.getPushServerType().equalsIgnoreCase("fcm")) {
+			throw new BadDataException(GatewayConstants.PUSH_SERVER_TYPE_NOT_VALID);
+		}
+
+		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
+
+		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
+	}
+
+	@SwitchDataSource(value = "[0]")
+	public String updateChatUserDetails(String userdomain, SanboxUserRegisterDto registerDto, ChatUser chatUser) {
+		RegisterDto data = new RegisterDto();
+		data.setDeviceId(registerDto.getDeviceId());
+		data.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+		data.setDeviceToken(registerDto.getDeviceToken());
+		data.setDeviceType(registerDto.getDeviceType());
+		data.setLicenseKey(registerDto.getLicenseKey());
+		data.setMobileNumber(registerDto.getMobileNumber().trim());
+		data.setMode(registerDto.getMode());
+		data.setUserIdentifier(registerDto.getUserIdentifier());
+		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+		data.setForceRegister(registerDto.getForceRegister());
+		data.setPushServerType(registerDto.getPushServerType());
+		data.setUserType(registerDto.getUserType());
+		return updateChatUserDetails(userdomain, data, chatUser);
+	}
+
+	public String updateChatUserDetails(String userdomain, RegisterDto registerDto, ChatUser chatUser) {
+		String deviceIdprefix = "";
+		String pushServerType = "";
+		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
+			deviceIdprefix = "-web";
+		} else {
+			deviceIdprefix = "-mobile";
+			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().isEmpty()) {
+				chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
+			}
+			if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().isEmpty()) {
+				chatUsersDetailsRepo.updateVoipDeviceTokenAsEmpty(registerDto.getVoipDeviceToken());
+			}
+			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
+					&& (registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))) {
+				registerDto.setDeviceOsVersion("12.0");
+			}
+			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)) {
+				pushServerType = "fcm";
+			} else {
+				if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
+					pushServerType = registerDto.getPushServerType();
+				} else {
+					pushServerType = "apns";
+				}
+			}
+		}
+		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
+				? registerDto.getDeviceId()
+				: "MF-01" + deviceIdprefix;
+		ChatUserDetails user = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
+		String password = passwordService.generateRandomPassword();
+		if (user == null) {
+
+			user = new ChatUserDetails();
+			user.setCreatedAt(LocalDateTime.now());
+			user.setDeviceId(deviceId);
+			user.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+			user.setDeviceToken(registerDto.getDeviceToken());
+			user.setDeviceType(registerDto.getDeviceType());
+			user.setLastLoggedInAt(LocalDateTime.now());
+			user.setMode(registerDto.getMode());
+			user.setPassword(GatewayUtil.getMd5String(password));
+			user.setUsername(chatUser.getUsername());
+			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+			user.setPushServerType(pushServerType);
+			user.setUserType(applicationProperties.getDefaultUserType());
+			if (StringUtils.isNotBlank(registerDto.getUserType())) {
+				user.setUserType(registerDto.getUserType().trim());
+			}
+			chatUsersDetailsRepo.save(user);
+			return password;
+		} else {
+			user.setDeviceOsVersion(registerDto.getDeviceOsVersion());
+			user.setDeviceToken(registerDto.getDeviceToken());
+			user.setDeviceType(registerDto.getDeviceType());
+			user.setLastLoggedInAt(LocalDateTime.now());
+			user.setMode(registerDto.getMode());
+			user.setPassword(GatewayUtil.getMd5String(password));
+			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
+			user.setPushServerType(pushServerType);
+			if (StringUtils.isNotBlank(registerDto.getUserType())) {
+				user.setUserType(registerDto.getUserType().trim());
+			}
+			chatUsersDetailsRepo.save(user);
+			return password;
 		}
 	}
 

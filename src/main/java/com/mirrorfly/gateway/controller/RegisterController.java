@@ -1,8 +1,7 @@
 package com.mirrorfly.gateway.controller;
 
-import com.mirrorfly.gateway.dto.RegisterResponseDto;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.validation.annotation.Validated;
+import java.util.Objects;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,36 +18,21 @@ import com.mirrorfly.gateway.service.RegisterService;
 @RequestMapping("/api/v1/register")
 public class RegisterController {
 
-	@Autowired
-	private RegisterService registerService;
+	private final RegisterService registerService;
 
-	/**
-	 * Function to validate username and password by passing through loginService.
-	 * This function return a response stating that login success or error with
-	 * error code and error message.
-	 * 
-	 * @param login this has username and password.
-	 * @return success full response login screen with token for authorization.
-	 */
+	public RegisterController(RegisterService registerService) {
+		this.registerService = registerService;
+	}
 
 	@GetMapping("/info")
 	public Response<RegisterInfoDto> getRegisterInfo(@RequestHeader String userdomain) {
-		return registerService.getRegisterInfo(userdomain);
+		return this.registerService.getRegisterInfo(userdomain);
 	}
 
-	/**
-	 * Function to validate username and password by passing through loginService.
-	 * This function return a response stating that login success or error with
-	 * error code and error message.
-	 * 
-	 * @param login this has username and password.
-	 * @return success full response login screen with token for authorization.
-	 */
-
 	@PostMapping
-	public Response<String> registerNewUser(@Validated @RequestBody RegisterRequestDto registerRequestDto,
-			@RequestHeader String userdomain) {
-		return registerService.registerNewUser(userdomain, registerRequestDto);
+	public Response<String> registerNewUser(@RequestBody RegisterRequestDto registerRequestDto, @RequestHeader String userdomain) {
+		Objects.requireNonNull(registerRequestDto, "RegisterData must not be null");
+		return this.registerService.registerNewUser(userdomain, registerRequestDto);
 	}
 
 }
