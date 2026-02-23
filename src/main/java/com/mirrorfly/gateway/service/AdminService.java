@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.http.HttpStatus;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
@@ -20,35 +19,38 @@ import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.repo.ConnectionConfigRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AdminService {
 
-	@Autowired
-	private ConnectionConfigRepo connectionConfigRepo;
+	private final ConnectionConfigRepo connectionConfigRepo;
 
-	@Autowired
-	private DataStore dataStore;
+	private final DataStore dataStore;
 
-	@Autowired
-	private ApplicationContext applicationContext;
-	
-	@Autowired
-	private ApplicationProperties applicationProperties;
-	
-    @Autowired
-    private UserRepo userRepo;
-    
-	private WebClient webClient;
-	
-    public AdminService(WebClient.Builder webClientBuilder, ApplicationProperties applicationProperties) {
-    	this.webClient = webClientBuilder.baseUrl(applicationProperties.getPreProdUrl()).build();
-    }
-    
-    public Map<String, Object> reloadConnectionConfig() {
+	private final ApplicationContext applicationContext;
+
+	private final ApplicationProperties applicationProperties;
+
+	private final UserRepo userRepo;
+
+	private final WebClient webClient;
+
+	public AdminService(ConnectionConfigRepo connectionConfigRepo, DataStore dataStore, ApplicationContext applicationContext, ApplicationProperties applicationProperties, UserRepo userRepo, WebClient.Builder webClient) {
+		this.connectionConfigRepo = connectionConfigRepo;
+		this.dataStore = dataStore;
+		this.applicationContext = applicationContext;
+		this.applicationProperties = applicationProperties;
+		this.userRepo = userRepo;
+		this.webClient = webClient.baseUrl(applicationProperties.getPreProdUrl()).build();
+	}
+
+	public Map<String, Object> reloadConnectionConfig() {
+		
 		log.info("Gateway service inmemory data reload requested....");
 		Map<String, Object> response = new HashMap<>();
 		try {
@@ -61,7 +63,7 @@ public class AdminService {
 			autowireCapableBeanFactory.autowireBean(inMemoryDataSources);
 
 			inMemoryDataSources.refresh(connectionConfigs);
-			
+
 			response.put("status", HttpStatus.SC_OK);
 			response.put("message", "Gateway service inmemory data reloaded successfully");
 
@@ -72,22 +74,22 @@ public class AdminService {
 		}
 		return response;
 	}
-	
-	@SwitchDataSource(value="[0]")
+
+	@SwitchDataSource(value = "[0]")
 	public boolean isAdmin(String userdomain, String username) {
-		
-		if(!applicationProperties.getSandboxUrl().startsWith(userdomain)) {
+
+		if (!applicationProperties.getSandboxUrl().startsWith(userdomain)) {
 			return false;
 		}
-		
+
 		Users user = userRepo.findByUsername(username);
 		boolean result = false;
-		if(user != null && user.getIsAdmin() == 1) {
+		if (user != null && user.getIsAdmin() == 1) {
 			result = true;
 		}
 		return result;
 	}
-	
+
 	@SuppressWarnings("rawtypes")
 	public Mono<Map> reloadAll(String uri, String token) {
 		return this.webClient.get().uri(uri).accept(MediaType.APPLICATION_JSON).header("Authorization", token)
@@ -101,11 +103,11 @@ public class AdminService {
 					}
 				});
 	}
-	
-    public Map<String, Object> getErrorMessage(String service){
+
+	public Map<String, Object> getErrorMessage(String service) {
 		Map<String, Object> response = new HashMap<>();
 		response.put("status", HttpStatus.SC_EXPECTATION_FAILED);
-		response.put("message", "Could not reload "+service+" service inmemory data");
+		response.put("message", "Could not reload " + service + " service inmemory data");
 		return response;
 	}
 

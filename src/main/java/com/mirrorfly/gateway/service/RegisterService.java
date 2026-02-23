@@ -123,7 +123,11 @@ public class RegisterService {
 			user.setUsername(dto.getUserIdentifier());
 			registerResponseDefaults(response, false, false);
 		} else {
-			user = userRepo.findByUsername(chatUser.getUsername());
+			user = Optional.ofNullable(userRepo.findByUsername(chatUser.getUsername())).orElseGet(() -> {
+				Users u = new Users();
+				u.setUsername(dto.getUserIdentifier());
+				return u;
+			});
 			validateExistingUser(chatUser);
 			registerResponseDefaults(response, true, true);
 		}
@@ -136,7 +140,7 @@ public class RegisterService {
 
 		updateUserPassword(user, password, dto.getDeviceType());
 		response.setUsername(chatUser.getUsername());
-		response.setToken(tokenService.getToken(userdomain, chatUser.getUsername(), resolveDeviceId(dto), ""));
+		response.setToken(tokenService.asyncGetToken(userdomain, chatUser.getUsername(), resolveDeviceId(dto), ""));
 
 		userRepo.save(user);
 		return response;
@@ -379,15 +383,17 @@ public class RegisterService {
 
 			/** -------------------- Update Privacy Settings -------------------- */
 			
-			PrivacySettingsEntity privacy = privacySettingsRepo.findByUsername(username);
-
-			if (privacy == null) {
-				privacy = new PrivacySettingsEntity();
-				privacy.setUsername(username);
-				privacy.setSeenReceipt(0);
-				privacySettingsRepo.save(privacy);
+			PrivacySettingsEntity privacySetting = privacySettingsRepo.findByUsername(username);
+			if (privacySetting == null) {
+				PrivacySettingsEntity privacySettingsEntity = new PrivacySettingsEntity();
+				privacySettingsEntity.setUsername(username);
+				privacySettingsEntity.setSeenReceipt(1);
+				privacySettingsEntity.setHideProfile(1);
+				privacySettingsEntity.setOnlineStatus(1);
+				privacySettingsEntity.setCreatedAt(LocalDateTime.now());
+				privacySettingsRepo.save(privacySettingsEntity);
 			}
-
+			
 		});
 	}
 

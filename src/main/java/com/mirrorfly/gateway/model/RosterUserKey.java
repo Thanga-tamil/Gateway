@@ -16,6 +16,8 @@ import lombok.NoArgsConstructor;
 @Data
 public class RosterUserKey implements Serializable {
 
+	private static final long serialVersionUID = 1L;
+
 	@Column(name = "username")
 	private String username;
 
@@ -24,8 +26,10 @@ public class RosterUserKey implements Serializable {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj) return true;
-		if (obj == null || getClass() != obj.getClass()) return false;
+		if (this == obj)
+			return true;
+		if (obj == null || getClass() != obj.getClass())
+			return false;
 		RosterUserKey that = (RosterUserKey) obj;
 		return username.equals(that.username) && jid.equals(that.jid);
 	}
@@ -34,6 +38,5 @@ public class RosterUserKey implements Serializable {
 	public int hashCode() {
 		return Objects.hash(username, jid);
 	}
-
 
 }

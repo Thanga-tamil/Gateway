@@ -26,39 +26,37 @@ public class QueueService {
 			rabbitTemplate.convertAndSend(applicationProperties.getMailQueue(), EnumQueue.EMAIL_QUEUE.getQueue(),
 					mailPayload);
 		} catch (AmqpException a) {
-			log.error("Error in Sending to RabbitMQ Mail Exchange", a);
+			log.error("Error in Sending to RabbitMQ Mail Exchange ==> " + a.getMessage());
 			return false;
 		} catch (Exception a) {
-			log.error("Error in Sending to Mail Queue", a);
+			log.error("Error in Sending to Mail Queue ==> " + a.getMessage());
 			return false;
-
 		}
 		return true;
 	}
-
+	
 	public boolean sendLicenseDataPayload(LicenseDataPayload licenseDataPayload) {
 		try {
 			rabbitTemplate.convertAndSend(applicationProperties.getLicenseDataQueue(),
 					EnumQueue.LICENSE_QUEUE.getQueue(), licenseDataPayload);
 		} catch (AmqpException a) {
-			log.error("Error in Sending to RabbitMQ Mail Exchange", a);
+			log.error("Error in Sending to RabbitMQ Mail Exchange ==> " + a.getMessage());
 			return false;
 		} catch (Exception a) {
-			log.error("Error in Sending to Mail Queue", a);
+			log.error("Error in Sending to Mail Queue ==> " + a.getMessage());
 			return false;
-
 		}
 		return true;
 	}
 
 	public boolean sendUserSessionLogoutActivity(QueuePayloadDto payload) {
 		try {
-            log.info("Multi-Sessions Logout RabbitMQ payload ::: {}", payload);
+			log.info("Multi-Sessions Logout RabbitMQ payload ::: " + payload);
 			rabbitTemplate.convertAndSend(EnumQueue.API_DATA_QUEUE.getQueue(), payload);
-            return true;
+			return true;
 		} catch (Exception e) {
-			log.error("Failed to send logout payload to RabbitMQ: {}", payload, e);
-            return false;
+			log.error("Failed to send logout payload to RabbitMQ ==> " + e.getMessage());
+			return false;
 		}
 	}
 

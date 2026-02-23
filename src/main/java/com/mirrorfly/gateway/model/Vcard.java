@@ -14,15 +14,12 @@ import lombok.Data;
 @Data
 public class Vcard implements Serializable {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 6576324953564602096L;
 
 	@Id
 	@Column(name = "username")
 	private String username;
-	
+
 	@Column(name = "vcard")
 	private String vcardXml;
 

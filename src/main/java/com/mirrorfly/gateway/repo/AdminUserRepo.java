@@ -10,10 +10,10 @@ import com.mirrorfly.gateway.model.AdminUser;
 @Repository
 public interface AdminUserRepo extends JpaRepository<AdminUser, String> {
 
-	@Query("Select u from AdminUser u where u.username=:username and u.isDeleted=0")
+	@Query("Select u from AdminUser u where u.username = :username and u.isDeleted = 0")
 	public AdminUser findByUsername(@Param(value = "username") String username);
 
-	@Query("Select u from AdminUser u where u.emailId=:emailId and u.isDeleted=0")
+	@Query("Select u from AdminUser u where u.emailId = :emailId and u.isDeleted = 0")
 	public AdminUser findByEmailId(@Param(value = "emailId") String emailId);
 
 }

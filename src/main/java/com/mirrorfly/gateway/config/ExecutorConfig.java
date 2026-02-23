@@ -20,4 +20,15 @@ public class ExecutorConfig {
 		return executor;
 	}
 
+	@Bean(name = "loginExecutor")
+	public Executor loginExecutor() {
+		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+		executor.setCorePoolSize(10);
+		executor.setMaxPoolSize(50);
+		executor.setQueueCapacity(300);
+		executor.setThreadNamePrefix("LoginAsync-");
+		executor.initialize();
+		return executor;
+	}
+
 }

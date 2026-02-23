@@ -12,19 +12,11 @@ import jakarta.persistence.Table;
 
 import lombok.Data;
 
-/**
- * A container class to store and retrieve informations from database tables.
- * This include token details with token expire time limit range.
- *
- */
-
 @Entity
 @Table(name = "chat_access_tokens")
 @Data
 public class TokenDetail implements Serializable {
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 6576324953564602096L;
 
 	@Id

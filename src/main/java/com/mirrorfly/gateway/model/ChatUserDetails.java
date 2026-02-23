@@ -1,5 +1,6 @@
 package com.mirrorfly.gateway.model;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -14,7 +15,9 @@ import lombok.Data;
 @Entity
 @Table(name = "chat_users_details")
 @Data
-public class ChatUserDetails {
+public class ChatUserDetails implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -60,10 +63,10 @@ public class ChatUserDetails {
 	@Column(name = "user_type")
 	private String userType;
 
-    @Column(name = "user_ip", length = 45)
-    private String userIp;
+	@Column(name = "user_ip", length = 45)
+	private String userIp;
 
-    @Column(name = "country_code", length = 10)
-    private String countryCode;
+	@Column(name = "country_code", length = 10)
+	private String countryCode;
 
 }

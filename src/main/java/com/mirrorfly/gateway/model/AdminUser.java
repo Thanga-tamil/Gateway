@@ -1,5 +1,6 @@
 package com.mirrorfly.gateway.model;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -12,7 +13,9 @@ import lombok.Data;
 @Entity
 @Table(name = "users_admin")
 @Data
-public class AdminUser {
+public class AdminUser implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	@Id
 	@Column(name = "username")

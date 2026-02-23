@@ -176,7 +176,7 @@ public class SandboxUserService {
 				: "MF-01" + deviceIdprefix;
 
 		registerResponseDto
-				.setToken(tokenService.getToken(userdomain, registerResponseDto.getUsername(), deviceId, ""));
+				.setToken(tokenService.asyncGetToken(userdomain, registerResponseDto.getUsername(), deviceId, ""));
 		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
 			users.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
 		} else {

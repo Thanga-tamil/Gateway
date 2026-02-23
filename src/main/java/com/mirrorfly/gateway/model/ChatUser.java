@@ -15,9 +15,6 @@ import lombok.Data;
 @Data
 public class ChatUser implements Serializable {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 6576324953564602096L;
 
 	@Id
@@ -80,9 +77,8 @@ public class ChatUser implements Serializable {
 
 	@Column(name = "is_delete_inprogrees")
 	private Integer isDeleteInprogrees;
-	
+
 	@Column(columnDefinition = "JSON", name = "metadata")
 	private String metaData;
-	
 
 }
