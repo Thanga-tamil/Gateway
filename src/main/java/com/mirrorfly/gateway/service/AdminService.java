@@ -19,27 +19,28 @@ import com.mirrorfly.gateway.model.Users;
 import com.mirrorfly.gateway.repo.ConnectionConfigRepo;
 import com.mirrorfly.gateway.repo.UserRepo;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AdminService {
 
-	private final ConnectionConfigRepo connectionConfigRepo;
+	private ConnectionConfigRepo connectionConfigRepo;
 
-	private final DataStore dataStore;
+	private DataStore dataStore;
 
-	private final ApplicationContext applicationContext;
+	private ApplicationContext applicationContext;
 
-	private final ApplicationProperties applicationProperties;
+	private ApplicationProperties applicationProperties;
 
-	private final UserRepo userRepo;
+	private UserRepo userRepo;
 
-	private final WebClient webClient;
+	private WebClient webClient;
 
+	public AdminService() {
+	}
+	
 	public AdminService(ConnectionConfigRepo connectionConfigRepo, DataStore dataStore, ApplicationContext applicationContext, ApplicationProperties applicationProperties, UserRepo userRepo, WebClient.Builder webClient) {
 		this.connectionConfigRepo = connectionConfigRepo;
 		this.dataStore = dataStore;
@@ -110,5 +111,4 @@ public class AdminService {
 		response.put("message", "Could not reload " + service + " service inmemory data");
 		return response;
 	}
-
 }
