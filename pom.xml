@@ -11,7 +11,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.1.12</version>
-		<relativePath /> <!-- lookup parent from repository -->
+		<relativePath />
 	</parent>
 
 	<properties>
@@ -19,6 +19,13 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>17</java.version>
 		<spring-cloud.version>2022.0.4</spring-cloud.version>
+		<lombok.version>1.18.38</lombok.version>
+		<hipersistence.version>3.5.2</hipersistence.version>
+		<passay.version>1.3.0</passay.version>
+		<ipadress.version>5.4.0</ipadress.version>
+		<jwt.version>3.10.3</jwt.version>
+		<ognl.version>3.3.1</ognl.version>
+		<aws.sdk.ses.version>1.12.772</aws.sdk.ses.version>
 	</properties>
 
 	<dependencies>
@@ -91,17 +98,17 @@
 		<dependency>
 			<groupId>org.passay</groupId>
 			<artifactId>passay</artifactId>
-			<version>1.3.0</version>
+			<version>${passay.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.seancfoley</groupId>
 			<artifactId>ipaddress</artifactId>
-			<version>5.4.0</version>
+			<version>${ipadress.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.auth0</groupId>
 			<artifactId>java-jwt</artifactId>
-			<version>3.10.3</version>
+			<version>${jwt.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -114,12 +121,12 @@
 		<dependency>
 			<groupId>ognl</groupId>
 			<artifactId>ognl</artifactId>
-			<version>3.3.1</version>
+			<version>${ognl.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-ses</artifactId>
-			<version>1.12.772</version>
+			<version>${aws.sdk.ses.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.ben-manes.caffeine</groupId>
@@ -128,13 +135,13 @@
 		<dependency>
 			<groupId>io.hypersistence</groupId>
 			<artifactId>hypersistence-utils-hibernate-62</artifactId>
-			<version>3.5.2</version>
+			<version>${hipersistence.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
-			<version>1.18.38</version>
+			<version>${lombok.version}</version>
 		</dependency>
 
 	</dependencies>

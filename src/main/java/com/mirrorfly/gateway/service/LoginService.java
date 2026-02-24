@@ -127,7 +127,7 @@ public class LoginService {
 
 	private String decryptPassword(String encryptedPassword, String licenseKey) {
 		try {
-			String decrypted = AESEncryption.decryptString(encryptedPassword, licenseKey + licenseKey + licenseKey);
+			String decrypted = AESEncryption.decryptString(encryptedPassword, licenseKey.repeat(3));
 			LoginRequestDto login = MAPPER.readValue(URLDecoder.decode(decrypted, StandardCharsets.UTF_8), LoginRequestDto.class);
 			return login.getPassword();
 		} catch (Exception e) {
@@ -168,7 +168,7 @@ public class LoginService {
 
         ChatUserDetails chatUserDetails = chatUsersDetailsRepo.findFirstByUsernameOrderByLastLoggedInAtDesc(loginRequestDto.getUsername()).orElseThrow(() -> new BadDataException(GatewayConstants.USER_NOT_FOUND));
 
-        String userPassword = WEB.equalsIgnoreCase(chatUserDetails.getDeviceType()) ? password : GatewayUtil.getMd5String(password);
+        String userPassword = GatewayUtil.getMd5String(password);
 
         if (!userPassword.equals(chatUserDetails.getPassword())) {
             throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
