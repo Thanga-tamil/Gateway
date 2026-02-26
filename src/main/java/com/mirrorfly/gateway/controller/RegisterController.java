@@ -14,6 +14,8 @@ import com.mirrorfly.gateway.dto.RegisterRequestDto;
 import com.mirrorfly.gateway.response.Response;
 import com.mirrorfly.gateway.service.RegisterService;
 
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/register")
 public class RegisterController {
@@ -32,6 +34,8 @@ public class RegisterController {
 	@PostMapping
 	public Response<String> registerNewUser(@RequestBody RegisterRequestDto registerRequestDto, @RequestHeader String userdomain) {
 		Objects.requireNonNull(registerRequestDto, "RegisterData must not be null");
+		log.info("registerRequestDtoregisterRequestDto" + registerRequestDto);
+		log.info("111 - userdomainuserdomain" + userdomain);
 		return this.registerService.registerNewUser(userdomain, registerRequestDto);
 	}
 
