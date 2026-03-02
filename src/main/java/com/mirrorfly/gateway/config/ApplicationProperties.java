@@ -150,4 +150,8 @@ public class ApplicationProperties {
 		return env.getProperty("domain.ting");
 	}
 
+	public String getAdminSecretKey() {
+		return env.getProperty("admin_secret_key");
+	}
+
 }
