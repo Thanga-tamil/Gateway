@@ -94,9 +94,14 @@ public class AccessGatewayFilter implements GlobalFilter {
 		} else {
 			String userdomain = exchange.getRequest().getHeaders().getFirst(GatewayConstants.USER_DOMAIN);
 
+			log.info("checking cominggg {}", header);
+
 			if (exchange.getRequest().getPath().toString().contains("chat/sendmessage")) {
 
+				log.info("checking cominggg chat/sendmessage  {}", header);
+
 				if (applicationProperties.getAdminSecretKey().equals(header)) {
+					log.info("checking cominggg conditon came  {}", header);
 					ServerHttpRequest.Builder builder = request.mutate();
 					builder.header("username", "123456789");
 					return chain.filter(exchange.mutate().request(builder.build()).build());
