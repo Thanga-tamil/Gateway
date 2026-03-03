@@ -95,6 +95,7 @@ public class AccessGatewayFilter implements GlobalFilter {
 			String userdomain = exchange.getRequest().getHeaders().getFirst(GatewayConstants.USER_DOMAIN);
 
 			log.info("checking cominggg {}", header);
+			log.info("checking cominggg path {}", exchange.getRequest().getPath().toString());
 
 			if (exchange.getRequest().getPath().toString().contains("chat/sendmessage")) {
 
