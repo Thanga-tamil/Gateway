@@ -279,12 +279,12 @@ public class RegisterService {
 		chatUsersDetailsRepo.delete(deletable);
 		spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletable.getUsername(), deletable.getDeviceId());
 
-		// try {
-		// 	log.info("222 --- sendUserSessionLogoutActivity :" );
-		// 	// queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(domain, deletable.getUsername(), deletable.getDeviceId(), Collections.singleton(deletable.getSocketId()), Boolean.FALSE));
-		// } catch (JsonProcessingException e) {
-		// 	log.error("IQ logout failed :: " + e.getMessage());
-		// }
+		try {
+			log.info("222 --- sendUserSessionLogoutActivity :" );
+			queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(domain, deletable.getUsername(), deletable.getDeviceId(), Collections.singleton(deletable.getSocketId()), Boolean.FALSE));
+		} catch (JsonProcessingException e) {
+			log.error("IQ logout failed :: " + e.getMessage());
+		}
 	}
 
 	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> list, String deviceType) {
