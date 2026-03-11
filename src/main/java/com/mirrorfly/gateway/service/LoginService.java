@@ -159,20 +159,32 @@ public class LoginService {
 	 
     private Response<LoginDetailsDto> processLogin(String userdomain, LoginDto loginRequestDto) {
 
+		log.info("11 processLogin loginRequestDto::" + loginRequestDto);
+
         // ------- Your login logic here ----------
         AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
 		String licenseKey = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
 
+		log.info("11 processLogin loginRequestDto::" + licenseKey);
+
         String password = decryptPassword(loginRequestDto.getPassword(), licenseKey);
+
+		log.info("11 processLogin password::" + password);
 
         ChatUserDetails chatUserDetails = chatUsersDetailsRepo.findFirstByUsernameOrderByLastLoggedInAtDesc(loginRequestDto.getUsername()).orElseThrow(() -> new BadDataException(GatewayConstants.USER_NOT_FOUND));
 
+		log.info("11 processLogin chatUserDetails::" + chatUserDetails);
+
         String userPassword = GatewayUtil.getMd5String(password);
+
+		log.info("11 processLogin userPassword::" + userPassword);
 
         if (!userPassword.equals(chatUserDetails.getPassword())) {
             throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
         }
+		
+		log.info("11 processLogin userPassword::" + userPassword);
 
         if (!loginRequestDto.getUsername().equals("123456789")) {
             VcardSearch vcardSearch = vcardSearchRepo.findByUsername(chatUserDetails.getUsername());
