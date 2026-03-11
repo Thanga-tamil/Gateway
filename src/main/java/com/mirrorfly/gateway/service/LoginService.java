@@ -183,7 +183,7 @@ public class LoginService {
         if (!userPassword.equals(chatUserDetails.getPassword())) {
             throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
         }
-		
+
 		log.info("11 processLogin userPassword::" + userPassword);
 
         if (!loginRequestDto.getUsername().equals("123456789")) {
@@ -197,12 +197,17 @@ public class LoginService {
         
         String deviceId = StringUtils.isNotEmpty(chatUserDetails.getDeviceId()) ? chatUserDetails.getDeviceId() : "MF-01";
         String token = tokenService.asyncGetToken(userdomain, chatUserDetails.getUsername(), deviceId, "");
+
+		log.info("11 processLogin deviceId::" + deviceId);
+		log.info("11 processLogin token::" + token);
         
         chatUsersDetailsRepo.save(chatUserDetails);
        
         LoginDetailsDto data = new LoginDetailsDto();
         data.setToken(token);
 
+		log.info("11 processLogin data::" + data);
+		
         Response<LoginDetailsDto> response = new Response<>();
         response.setStatus(HttpStatus.OK.value());
         response.setMessage(GatewayConstants.DATA_RETRIEVED);
