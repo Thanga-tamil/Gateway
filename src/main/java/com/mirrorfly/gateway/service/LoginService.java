@@ -172,17 +172,17 @@ public class LoginService {
 
 		log.info("11 processLogin password::" + password);
 
-        ChatUserDetails chatUserDetails = chatUsersDetailsRepo.findFirstByUsernameOrderByLastLoggedInAtDesc(loginRequestDto.getUsername()).orElseThrow(() -> new BadDataException(GatewayConstants.USER_NOT_FOUND));
-
-		log.info("11 processLogin chatUserDetails::" + chatUserDetails);
-
         String userPassword = GatewayUtil.getMd5String(password);
 
 		log.info("11 processLogin userPassword::" + userPassword);
 
-        if (!userPassword.equals(chatUserDetails.getPassword())) {
-            throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
-        }
+		ChatUserDetails chatUserDetails = chatUsersDetailsRepo.findByUsernameAndPassword(loginRequestDto.getUsername(), userPassword);
+
+		log.info("11 processLogin chatUserDetails::" + chatUserDetails);
+
+		if (chatUserDetails == null) {
+			throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
+		}
 
 		log.info("11 processLogin userPassword::" + userPassword);
 
