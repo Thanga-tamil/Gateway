@@ -255,32 +255,20 @@ public class RegisterService {
 
 	private void removeOldSessionIfNeeded(String username, String deviceType, String domain) {
 
-		log.info("222 --- removeOldSessionIfNeeded username:" + username);
-		log.info("222 --- removeOldSessionIfNeeded deviceType:" + deviceType);
-		log.info("222 --- removeOldSessionIfNeeded domain:" + domain);
-
 		List<ChatUserDetails> sessions = chatUsersDetailsRepo.findByUsername(username);
-
-		log.info("222 --- removeOldSessionIfNeeded sessions:" + sessions);
 
 		if (sessions == null || sessions.isEmpty())
 			return;
 
-		log.info("222 --- removeOldSessionIfNeeded sessions not return :");
-
 		ChatUserDetails deletable = findDeletableChatUsersDetails(sessions, deviceType);
-		log.info("222 --- removeOldSessionIfNeeded deletable :" + deletable);
 
 		if (deletable == null)
 			return;
-
-		log.info("222 --- removeOldSessionIfNeeded deletable not return :" + deletable);
 
 		chatUsersDetailsRepo.delete(deletable);
 		spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletable.getUsername(), deletable.getDeviceId());
 
 		try {
-			log.info("222 --- sendUserSessionLogoutActivity :" );
 			queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(domain, deletable.getUsername(), deletable.getDeviceId(), Collections.singleton(deletable.getSocketId()), Boolean.FALSE));
 		} catch (JsonProcessingException e) {
 			log.error("IQ logout failed :: " + e.getMessage());
@@ -290,8 +278,6 @@ public class RegisterService {
 	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> list, String deviceType) {
 
 		boolean incomingWeb = GatewayConstants.DEVICE_WEB.equalsIgnoreCase(deviceType);
-
-		log.info("222 --- removeOldSessionIfNeeded incomingWeb :" + incomingWeb);
 
 		return list.stream().filter(s -> incomingWeb == GatewayConstants.DEVICE_WEB.equalsIgnoreCase(s.getDeviceType())).min(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).orElse(null);
 	}

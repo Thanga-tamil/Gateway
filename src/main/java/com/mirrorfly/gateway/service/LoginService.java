@@ -159,32 +159,20 @@ public class LoginService {
 	 
     private Response<LoginDetailsDto> processLogin(String userdomain, LoginDto loginRequestDto) {
 
-		log.info("11 processLogin loginRequestDto::" + loginRequestDto);
-
         // ------- Your login logic here ----------
         AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
 		String licenseKey = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
 
-		log.info("11 processLogin loginRequestDto::" + licenseKey);
-
         String password = decryptPassword(loginRequestDto.getPassword(), licenseKey);
-
-		log.info("11 processLogin password::" + password);
 
         String userPassword = GatewayUtil.getMd5String(password);
 
-		log.info("11 processLogin userPassword::" + userPassword);
-
 		ChatUserDetails chatUserDetails = chatUsersDetailsRepo.findByUsernameAndPassword(loginRequestDto.getUsername(), userPassword);
-
-		log.info("11 processLogin chatUserDetails::" + chatUserDetails);
 
 		if (chatUserDetails == null) {
 			throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
 		}
-
-		log.info("11 processLogin userPassword::" + userPassword);
 
         if (!loginRequestDto.getUsername().equals("123456789")) {
             VcardSearch vcardSearch = vcardSearchRepo.findByUsername(chatUserDetails.getUsername());
@@ -197,16 +185,11 @@ public class LoginService {
         
         String deviceId = StringUtils.isNotEmpty(chatUserDetails.getDeviceId()) ? chatUserDetails.getDeviceId() : "MF-01";
         String token = tokenService.asyncGetToken(userdomain, chatUserDetails.getUsername(), deviceId, "");
-
-		log.info("11 processLogin deviceId::" + deviceId);
-		log.info("11 processLogin token::" + token);
         
         chatUsersDetailsRepo.save(chatUserDetails);
        
         LoginDetailsDto data = new LoginDetailsDto();
         data.setToken(token);
-
-		log.info("11 processLogin data::" + data);
 		
         Response<LoginDetailsDto> response = new Response<>();
         response.setStatus(HttpStatus.OK.value());
