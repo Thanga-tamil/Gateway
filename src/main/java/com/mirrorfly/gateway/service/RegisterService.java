@@ -9,19 +9,19 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
-import com.mirrorfly.gateway.model.*;
-import com.mirrorfly.gateway.repo.*;
-import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -31,19 +31,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorfly.gateway.config.ApplicationProperties;
 import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
-import com.mirrorfly.gateway.dto.RegisterDto;
-import com.mirrorfly.gateway.dto.RegisterInfoDto;
-import com.mirrorfly.gateway.dto.RegisterRequestDto;
-import com.mirrorfly.gateway.dto.RegisterResponseDto;
-import com.mirrorfly.gateway.dto.SanboxUserRegisterDto;
+import com.mirrorfly.gateway.dto.*;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
+import com.mirrorfly.gateway.model.*;
 import com.mirrorfly.gateway.queue.QueueService;
+import com.mirrorfly.gateway.repo.*;
 import com.mirrorfly.gateway.response.Response;
-import com.mirrorfly.gateway.util.AESEncryption;
-import com.mirrorfly.gateway.util.DataHelperUtils;
-import com.mirrorfly.gateway.util.GatewayConstants;
-import com.mirrorfly.gateway.util.GatewayUtil;
+import com.mirrorfly.gateway.util.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,416 +48,370 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class RegisterService {
 
-	private final ChatSettingsRepo settingsRepo;
-
-	private final TokenService tokenService;
-
-	private final PasswordService passwordService;
-
-	private final ChatUserRepo chatUserRepo;
-
-	private final UserRepo userRepo;
-
 	private final ApplicationProperties applicationProperties;
-
-	private final RestTemplate restTemplate;
-
-	private final LastRepo lastRepo;
-
+	private final TokenService tokenService;
+	private final PasswordService passwordService;
 	private final ConfigService configService;
-
 	private final VcardService vcardService;
-
-	private final ChatUsersDetailsRepo chatUsersDetailsRepo;
-
-	private final SpoolRepo spoolRepo;
-
+	private final RestTemplate restTemplate;
 	private final DataStore dataStore;
-
 	private final QueueService queueService;
-
+	private final UserRepo userRepo;
+	private final ChatUserRepo chatUserRepo;
+	private final ChatUsersDetailsRepo chatUsersDetailsRepo;
+	private final SpoolRepo spoolRepo;
+	private final LastRepo lastRepo;
+	private final ChatSettingsRepo settingsRepo;
 	private final UserContactRepo userContactRepo;
-
 	private final RosterUserRepo rosterUserRepo;
+	private final PrivacySettingsRepo privacySettingsRepo;
 
-	private final ObjectMapper objectMapper;
+	private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private final PrivacySettingsRepo privacySettingsRepo;
+	/** ---------- Register Info -------------- */
 
-	private final AsyncService asyncService;
-
-	@SwitchDataSource(value = "[0]")
+	@SwitchDataSource("[0]")
 	public Response<RegisterInfoDto> getRegisterInfo(String userdomain) {
+		
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 		ChatSettings settings = settingsRepo.findAll().get(0);
+
 		RegisterInfoDto info = new RegisterInfoDto();
 		info.setDomain(settings.getDomain());
 		info.setMailLogin(settings.getMailLogin());
-		Response<RegisterInfoDto> response = new Response<>();
-		response.setStatus(HttpStatus.OK.value());
-		response.setData(info);
-		response.setMessage(GatewayConstants.DATA_RETRIEVED);
+
+		return new Response<RegisterInfoDto>(HttpStatus.OK.value(), info, GatewayConstants.DATA_RETRIEVED);
+	}
+
+	/** ---------- User Registration -------------- */
+
+	@SwitchDataSource("[0]")
+	public Response<String> registerNewUser(String userdomain, RegisterRequestDto req) {
+
+		String licenseKey = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
+
+		String xmppDomain = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain")).orElseThrow(() -> new BadDataException("Xmpp Domain not found"));
+
+		RegisterDto registerDto = decryptAndParse(req.getRegisterData(), licenseKey);
+		registerDto.setMobileNumber(registerDto.getCountryCode() + registerDto.getMobileNumber());
+
+		RegisterResponseDto responseDto = registerUser(userdomain, registerDto);
+		responseDto.setConfig(configService.getConfigData(licenseKey));
+
+		asyncPostRegister(userdomain, responseDto.getUsername(), registerDto.getMobileNumber(), xmppDomain);
+
+		String encryptData = AESEncryption.encryptString(toJson(responseDto), licenseKey.repeat(3));
+		
+		return new Response<String>(HttpStatus.OK.value(), encryptData, GatewayConstants.DATA_RETRIEVED);
+	}
+	
+	/** ---------- Core Registration -------------- */
+
+	private RegisterResponseDto registerUser(String userdomain, RegisterDto dto) {
+
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+		inputDataValidation(dto);
+
+		ChatUser chatUser = chatUserRepo.findByUserIdentifier(dto.getUserIdentifier());
+		Users user;
+		RegisterResponseDto response = new RegisterResponseDto();
+
+		if (chatUser == null) {
+			validateLicense(dto.getLicenseKey());
+			chatUser = createNewChatUser(dto);
+			user = new Users();
+			user.setUsername(dto.getUserIdentifier());
+			registerResponseDefaults(response, false, false);
+		} else {
+			user = Optional.ofNullable(userRepo.findByUsername(chatUser.getUsername())).orElseGet(() -> {
+				Users u = new Users();
+				u.setUsername(dto.getUserIdentifier());
+				return u;
+			});
+			validateExistingUser(chatUser);
+			registerResponseDefaults(response, true, true);
+		}
+
+		chatUser.setMetaData(GatewayUtil.convertMetaDataAsJson(dto.getMetaData()));
+		chatUserRepo.save(chatUser);
+
+		String password = updateChatUserDetails(userdomain, dto, chatUser);
+		response.setPassword(password);
+
+		updateUserPassword(user, password, dto.getDeviceType());
+		response.setUsername(chatUser.getUsername());
+		response.setToken(tokenService.asyncGetToken(userdomain, chatUser.getUsername(), resolveDeviceId(dto), ""));
+
+		userRepo.save(user);
 		return response;
 	}
 
-	@SwitchDataSource(value = "[0]")
-	public Response<String> registerNewUser(String userdomain, RegisterRequestDto registerRequestDto) {
-		Object config = dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey");
-		String licenseKey = config != null ? (String) config : null;
-		if (licenseKey == null) {
-			throw new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL);
-		}
-		String xmppDomain = Optional
-				.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain"))
-				.orElseThrow(() -> new BadDataException("Xmpp Domain not found"));
+	/** ---------- Update Chat Users Details -------------- */
 
-		String decyptedString = AESEncryption.decryptString(registerRequestDto.getRegisterData(),
-				licenseKey + licenseKey + licenseKey);
-		if (decyptedString.equals("")) {
-			throw new BadDataException(GatewayConstants.LICENSEKEY_INVALID);
+	public String updateChatUserDetails(String userdomain, RegisterDto dto, ChatUser chatUser) {
+
+		String deviceId = resolveDeviceId(dto);
+		String pushServerType = resolvePushServerType(dto);
+		clearOldTokens(dto);
+
+		ChatUserDetails details = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
+
+		String password = passwordService.generateRandomPassword();
+
+		if (details == null) {
+			removeOldSessionIfNeeded(chatUser.getUsername(), dto.getDeviceType(), userdomain);
+			details = new ChatUserDetails();
+			details.setUsername(chatUser.getUsername());
+			details.setDeviceId(deviceId);
+			details.setCreatedAt(LocalDateTime.now());
 		}
-		RegisterDto registerDto;
+
+		populateUserDetails(details, dto, password, pushServerType);
+		chatUsersDetailsRepo.save(details);
+		return password;
+	}
+
+	/** ---------- Helpers Method -------------- */
+
+	private void validateLicense(String licenseKey) {
 		try {
-			registerDto = objectMapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8.toString()),
-					RegisterDto.class);
+			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(applicationProperties.getWebportalApiBaseUrl() + "/license/validate").queryParam("licenseKey", licenseKey);
+			restTemplate.exchange(builder.toUriString(), HttpMethod.GET, new HttpEntity<>(new HttpHeaders()), String.class);
+		} catch (HttpStatusCodeException e) {
+			handlingExceptionOfApiCall(e);
+		}
+	}
+
+	private ChatUser createNewChatUser(RegisterDto dto) {
+		ChatUser user = new ChatUser();
+		user.setUsername(dto.getUserIdentifier());
+		user.setMobileNumber(dto.getMobileNumber());
+		user.setUserIdentifier(dto.getUserIdentifier());
+		user.setLicenseKey(dto.getLicenseKey());
+		user.setDevicetype(dto.getDeviceType());
+		user.setCreatedAt(GatewayUtil.getCurrentDateTime());
+		user.setIsDeleteInprogrees(0);
+
+		registerLogintime(dto.getUserIdentifier());
+
+		VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(dto.getUserIdentifier());
+		vcardService.updateVcard(vcardSearch, new Vcard());
+
+		return user;
+	}
+
+	private void validateExistingUser(ChatUser chatUser) {
+		if (chatUser.getIsDeleteInprogrees() == 1)
+			throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
+
+		VcardSearch vcardSearch = vcardService.findVcardSearchByUserName(chatUser.getUsername());
+
+		if (vcardSearch != null && vcardSearch.getIsBlock() == 1)
+			throw new ForbiddenException(GatewayConstants.BLOCK_USER);
+	}
+
+	private void registerResponseDefaults(RegisterResponseDto r, boolean profile, boolean existing) {
+		r.setIsProfileUpdated(profile);
+		r.setIsExisting(existing);
+	}
+
+	private void updateUserPassword(Users user, String password, String deviceType) {
+		if (GatewayConstants.WEB.equalsIgnoreCase(deviceType))
+			user.setWsPassword(GatewayUtil.getMd5String(password));
+		else
+			user.setPassword(GatewayUtil.getMd5String(password));
+	}
+
+	private String resolveDeviceId(RegisterDto dto) {
+		String suffix = dto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB) ? "-web" : "-mobile";
+		return StringUtils.defaultIfBlank(dto.getDeviceId(), "MF-01" + suffix);
+	}
+
+	private String resolvePushServerType(RegisterDto dto) {
+		if (GatewayConstants.DEVICE_ANDROID.equalsIgnoreCase(dto.getDeviceType()))
+			return "fcm";
+		return StringUtils.defaultIfBlank(dto.getPushServerType(), "apns");
+	}
+
+	private void clearOldTokens(RegisterDto dto) {
+		if (StringUtils.isNotBlank(dto.getDeviceToken()))
+			chatUsersDetailsRepo.updateDeviceTokenAsEmpty(dto.getDeviceToken());
+		if (StringUtils.isNotBlank(dto.getVoipDeviceToken()))
+			chatUsersDetailsRepo.updateVoipDeviceTokenAsEmpty(dto.getVoipDeviceToken());
+	}
+
+	private void populateUserDetails(ChatUserDetails u, RegisterDto d, String password, String pushServerType) {
+
+		u.setDeviceOsVersion(StringUtils.defaultIfBlank(d.getDeviceOsVersion(), "12.0"));
+		u.setDeviceToken(d.getDeviceToken());
+		u.setVoipDeviceToken(d.getVoipDeviceToken());
+		u.setDeviceType(d.getDeviceType());
+		u.setLastLoggedInAt(LocalDateTime.now());
+		u.setMode(d.getMode());
+		u.setPassword(GatewayUtil.getMd5String(password));
+		u.setPushServerType(pushServerType);
+		u.setUserType(StringUtils.defaultIfBlank(d.getUserType(), applicationProperties.getDefaultUserType()));
+	}
+
+	private void removeOldSessionIfNeeded(String username, String deviceType, String domain) {
+
+		List<ChatUserDetails> sessions = chatUsersDetailsRepo.findByUsername(username);
+
+		if (sessions == null || sessions.isEmpty())
+			return;
+
+		ChatUserDetails deletable = findDeletableChatUsersDetails(sessions, deviceType);
+
+		if (deletable == null)
+			return;
+
+		chatUsersDetailsRepo.delete(deletable);
+		spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletable.getUsername(), deletable.getDeviceId());
+
+		try {
+			queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(domain, deletable.getUsername(), deletable.getDeviceId(), Collections.singleton(deletable.getSocketId()), Boolean.FALSE));
+		} catch (JsonProcessingException e) {
+			log.error("IQ logout failed :: " + e.getMessage());
+		}
+	}
+
+	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> list, String deviceType) {
+
+		boolean incomingWeb = GatewayConstants.DEVICE_WEB.equalsIgnoreCase(deviceType);
+
+		return list.stream().filter(s -> incomingWeb == GatewayConstants.DEVICE_WEB.equalsIgnoreCase(s.getDeviceType())).min(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).orElse(null);
+	}
+
+	// private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> sessions, String deviceType) {
+
+    // boolean incomingWeb = GatewayConstants.DEVICE_WEB.equalsIgnoreCase(deviceType);
+
+    // // If new login is WEB → do not delete anything
+    // if (incomingWeb) {
+    //     return null;
+    // }
+
+    // // If new login is MOBILE → delete existing mobile session
+    // return sessions.stream()
+    //         .filter(s -> !GatewayConstants.DEVICE_WEB.equalsIgnoreCase(s.getDeviceType()))
+    //         .min(Comparator.comparing(ChatUserDetails::getLastLoggedInAt))
+    //         .orElse(null);
+// }
+
+	/** ---------- Validation Method -------------- */
+
+	private RegisterDto decryptAndParse(String data, String key) {
+		try {
+			String decrypted = AESEncryption.decryptString(data, key + key + key);
+			return MAPPER.readValue(URLDecoder.decode(decrypted, StandardCharsets.UTF_8), RegisterDto.class);
 		} catch (Exception e) {
-			log.error("RegisterDto values are not readable ::: " + e.getMessage());
 			throw new BadDataException(GatewayConstants.INVALID_ERROR);
 		}
-		String contactNo = registerDto.getMobileNumber();
-		registerDto.setMobileNumber(registerDto.getCountryCode() + contactNo);
-		RegisterResponseDto registerResponseDto = registerUser(userdomain, registerDto);
-		// get config details and return in the response
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-		registerResponseDto.setConfig(configService.getConfigData(licenseKey));
-		ObjectMapper mapper = new ObjectMapper();
-		String jsonString;
-		log.info("User registered successfully: {}, userIdentifier: {}", registerResponseDto.getUsername(),
-				registerResponseDto);
+	}
+
+	private String toJson(Object o) {
 		try {
-			jsonString = mapper.writeValueAsString(registerResponseDto);
+			return MAPPER.writeValueAsString(o);
 		} catch (JsonProcessingException e) {
 			throw new BadDataException("Json Parsing Error");
 		}
-
-		// Update the Rosters
-		if (StringUtils.isNotBlank(contactNo)) {
-			asyncService.updateRosters(userdomain, registerResponseDto.getUsername(), contactNo, xmppDomain);
-		}
-
-        //update Privacy settings for user.
-        updatePrivacySettings(userdomain, registerResponseDto.getUsername());
-		Response<String> response = new Response<>();
-		response.setData(AESEncryption.encryptString(jsonString, licenseKey + licenseKey + licenseKey));
-		response.setStatus(HttpStatus.OK.value());
-		response.setMessage(GatewayConstants.DATA_RETRIEVED);
-		return response;
-	}
-
-
-    @Async
-    public void updatePrivacySettings(String userdomain, String userName) {
-        AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-        PrivacySettingsEntity privacySetting = privacySettingsRepo.findByUsername(userName);
-        if(privacySetting == null){
-            PrivacySettingsEntity privacySettingsEntity =  new PrivacySettingsEntity();
-            privacySettingsEntity.setUsername(userName);
-            privacySettingsEntity.setSeenReceipt(0);
-            privacySettingsRepo.save(privacySettingsEntity);
-        }
-    }
-
-	@Transactional
-	public void saveAndDeleteRosters(List<RosterUser> rosters, List<UserContact> contacts) {
-		rosterUserRepo.saveAll(rosters);
-		userContactRepo.deleteAll(contacts);
 	}
 
 	public void registerLogintime(String username) {
 		Last last = new Last();
 		last.setUsername(username);
 		last.setStatus(0);
-		LocalDateTime date = LocalDateTime.now();
-		ZoneOffset zone = ZoneOffset.of("Z");
-		last.setSeconds(BigInteger.valueOf(date.toEpochSecond(zone)));
 		last.setPresence(0);
 		last.setState("Stream reset by peer");
+		last.setSeconds(BigInteger.valueOf(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)));
 		lastRepo.save(last);
 	}
 
-	@SwitchDataSource(value = "[0]")
-	private RegisterResponseDto registerUser(String userdomain, RegisterDto registerDto) {
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-		RegisterResponseDto registerResponseDto = new RegisterResponseDto();
-		inputDataValidation(registerDto);
-		Users user = new Users();
-		ChatUser chatUser = chatUserRepo.findByUserIdentifier(registerDto.getUserIdentifier());
-		if (chatUser == null) {
-			String url = applicationProperties.getWebportalApiBaseUrl() + "/license/validate";
-			try {
-				HttpHeaders headers = new HttpHeaders();
-				headers.set(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-				UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url).queryParam("licenseKey",
-						registerDto.getLicenseKey());
-				HttpEntity<?> entity = new HttpEntity<>(headers);
-				restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
-			} catch (HttpStatusCodeException e) {
-				handlingExceptionOfApiCall(e);
-			}
-			chatUser = new ChatUser();
-			chatUser.setUsername(registerDto.getUserIdentifier());
-			chatUser.setMobileNumber(registerDto.getMobileNumber());
-			chatUser.setCreatedAt(GatewayUtil.getCurrentDateTime());
-			chatUser.setUserIdentifier(registerDto.getUserIdentifier());
-			chatUser.setLicenseKey(registerDto.getLicenseKey());
-			chatUser.setIsDeleteInprogrees(0);
-			chatUser.setDevicetype(registerDto.getDeviceType());
-			// To insert the register login time
-			registerLogintime(registerDto.getUserIdentifier());
-			user.setUsername(registerDto.getUserIdentifier());
-			// Insert the vcard details
-			VcardSearch vcardSearch = vcardService.updateVcardSearchDetails(registerDto.getUserIdentifier());
-			vcardService.updateVcard(vcardSearch, new Vcard());
-			registerResponseDto.setIsProfileUpdated(false);
-			registerResponseDto.setIsExisting(false);
-		} else {
-			user = userRepo.findByUsername(chatUser.getUsername());
-			if (chatUser.getIsDeleteInprogrees() == 1) {
-				throw new BadDataException(GatewayConstants.DELETE_INPROGRESS);
-			}
-			VcardSearch vcardSearch = vcardService.findVcardSearchByUserName(chatUser.getUsername());
-			if (vcardSearch == null) {
-				vcardSearch = vcardService.updateVcardSearchDetails(registerDto.getUserIdentifier());
-				vcardService.updateVcard(vcardSearch, new Vcard());
-				registerResponseDto.setIsProfileUpdated(false);
-			} else {
-				if (vcardSearch.getIsBlock() == 1) {
-					throw new ForbiddenException(GatewayConstants.BLOCK_USER);
-				}
-				registerResponseDto.setIsProfileUpdated(true);
-			}
-			registerResponseDto.setIsExisting(true);
-		}
-		String metadata = GatewayUtil.convertMetaDataAsJson(registerDto.getMetaData());
-		chatUser.setMetaData(metadata);
-
-		chatUserRepo.save(chatUser);
-
-		String password = updateChatUserDetails(userdomain, registerDto, chatUser);
-		registerResponseDto.setPassword(password);
-
-		String deviceIdprefix = "";
-		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-			deviceIdprefix = "-web";
-		} else {
-			deviceIdprefix = "-mobile";
-		}
-		String deviceId = StringUtils.isNotBlank(registerDto.getDeviceId()) ? registerDto.getDeviceId()
-				: "MF-01" + deviceIdprefix;
-
-		registerResponseDto.setToken(tokenService.getToken(userdomain, registerDto.getUserIdentifier(), deviceId, ""));
-		registerResponseDto.setUsername(user.getUsername());
-		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.WEB)) {
-			user.setWsPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
-		} else {
-			user.setPassword(GatewayUtil.getMd5String(registerResponseDto.getPassword()));
-		}
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain); // Again setup the DB based on the domain
-		userRepo.save(user);
-		return registerResponseDto;
-	}
-
-	@SwitchDataSource(value = "[0]")
-	public String updateChatUserDetails(String userdomain, SanboxUserRegisterDto registerDto, ChatUser chatUser) {
-		RegisterDto data = new RegisterDto();
-		data.setDeviceId(registerDto.getDeviceId());
-		data.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-		data.setDeviceToken(registerDto.getDeviceToken());
-		data.setDeviceType(registerDto.getDeviceType());
-		data.setLicenseKey(registerDto.getLicenseKey());
-		data.setMobileNumber(registerDto.getMobileNumber());
-		data.setMode(registerDto.getMode());
-		data.setUserIdentifier(registerDto.getUserIdentifier());
-		data.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-		data.setForceRegister(registerDto.getForceRegister());
-		data.setPushServerType(registerDto.getPushServerType());
-		data.setUserType(registerDto.getUserType());
-		return updateChatUserDetails(userdomain, data, chatUser);
-	}
-
-	public String updateChatUserDetails(String userdomain, RegisterDto registerDto, ChatUser chatUser) {
-		String deviceIdprefix = "";
-		String pushServerType = "";
-		if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
-			deviceIdprefix = "-web";
-		} else {
-			deviceIdprefix = "-mobile";
-			if (registerDto.getDeviceToken() != null && !registerDto.getDeviceToken().isEmpty()) {
-				chatUsersDetailsRepo.updateDeviceTokenAsEmpty(registerDto.getDeviceToken());
-			}
-			if (registerDto.getVoipDeviceToken() != null && !registerDto.getVoipDeviceToken().isEmpty()) {
-				chatUsersDetailsRepo.updateVoipDeviceTokenAsEmpty(registerDto.getVoipDeviceToken());
-			}
-			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS)
-					&& (registerDto.getDeviceOsVersion() == null || registerDto.getDeviceOsVersion().equals(""))) {
-				registerDto.setDeviceOsVersion("12.0");
-			}
-			if (registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID)) {
-				pushServerType = "fcm";
-			} else {
-				if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()) {
-					pushServerType = registerDto.getPushServerType();
-				} else {
-					pushServerType = "apns";
-				}
-			}
-		}
-		String deviceId = registerDto.getDeviceId() != null && !registerDto.getDeviceId().isEmpty()
-				? registerDto.getDeviceId()
-				: "MF-01" + deviceIdprefix;
-		ChatUserDetails user = chatUsersDetailsRepo.findByUsernameAndDeviceId(chatUser.getUsername(), deviceId);
-		String password = passwordService.generateRandomPassword();
-		if (user == null) {
-
-			List<ChatUserDetails> existingChatUsersDetails = chatUsersDetailsRepo
-					.findByUsername(chatUser.getUsername());
-
-			/*
-			 * 1. Check if User Max-Session Exceeded if yes fetch the user session and find
-			 * the session needs to be deleted.
-			 *
-			 * 2. If the found session is Web and Logged in via QR-Code (SocketId). Then
-			 * Send session logged-out IQ to the devices
-			 */
-			if (existingChatUsersDetails != null && !existingChatUsersDetails.isEmpty()) {
-				ChatUserDetails deletableRecord = findDeletableChatUsersDetails(existingChatUsersDetails,
-						registerDto.getDeviceType());
-
-				if (deletableRecord != null) {
-
-					chatUsersDetailsRepo.delete(deletableRecord);
-					spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletableRecord.getUsername(),
-							deletableRecord.getDeviceId());
-
-					try {
-						queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(userdomain,
-								deletableRecord.getUsername(), deletableRecord.getDeviceId(),
-								Collections.singleton(deletableRecord.getSocketId()),Boolean.FALSE));
-					} catch (JsonProcessingException e) {
-						log.error("Failed to convert IQ payload to JSON: userdomain={}, username={}, sessionIds={}",
-								userdomain, chatUser.getUsername(), deletableRecord.getSocketId(), e.getMessage());
-					}
-				}
-			}
-			user = new ChatUserDetails();
-			user.setCreatedAt(LocalDateTime.now());
-			user.setDeviceId(deviceId);
-			user.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-			user.setDeviceToken(registerDto.getDeviceToken());
-			user.setDeviceType(registerDto.getDeviceType());
-			user.setLastLoggedInAt(LocalDateTime.now());
-			user.setMode(registerDto.getMode());
-			user.setPassword(GatewayUtil.getMd5String(password));
-			user.setUsername(chatUser.getUsername());
-			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-			user.setPushServerType(pushServerType);
-			user.setUserType(applicationProperties.getDefaultUserType());
-			if (StringUtils.isNotBlank(registerDto.getUserType())) {
-				user.setUserType(registerDto.getUserType().trim());
-			}
-			chatUsersDetailsRepo.save(user);
-			return password;
-		} else {
-			user.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-			user.setDeviceToken(registerDto.getDeviceToken());
-			user.setDeviceType(registerDto.getDeviceType());
-			user.setLastLoggedInAt(LocalDateTime.now());
-			user.setMode(registerDto.getMode());
-			user.setPassword(GatewayUtil.getMd5String(password));
-			user.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-			user.setPushServerType(pushServerType);
-			if (StringUtils.isNotBlank(registerDto.getUserType())) {
-				user.setUserType(registerDto.getUserType().trim());
-			}
-			chatUsersDetailsRepo.save(user);
-			return password;
+	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
+		try {
+			Response<?> r = MAPPER.readValue(e.getResponseBodyAsString(), Response.class);
+			throw new BadDataException(r.getMessage());
+		} catch (Exception ex) {
+			throw new BadDataException("Error in registration. Please try again later");
 		}
 	}
-
-	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> existingChatUsersDetails,
-			String deviceType) {
-
-		boolean incomingIsWeb = deviceType.equalsIgnoreCase(GatewayConstants.DEVICE_WEB);
-
-		List<ChatUserDetails> webSessions = existingChatUsersDetails.stream()
-				.filter(s -> s.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
-				.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).toList();
-
-		List<ChatUserDetails> mobileSessions = existingChatUsersDetails.stream()
-				.filter(s -> !s.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB))
-				.sorted(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).toList();
-
-		List<ChatUserDetails> sessions = incomingIsWeb ? webSessions : mobileSessions;
-		return sessions.isEmpty() ? null : sessions.get(0);
-	}
-
-	public void inputDataValidation(SanboxUserRegisterDto registerDto) {
-		RegisterDto registerData = new RegisterDto();
-		registerData.setDeviceId(registerDto.getDeviceId());
-		registerData.setDeviceOsVersion(registerDto.getDeviceOsVersion());
-		registerData.setDeviceToken(registerDto.getDeviceToken());
-		registerData.setDeviceType(registerDto.getDeviceType());
-		registerData.setLicenseKey(registerDto.getLicenseKey());
-		registerData.setMobileNumber(registerDto.getMobileNumber());
-		registerData.setMode(registerDto.getMode());
-		registerData.setUserIdentifier(registerDto.getUserIdentifier());
-		registerData.setVoipDeviceToken(registerDto.getVoipDeviceToken());
-		registerData.setForceRegister(registerDto.getForceRegister());
-		registerData.setPushServerType(registerDto.getPushServerType());
-		registerData.setMetaData(registerDto.getMetaData());
-		registerData.setUserType(registerDto.getUserType());
-		inputDataValidation(registerData);
-	}
-
+	
 	private void inputDataValidation(RegisterDto registerDto) {
+
 		String userIdentifier = registerDto.getUserIdentifier();
-		if (userIdentifier == null || userIdentifier.trim().isEmpty()) {
+
+		if (StringUtils.isBlank(userIdentifier)) {
 			throw new BadDataException(GatewayConstants.USER_IDENTIFIER_EMPTY);
 		}
-		if (userIdentifier.contains("\"") || userIdentifier.contains("&") || userIdentifier.contains("\'")
-				|| userIdentifier.contains("/") || userIdentifier.contains(":") || userIdentifier.contains("<")
-				|| userIdentifier.contains(">") || userIdentifier.contains("@")) {
-			throw new BadDataException("User identifier should not contain (\",&,\',/,:,<,>,@).");
+
+		if (userIdentifier.contains("\"") || userIdentifier.contains("&") || userIdentifier.contains("'") || userIdentifier.contains("/") || userIdentifier.contains(":") || userIdentifier.contains("<") || userIdentifier.contains(">") || userIdentifier.contains("@")) {
+			throw new BadDataException("User identifier should not contain (\",&,' ,/,:,<,>,@).");
 		}
-		if (registerDto.getLicenseKey() == null || registerDto.getLicenseKey().trim().isEmpty()) {
+
+		if (StringUtils.isBlank(registerDto.getLicenseKey())) {
 			throw new BadDataException(GatewayConstants.USER_LICENSEKEY_EMPTY);
 		}
-		if (registerDto.getDeviceType() == null || registerDto.getDeviceType().trim().isEmpty()) {
+
+		if (StringUtils.isBlank(registerDto.getDeviceType())) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_EMPTY);
 		}
-		if (!registerDto.getDeviceType().equalsIgnoreCase("android")
-				&& !registerDto.getDeviceType().equalsIgnoreCase("web")
-				&& !registerDto.getDeviceType().equalsIgnoreCase("ios")) {
+
+		if (!registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_ANDROID) && !registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_IOS) && !registerDto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)) {
 			throw new BadDataException(GatewayConstants.DEVICE_TYPE_NOT_VALID);
 		}
-		if (registerDto.getPushServerType() != null && !registerDto.getPushServerType().trim().isEmpty()
-				&& !registerDto.getPushServerType().equalsIgnoreCase("apns")
-				&& !registerDto.getPushServerType().equalsIgnoreCase("fcm")) {
+
+		if (StringUtils.isNotBlank(registerDto.getPushServerType()) && !registerDto.getPushServerType().equalsIgnoreCase("apns") && !registerDto.getPushServerType().equalsIgnoreCase("fcm")) {
 			throw new BadDataException(GatewayConstants.PUSH_SERVER_TYPE_NOT_VALID);
 		}
+
 		GatewayUtil.validateMetaData(registerDto.getMetaData(), applicationProperties.getMetaDataLimit());
+
 		GatewayUtil.validateUserType(registerDto.getUserType(), applicationProperties.getUserTypes());
 	}
 
-	private void handlingExceptionOfApiCall(HttpStatusCodeException e) {
-		String responseBody = e.getResponseBodyAsString();
-		ObjectMapper mapper = new ObjectMapper();
-		try {
-			Response<?> r = mapper.readValue(responseBody, Response.class);
-			throw new BadDataException(r.getMessage());
-		} catch (JsonProcessingException ex) {
-			throw new BadDataException("Error in registration. Please try again later");
-		}
+	@Async("contactsyncExecutor")
+	@SwitchDataSource("[0]")
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public CompletableFuture<Void> asyncPostRegister(String userdomain, String username, String contactNo, String xmppDomain) {
+
+		return CompletableFuture.runAsync(() -> {
+
+			AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+
+			/** -------------------- Update RosterUsers -------------------- */
+			
+			if (StringUtils.isNotBlank(contactNo)) {
+
+				List<UserContact> contacts = userContactRepo.findByMobileNumber(contactNo);
+
+				if (contacts != null && !contacts.isEmpty()) {
+
+					Set<String> usernames = contacts.stream().map(UserContact::getUsername).collect(Collectors.toSet());
+					String jid = username + "@" + xmppDomain;
+					List<String> existingRosters = rosterUserRepo.findAllRosters(usernames, jid);
+					List<RosterUser> newRosters = contacts.stream().filter(c -> !existingRosters.contains(c.getUsername())).map(c -> new RosterUser(new RosterUserKey(c.getUsername(), jid), 'N', 'N', username, c.getName(), 'B', "item", c.getLicenseKey())).toList();
+
+					if (!newRosters.isEmpty()) {
+						rosterUserRepo.saveAll(newRosters);
+					}
+					userContactRepo.deleteAll(contacts);
+				}
+			}
+
+			/** -------------------- Update Privacy Settings -------------------- */
+			
+			PrivacySettingsEntity privacySetting = privacySettingsRepo.findByUsername(username);
+			if (privacySetting == null) {
+				PrivacySettingsEntity privacySettingsEntity = new PrivacySettingsEntity();
+				privacySettingsEntity.setUsername(username);
+				privacySettingsEntity.setSeenReceipt(1);
+				privacySettingsEntity.setHideProfile(1);
+				privacySettingsEntity.setOnlineStatus(1);
+				privacySettingsEntity.setCreatedAt(LocalDateTime.now());
+				privacySettingsRepo.save(privacySettingsEntity);
+			}
+			
+		});
 	}
 
 }

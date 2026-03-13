@@ -1,10 +1,8 @@
 package com.mirrorfly.gateway.repo;
 
 import java.util.List;
+import java.util.Optional;
 
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +16,8 @@ import com.mirrorfly.gateway.model.ChatUserDetails;
 public interface ChatUsersDetailsRepo extends JpaRepository<ChatUserDetails, String> {
 
 	public List<ChatUserDetails> findByUsername(@Param("username") String username);
+
+	public Optional<ChatUserDetails> findFirstByUsernameOrderByLastLoggedInAtDesc(String username);
 
 	@Query("Select c from ChatUserDetails  c where c.username = :username and c.password = :password")
 	public ChatUserDetails findByUsernameAndPassword(@Param("username") String username,
@@ -49,18 +49,26 @@ public interface ChatUsersDetailsRepo extends JpaRepository<ChatUserDetails, Str
 	@Query("Update ChatUserDetails c set c.voipDeviceToken='' where c.voipDeviceToken = :voipDeviceToken")
 	public void updateVoipDeviceTokenAsEmpty(String voipDeviceToken);
 
-    @Transactional
-    @Modifying
-    @Query("Update ChatUserDetails c set c.userIp = :userIp, c.countryCode = :countryCode where c.username = :username and c.deviceId = :deviceId")
-    int updateIpWithDeviceId(@Param("userIp") String userIp, @Param("deviceId") String deviceId, @Param("username") String username, @Param("countryCode") String countryCode);
+	@Transactional
+	@Modifying
+	@Query("Update ChatUserDetails c set c.userIp = :userIp, c.countryCode = :countryCode where c.username = :username and c.deviceId = :deviceId")
+	int updateIpWithDeviceId(@Param("userIp") String userIp, @Param("deviceId") String deviceId,
+			@Param("username") String username, @Param("countryCode") String countryCode);
 
 	@Transactional
 	@Modifying
 	@Query("Update ChatUserDetails c set c.userIp = :userIp, c.countryCode = :countryCode, c.deviceId = :deviceId where c.username = :username and c.socketId = :socketId")
-	int updateIpWithSocketIdAndDeviceId(@Param("userIp") String ip,  @Param("deviceId") String deviceId, @Param("username") String username, @Param("countryCode") String countryCode, @Param("socketId")String socketId);
+	int updateIpWithSocketIdAndDeviceId(@Param("userIp") String ip, @Param("deviceId") String deviceId,
+			@Param("username") String username, @Param("countryCode") String countryCode,
+			@Param("socketId") String socketId);
 
 	@Transactional
 	@Modifying
 	@Query("Update ChatUserDetails c set c.userIp = :userIp, c.countryCode = :countryCode where c.username = :username and c.socketId = :socketId")
-	int updateIpWithSocketId(@Param("userIp") String ip, @Param("socketId")String socketId, @Param("username") String username, @Param("countryCode") String countryCode);
+	int updateIpWithSocketId(@Param("userIp") String ip, @Param("socketId") String socketId,
+			@Param("username") String username, @Param("countryCode") String countryCode);
+
+	@Modifying
+	@Query("DELETE FROM ChatUserDetails c WHERE c.username = :username AND c.deviceId = :deviceId")
+	void deleteByUsernameAndDeviceId(String username, String deviceId);
 }

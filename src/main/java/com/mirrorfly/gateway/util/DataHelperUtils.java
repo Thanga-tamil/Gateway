@@ -14,8 +14,7 @@ public class DataHelperUtils {
 		throw new UnsupportedOperationException("Utility class - instantiation not allowed");
 	}
 
-	public static QueuePayloadDto prepareIQPayload(String userdomain, String username, String deviceId,
-			Set<String> sessionIds, Boolean simBindLogout) throws JsonProcessingException {
+	public static QueuePayloadDto prepareIQPayload(String userdomain, String username, String deviceId, Set<String> sessionIds, Boolean simBindLogout) throws JsonProcessingException {
 		Map<String, Object> iqPayloadMap = new HashMap<>();
 		iqPayloadMap.put("username", username);
 		iqPayloadMap.put("socket_id", String.join(",", sessionIds));
@@ -24,8 +23,7 @@ public class DataHelperUtils {
 		return new QueuePayloadDto("logout_sessions", GatewayUtil.convertMapToJson(iqPayloadMap), userdomain);
 	}
 
-	public static QueuePayloadDto prepareIQPayload(String userdomain, String username, Set<String> sessionIds)
-			throws JsonProcessingException {
+	public static QueuePayloadDto prepareIQPayload(String userdomain, String username, Set<String> sessionIds) throws JsonProcessingException {
 		Map<String, Object> iqPayloadMap = new HashMap<>();
 		iqPayloadMap.put("username", username);
 		iqPayloadMap.put("socket_id", String.join(",", sessionIds));

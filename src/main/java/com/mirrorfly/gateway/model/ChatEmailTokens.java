@@ -1,5 +1,6 @@
 package com.mirrorfly.gateway.model;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
@@ -16,7 +17,9 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "chat_email_tokens")
-public class ChatEmailTokens {
+public class ChatEmailTokens implements Serializable{
+
+	private static final long serialVersionUID = 1L;
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -5,8 +5,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -21,12 +23,14 @@ import com.mirrorfly.gateway.dto.LoginDetailsDto;
 import com.mirrorfly.gateway.dto.LoginDto;
 import com.mirrorfly.gateway.dto.LoginRequestDto;
 import com.mirrorfly.gateway.dto.PasswordDto;
+import com.mirrorfly.gateway.dto.QueuePayloadDto;
 import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.exception.ForbiddenException;
 import com.mirrorfly.gateway.model.AdminUser;
 import com.mirrorfly.gateway.model.ChatUserDetails;
 import com.mirrorfly.gateway.model.EmailToken;
 import com.mirrorfly.gateway.model.TokenDetail;
+import com.mirrorfly.gateway.model.VcardSearch;
 import com.mirrorfly.gateway.queue.MailPayload;
 import com.mirrorfly.gateway.queue.QueueService;
 import com.mirrorfly.gateway.repo.AdminUserRepo;
@@ -40,135 +44,203 @@ import com.mirrorfly.gateway.util.DataHelperUtils;
 import com.mirrorfly.gateway.util.GatewayConstants;
 import com.mirrorfly.gateway.util.GatewayUtil;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class LoginService {
 
-	@Autowired
-	private AdminUserRepo adminUserRepo;
+	private final AdminUserRepo adminUserRepo;
 
-	@Autowired
-	private TokenService tokenService;
+	private final VcardSearchRepo vcardSearchRepo;
 
-	@Autowired
-	private QueueService queueService;
+	private final ChatUsersDetailsRepo chatUsersDetailsRepo;
 
-	@Autowired
-	private EmailTokenService emailTokenService;
+	private final SpoolRepo spoolRepo;
 
-	@Autowired
-	private EmailTokenRepo emailTokenRepo;
+	private final TokenService tokenService;
 
-	@Autowired
-	private ApplicationProperties applicationProperties;
+	private final QueueService queueService;
 
-	@Autowired
-	private VcardSearchRepo vcardSearchRepo;
+	private final EmailTokenService emailTokenService;
 
-	@Autowired
-	private ChatUsersDetailsRepo chatUsersDetailsRepo;
+	private final EmailTokenRepo emailTokenRepo;
+	
+	private final Executor loginExecutor;
+	 
+	private final ApplicationProperties applicationProperties;
 
-	@Autowired
-	private DataStore dataStore;
-
-	@Autowired
-	private SpoolRepo spoolRepo;
+	private final DataStore dataStore;
+	
+	private static final ObjectMapper MAPPER = new ObjectMapper();
+	
+	private static final String WEB = "web";
 
 	@SwitchDataSource(value = "[0]")
 	public Response<LoginDetailsDto> login(String userdomain, LoginDto loginRequestDto) {
-		// If incoming requested in encrypted means, we need to decrypt the password
-		// field to find the original password
+	
+		log.info("Login Request DTO: " + loginRequestDto);
+
+		// Set DB based on domain
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
-		String licenseKey = Optional
-				.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey"))
-				.orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
+		// Get license key
+		String licenseKey = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
 
-		ObjectMapper mapper = new ObjectMapper();
-		String decyptedString = AESEncryption.decryptString(loginRequestDto.getPassword(), licenseKey.repeat(3));
-
-		String password;
-		LoginRequestDto login;
-
-		try {
-			login = mapper.readValue(URLDecoder.decode(decyptedString, StandardCharsets.UTF_8), LoginRequestDto.class);
-			password = login.getPassword();
-		} catch (JsonProcessingException e) {
-			log.error("Unable to unserialize the password field {}, continuing assuming the password is plain",
-					e.getMessage());
-			password = loginRequestDto.getPassword();
+		// Decrypt password if needed
+		String password = decryptPassword(loginRequestDto.getPassword(), licenseKey);
+		
+		ChatUserDetails chatUserDetails = chatUsersDetailsRepo.findFirstByUsernameOrderByLastLoggedInAtDesc(loginRequestDto.getUsername()).orElseThrow(() -> new BadDataException(GatewayConstants.USER_NOT_FOUND));
+		
+		String user_password = WEB.equalsIgnoreCase(chatUserDetails.getDeviceType()) ? password : GatewayUtil.getMd5String(password);
+		
+		// Validate user
+		if (!user_password.equals(chatUserDetails.getPassword()))
+			throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
+		
+		// Check if user is blocked
+		if (!loginRequestDto.getUsername().equals("123456789")) {
+			VcardSearch vcardSearch = vcardSearchRepo.findByUsername(chatUserDetails.getUsername());
+			if (1 == vcardSearch.getIsBlock()) {
+				throw new ForbiddenException(GatewayConstants.BLOCK_USER);
+			}
 		}
 
-		// Validating the password against the data in DB
-		ChatUserDetails chatUserDetails = Optional.ofNullable(chatUsersDetailsRepo
-				.findByUsernameAndPassword(loginRequestDto.getUsername(), GatewayUtil.getMd5String(password)))
-				.map(chatUserDetail -> {
+		// Update last login
+		chatUserDetails.setLastLoggedInAt(LocalDateTime.now());
+		chatUsersDetailsRepo.save(chatUserDetails);
 
-					Optional.ofNullable(vcardSearchRepo.findByUsername(chatUserDetail.getUsername()))
-							.ifPresent(vcard -> {
-								if (vcard.getIsBlock() == 1) {
-									throw new ForbiddenException(GatewayConstants.BLOCK_USER);
-								}
-							});
+		String deviceId = StringUtils.isNotEmpty(chatUserDetails.getDeviceId()) ? chatUserDetails.getDeviceId() : "MF-01";
+		String token = tokenService.asyncGetToken(userdomain, chatUserDetails.getUsername(), deviceId, "");
 
-					chatUserDetail.setLastLoggedInAt(LocalDateTime.now());
+		LoginDetailsDto data = new LoginDetailsDto();
+		data.setToken(token);
 
-					return chatUsersDetailsRepo.save(chatUserDetail);
-
-				}).orElseThrow(() -> new BadDataException(GatewayConstants.BAD_CREDENTIALS));
-
-		return new Response<>(HttpStatus.OK.value(),
-				new LoginDetailsDto(tokenService.getToken(userdomain, chatUserDetails.getUsername(),
-						chatUserDetails.getDeviceId() != null && !chatUserDetails.getDeviceId().isEmpty()
-								? chatUserDetails.getDeviceId()
-								: "MF-01",
-						"")),
-				GatewayConstants.DATA_RETRIEVED);
-
+		Response<LoginDetailsDto> response = new Response<>();
+		response.setStatus(HttpStatus.OK.value());
+		response.setData(data);
+		response.setMessage(GatewayConstants.DATA_RETRIEVED);
+		return response;
 	}
 
+	private String decryptPassword(String encryptedPassword, String licenseKey) {
+		try {
+			String decrypted = AESEncryption.decryptString(encryptedPassword, licenseKey.repeat(3));
+			LoginRequestDto login = MAPPER.readValue(URLDecoder.decode(decrypted, StandardCharsets.UTF_8), LoginRequestDto.class);
+			return login.getPassword();
+		} catch (Exception e) {
+			return encryptedPassword;
+		}
+	}
+
+	public CompletableFuture<Response<LoginDetailsDto>> loginAsync(String userdomain, LoginDto loginRequestDto) {
+
+		return CompletableFuture.supplyAsync(() -> {
+			try {
+				return processLogin(userdomain, loginRequestDto);
+			} catch (BadDataException e) {
+				return buildErrorResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+			} catch (ForbiddenException e) {
+				return buildErrorResponse(HttpStatus.FORBIDDEN.value(), e.getMessage());
+			} catch (Exception e) {
+				return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage());
+			}
+		}, loginExecutor);
+	}
+
+	private Response<LoginDetailsDto> buildErrorResponse(int status, String message) {
+		Response<LoginDetailsDto> resp = new Response<>();
+		resp.setStatus(status);
+		resp.setMessage(message);
+		return resp;
+	}
+	 
+    private Response<LoginDetailsDto> processLogin(String userdomain, LoginDto loginRequestDto) {
+
+        // ------- Your login logic here ----------
+        AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+
+		String licenseKey = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
+
+        String password = decryptPassword(loginRequestDto.getPassword(), licenseKey);
+
+        String userPassword = GatewayUtil.getMd5String(password);
+
+		ChatUserDetails chatUserDetails = chatUsersDetailsRepo.findByUsernameAndPassword(loginRequestDto.getUsername(), userPassword);
+
+		if (chatUserDetails == null) {
+			throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
+		}
+
+        if (!loginRequestDto.getUsername().equals("123456789")) {
+            VcardSearch vcardSearch = vcardSearchRepo.findByUsername(chatUserDetails.getUsername());
+            if (1 == vcardSearch.getIsBlock()) {
+                throw new ForbiddenException(GatewayConstants.BLOCK_USER);
+            }
+        }
+
+        chatUserDetails.setLastLoggedInAt(LocalDateTime.now());
+        
+        String deviceId = StringUtils.isNotEmpty(chatUserDetails.getDeviceId()) ? chatUserDetails.getDeviceId() : "MF-01";
+        String token = tokenService.asyncGetToken(userdomain, chatUserDetails.getUsername(), deviceId, "");
+        
+        chatUsersDetailsRepo.save(chatUserDetails);
+       
+        LoginDetailsDto data = new LoginDetailsDto();
+        data.setToken(token);
+		
+        Response<LoginDetailsDto> response = new Response<>();
+        response.setStatus(HttpStatus.OK.value());
+        response.setMessage(GatewayConstants.DATA_RETRIEVED);
+        response.setData(data);
+
+        return response;
+    }
+    
 	@SwitchDataSource(value = "[0]")
 	public Response<String> logout(String userdomain, String authorization, Boolean simBindLogout) {
+		
+        AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
+		// Retrieve token details and remove token
 		TokenDetail tokenDetail = tokenService.getTokenDetail(userdomain, authorization);
 		tokenService.deleteToken(userdomain, authorization);
 
-		if (tokenDetail != null) {
-			String deviceId = tokenDetail.getDevicetype() != null && !tokenDetail.getDevicetype().isEmpty()
-					? tokenDetail.getDevicetype()
-					: "MF-01";
-			ChatUserDetails chatUserDetail = chatUsersDetailsRepo.findByUsernameAndDeviceId(tokenDetail.getUsername(),
-					deviceId);
-			if (chatUserDetail != null) {
-
-				chatUsersDetailsRepo.delete(chatUserDetail);
-				spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(tokenDetail.getUsername(), deviceId);
-
-				// If QR-Web session (SocketId) send session logged-out IQ to the devices
-//				if (chatUserDetail.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB)
-//						&& StringUtils.isNotBlank(chatUserDetail.getSocketId())) {
-				try {
-					queueService.sendUserSessionLogoutActivity(
-							DataHelperUtils.prepareIQPayload(userdomain, chatUserDetail.getUsername(),
-									chatUserDetail.getDeviceId() != null ? chatUserDetail.getDeviceId() : "",
-									Collections.singleton(
-											chatUserDetail.getSocketId() != null ? chatUserDetail.getSocketId() : ""), simBindLogout));
-				} catch (JsonProcessingException e) {
-					log.error(
-							"Failed to convert IQ payload to JSON: userDomain={}, username={}, sessionIds={}, Error.. {}",
-							userdomain, chatUserDetail.getUsername(), chatUserDetail.getSocketId(), e.getMessage());
-				}
-			}
-
-//			}
+		if (tokenDetail == null) {
+			return new Response<>(HttpStatus.OK.value(), GatewayConstants.LOG_OUT);
 		}
 
-		Response<String> response = new Response<>();
-		response.setStatus(HttpStatus.OK.value());
-		response.setMessage(GatewayConstants.LOG_OUT);
-		return response;
+		// Determine device ID
+		String deviceId = StringUtils.defaultIfBlank(tokenDetail.getDevicetype(), "MF-01");
+
+		// Fetch user session details
+		ChatUserDetails chatUserDetail = chatUsersDetailsRepo.findByUsernameAndDeviceId(tokenDetail.getUsername(), deviceId);
+
+		if (chatUserDetail != null) {
+			String deviceType = chatUserDetail.getDeviceType();
+
+			// Delete non-web device session
+			if (!GatewayConstants.DEVICE_WEB.equalsIgnoreCase(deviceType)) {
+				chatUsersDetailsRepo.delete(chatUserDetail);
+			}
+
+			// Delete offline spool data
+			spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(tokenDetail.getUsername(), deviceId);
+
+			// Handle web session logout IQ event
+			if (GatewayConstants.DEVICE_WEB.equalsIgnoreCase(deviceType) && StringUtils.isNotBlank(chatUserDetail.getSocketId())) {
+				try {
+					QueuePayloadDto payload = DataHelperUtils.prepareIQPayload(userdomain, chatUserDetail.getUsername(), StringUtils.defaultIfEmpty(chatUserDetail.getDeviceId(), ""), Collections.singleton(StringUtils.defaultIfEmpty(chatUserDetail.getSocketId(), "")), simBindLogout);
+					queueService.sendUserSessionLogoutActivity(payload);
+				} catch (JsonProcessingException e) {
+					log.error("Failed to send logout IQ payload: userdomain={}, username={}, socketId={}, error={}", userdomain, chatUserDetail.getUsername(), chatUserDetail.getSocketId(), e.getMessage());
+				}
+			}
+		}
+
+		return new Response<>(HttpStatus.OK.value(), GatewayConstants.LOG_OUT);
 	}
 
 	@SwitchDataSource(value = "[0]")
@@ -197,15 +269,17 @@ public class LoginService {
 		Response<AdminLoginResponse> response = new Response<>();
 		AdminLoginResponse loginDetails = new AdminLoginResponse();
 		loginDetails.setImage(adminUser != null ? adminUser.getImage() : "");
-		loginDetails
-				.setToken(tokenService.getToken(userdomain, adminUser != null ? adminUser.getUsername() : "", "", ""));
+		loginDetails.setToken(tokenService.asyncGetToken(userdomain, adminUser != null ? adminUser.getUsername() : "", "", ""));
 		response.setStatus(HttpStatus.OK.value());
 		response.setData(loginDetails);
 		response.setMessage(GatewayConstants.DATA_RETRIEVED);
 		return response;
 	}
 
-	public Response<String> sendForgotPasswordEmail(String emailId) {
+	public Response<String> sendForgotPasswordEmail(String emailId, String userdomain) {
+		
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+
 		AdminUser mail = adminUserRepo.findByEmailId(emailId);
 		if (mail != null && mail.getIsActive() == 0) {
 			throw new BadDataException(GatewayConstants.INACTIVE_ACCOUNT);
@@ -213,10 +287,9 @@ public class LoginService {
 		if (mail == null)
 			throw new BadDataException(GatewayConstants.EMAILID_NOT_REGISTERED);
 
-		String token = emailTokenService.generateToken(emailId, "forgot-password.html");
+		String token = emailTokenService.generateToken(emailId, "forgot-password.html", userdomain);
 
-		queueService.sendMailPayload(new MailPayload(GatewayConstants.FORGOT_PASWORD, emailId, mail.getName(), token,
-				applicationProperties.getResetPasswordRedirectUrl()));
+		queueService.sendMailPayload(new MailPayload(GatewayConstants.FORGOT_PASWORD, emailId, mail.getName(), token, applicationProperties.getResetPasswordRedirectUrl()));
 
 		Response<String> response = new Response<>();
 		response.setStatus(HttpStatus.OK.value());
@@ -229,7 +302,7 @@ public class LoginService {
 		EmailToken validToken = emailTokenRepo.findByToken(token);
 
 		if (validToken == null)
-			throw new BadDataException("You can't be able to Reset Password");
+			throw new BadDataException("Please use the latest Reset Password link received in your email inbox or use the Forgot password option again to reset your password");
 
 		AdminUser adminUser = adminUserRepo.findByEmailId(validToken.getEmailId());
 		if (adminUser != null && adminUser.getIsActive() == 0) {

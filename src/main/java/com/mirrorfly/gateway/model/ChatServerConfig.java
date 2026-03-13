@@ -16,9 +16,7 @@ import lombok.Data;
 @Table(name = "chat_servers")
 @Data
 public class ChatServerConfig implements Serializable {
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 6576324953564602096L;
 
 	@Id

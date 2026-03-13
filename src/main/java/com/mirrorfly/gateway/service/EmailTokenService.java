@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.model.EmailToken;
 import com.mirrorfly.gateway.repo.EmailTokenRepo;
 import com.mirrorfly.gateway.util.GatewayConstants;
@@ -16,7 +17,9 @@ public class EmailTokenService {
 	@Autowired
 	private EmailTokenRepo emailTokenRepo;
 
-	public String generateToken(String emailId, String templateName) {
+	public String generateToken(String emailId, String templateName, String userdomain) {
+
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
 		EmailToken emailToken = emailTokenRepo.findByEmailIdAndEmailTemplate(emailId, templateName);
 		if (emailToken == null) {

@@ -4,7 +4,6 @@ import lombok.Data;
 
 @Data
 public class RegisterRequestDto {
-	
-	private String registerData;
 
+	private String registerData;
 }
