@@ -282,22 +282,6 @@ public class RegisterService {
 		return list.stream().filter(s -> incomingWeb == GatewayConstants.DEVICE_WEB.equalsIgnoreCase(s.getDeviceType())).min(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).orElse(null);
 	}
 
-	// private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> sessions, String deviceType) {
-
-    // boolean incomingWeb = GatewayConstants.DEVICE_WEB.equalsIgnoreCase(deviceType);
-
-    // // If new login is WEB → do not delete anything
-    // if (incomingWeb) {
-    //     return null;
-    // }
-
-    // // If new login is MOBILE → delete existing mobile session
-    // return sessions.stream()
-    //         .filter(s -> !GatewayConstants.DEVICE_WEB.equalsIgnoreCase(s.getDeviceType()))
-    //         .min(Comparator.comparing(ChatUserDetails::getLastLoggedInAt))
-    //         .orElse(null);
-// }
-
 	/** ---------- Validation Method -------------- */
 
 	private RegisterDto decryptAndParse(String data, String key) {
