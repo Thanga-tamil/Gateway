@@ -119,4 +119,7 @@ public class VcardSearch implements Serializable {
 	@Column(name = "updated_by")
 	private String updatedBy;
 
+	@Column(name = "description", columnDefinition = "TEXT")
+    private String description = "";
+
 }

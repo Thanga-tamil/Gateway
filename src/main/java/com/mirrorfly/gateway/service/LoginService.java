@@ -166,13 +166,13 @@ public class LoginService {
 
         String password = decryptPassword(loginRequestDto.getPassword(), licenseKey);
 
-        ChatUserDetails chatUserDetails = chatUsersDetailsRepo.findFirstByUsernameOrderByLastLoggedInAtDesc(loginRequestDto.getUsername()).orElseThrow(() -> new BadDataException(GatewayConstants.USER_NOT_FOUND));
-
         String userPassword = GatewayUtil.getMd5String(password);
 
-        if (!userPassword.equals(chatUserDetails.getPassword())) {
-            throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
-        }
+		ChatUserDetails chatUserDetails = chatUsersDetailsRepo.findByUsernameAndPassword(loginRequestDto.getUsername(), userPassword);
+
+		if (chatUserDetails == null) {
+			throw new BadDataException(GatewayConstants.BAD_CREDENTIALS);
+		}
 
         if (!loginRequestDto.getUsername().equals("123456789")) {
             VcardSearch vcardSearch = vcardSearchRepo.findByUsername(chatUserDetails.getUsername());
@@ -190,7 +190,7 @@ public class LoginService {
        
         LoginDetailsDto data = new LoginDetailsDto();
         data.setToken(token);
-
+		
         Response<LoginDetailsDto> response = new Response<>();
         response.setStatus(HttpStatus.OK.value());
         response.setMessage(GatewayConstants.DATA_RETRIEVED);

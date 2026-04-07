@@ -270,6 +270,7 @@ public class RegisterService {
 
 		ChatUserDetails deletable = findDeletableChatUsersDetails(sessions, deviceType);
 		log.info("111 - deletable" + deletable);
+
 		if (deletable == null)
 			return;
 

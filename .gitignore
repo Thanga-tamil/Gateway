@@ -1,63 +1,43 @@
-/.metadata/
-/.recommenders/
-
-#
-# Project specific excludes
-#
-.springBeans
-tomcat
-
-#
-# Default excludes
-#
-
-# Binaries
-*.7z
-*.dmg
-*.gz
-*.iso
-*.jar
-*.rar
-*.tar
-*.zip
-*.war
-*.ear
-*.sar
-*.class
-*.prefs
-*.classpath
-*.project
-
-# Maven
-target/
-*/.springBeans
-# IntelliJ project files
+*#
 *.iml
-*.iws
 *.ipr
-.idea/
-
-# eclipse project file
-.settings/
-*.classpath
-*.project
-
-# NetBeans specific
-nbproject/private/
-build/
-nbbuild/
-dist/
-nbdist/
-nbactions.xml
-nb-configuration.xml
-
-
-# OS
+*.iws
+*.jar
+*.sw?
+*~
+.#*
+.*.md.html
 .DS_Store
-
-# Misc
-*.swp
-release.properties
-pom.xml.releaseBackup
-pom.xml.tag
-/.apt_generated/
+.attach_pid*
+.classpath
+.factorypath
+.gradle
+.idea
+.metadata
+.project
+.recommenders
+.settings
+.springBeans
+.vscode
+/code
+MANIFEST.MF
+_site/
+activemq-data
+bin
+build
+!/**/src/**/bin
+!/**/src/**/build
+build.log
+dependency-reduced-pom.xml
+dump.rdb
+interpolated*.xml
+lib/
+manifest.yml
+out
+overridedb.*
+target
+.flattened-pom.xml
+secrets.yml
+.gradletasknamecache
+.sts4-cache
+target/
