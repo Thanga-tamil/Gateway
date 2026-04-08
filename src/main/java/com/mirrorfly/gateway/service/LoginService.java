@@ -230,14 +230,14 @@ public class LoginService {
 			spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(tokenDetail.getUsername(), deviceId);
 
 			// Handle web session logout IQ event
-			if (GatewayConstants.DEVICE_WEB.equalsIgnoreCase(deviceType) && StringUtils.isNotBlank(chatUserDetail.getSocketId())) {
+			// if (GatewayConstants.DEVICE_WEB.equalsIgnoreCase(deviceType) && StringUtils.isNotBlank(chatUserDetail.getSocketId())) {
 				try {
 					QueuePayloadDto payload = DataHelperUtils.prepareIQPayload(userdomain, chatUserDetail.getUsername(), StringUtils.defaultIfEmpty(chatUserDetail.getDeviceId(), ""), Collections.singleton(StringUtils.defaultIfEmpty(chatUserDetail.getSocketId(), "")), simBindLogout);
 					queueService.sendUserSessionLogoutActivity(payload);
 				} catch (JsonProcessingException e) {
 					log.error("Failed to send logout IQ payload: userdomain={}, username={}, socketId={}, error={}", userdomain, chatUserDetail.getUsername(), chatUserDetail.getSocketId(), e.getMessage());
 				}
-			}
+			// }
 		}
 
 		return new Response<>(HttpStatus.OK.value(), GatewayConstants.LOG_OUT);
