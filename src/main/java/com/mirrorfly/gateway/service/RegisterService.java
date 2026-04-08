@@ -366,7 +366,10 @@ public class RegisterService {
 			
 			if (StringUtils.isNotBlank(contactNo)) {
 
-				List<UserContact> contacts = userContactRepo.findByMobileNumber(contactNo);
+				// Reverse the contact number for efficient index lookup on mobile_number_reversed_trim
+				String reversedContactNo = new StringBuilder(contactNo.trim()).reverse().toString();
+
+				List<UserContact> contacts = userContactRepo.findByMobileNumber(reversedContactNo);
 
 				if (contacts != null && !contacts.isEmpty()) {
 
