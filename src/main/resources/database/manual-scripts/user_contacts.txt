@@ -1,0 +1,56 @@
+/* ============================================================
+   STEP 1 — Create Backup Table (Structure Only)
+============================================================ */
+
+DROP TABLE IF EXISTS app_core.users_contacts_backup;
+
+CREATE TABLE dazwayuatdb.users_contacts_backup
+LIKE dazwayuatdb.users_contacts;
+
+-- Add generated column
+ALTER TABLE dazwayuatdb.users_contacts_backup
+ADD COLUMN mobile_number_reversed_trim VARCHAR(191)
+GENERATED ALWAYS AS (REVERSE(TRIM(mobile_number))) STORED;
+
+-- Add index
+CREATE INDEX idx_uc_mobile_number_reversed_trim
+ON dazwayuatdb.users_contacts_backup(mobile_number_reversed_trim);
+
+
+/* ============================================================
+   STEP 3 — Populate Backup Table (Full Data Copy)
+============================================================ */
+
+START TRANSACTION;
+
+INSERT INTO dazwayuatdb.users_contacts_backup
+(
+    id,
+    username,
+    mobile_number,
+    name,
+    created_at,
+    license_key
+)
+SELECT
+    id,
+    username,
+    mobile_number,
+    name,
+    created_at,
+    license_key
+FROM dazwayuatdb.users_contacts;
+
+COMMIT;
+
+/* ============================================================
+   STEP 5 — Swap Tables (Atomic Rename)
+============================================================ */
+
+RENAME TABLE
+    dazwayuatdb.users_contacts TO dazwayuatdb.users_contacts_original,
+    dazwayuatdb.users_contacts_backup TO dazwayuatdb.users_contacts;
+
+/* ============================================================
+   DONE
+============================================================ */

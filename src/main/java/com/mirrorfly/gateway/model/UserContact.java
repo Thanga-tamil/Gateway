@@ -25,6 +25,9 @@ public class UserContact implements Serializable {
 	@Column(name = "mobile_number")
 	private String mobileNumber;
 
+	@Column(name = "mobile_number_reversed_trim")
+	private String mobileNumberReversedTrim;
+
 	@Column(name = "name")
 	private String name;
 

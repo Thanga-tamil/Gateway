@@ -12,7 +12,12 @@ import java.util.List;
 @Repository
 public interface UserContactRepo extends JpaRepository<UserContact, String>, CrudRepository<UserContact, String> {
 
-	@Query("SELECT uc FROM UserContact uc WHERE uc.mobileNumber LIKE CONCAT('%', :mobileNumber) GROUP BY uc.username")
-    List<UserContact> findByMobileNumber(@Param("mobileNumber") String mobileNumber);
+    // Expects reversed mobile number as input for optimal index usage
+    // Example: If mobile is "9998887771", pass "1777888999"
+    @Query("SELECT uc FROM UserContact uc WHERE uc.mobileNumberReversedTrim LIKE CONCAT(:reversedMobileNumber, '%') GROUP BY uc.username")
+    List<UserContact> findByMobileNumber(@Param("reversedMobileNumber") String reversedMobileNumber);
+
+    @Query("SELECT uc FROM UserContact uc WHERE uc.mobileNumber LIKE CONCAT('%', :mobileNumber) group by uc.username")
+    List<UserContact> findByMobileNumberOld(@Param("mobileNumber") String mobileNumber);
 
 }
