@@ -222,9 +222,9 @@ public class LoginService {
 			String deviceType = chatUserDetail.getDeviceType();
 
 			// Delete non-web device session
-			if (!GatewayConstants.DEVICE_WEB.equalsIgnoreCase(deviceType)) {
-				chatUsersDetailsRepo.delete(chatUserDetail);
-			}
+			// if (!GatewayConstants.DEVICE_WEB.equalsIgnoreCase(deviceType)) {
+			chatUsersDetailsRepo.delete(chatUserDetail);
+			// }
 
 			// Delete offline spool data
 			spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(tokenDetail.getUsername(), deviceId);
