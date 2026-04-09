@@ -95,8 +95,6 @@ public class RegisterService {
 		RegisterDto registerDto = decryptAndParse(req.getRegisterData(), licenseKey);
 		registerDto.setMobileNumber(registerDto.getCountryCode() + registerDto.getMobileNumber());
 
-		log.info("111 - registerNewUser" + userdomain);
-
 		RegisterResponseDto responseDto = registerUser(userdomain, registerDto);
 		responseDto.setConfig(configService.getConfigData(licenseKey));
 
@@ -117,8 +115,6 @@ public class RegisterService {
 		ChatUser chatUser = chatUserRepo.findByUserIdentifier(dto.getUserIdentifier());
 		Users user;
 		RegisterResponseDto response = new RegisterResponseDto();
-
-		log.info("111 - chatUser" + chatUser);
 
 		if (chatUser == null) {
 			validateLicense(dto.getLicenseKey());
@@ -153,8 +149,6 @@ public class RegisterService {
 	/** ---------- Update Chat Users Details -------------- */
 
 	public String updateChatUserDetails(String userdomain, RegisterDto dto, ChatUser chatUser) {
-
-		log.info("111 - updateChatUserDetails" + userdomain, dto, chatUser);
 
 		String deviceId = resolveDeviceId(dto);
 		String pushServerType = resolvePushServerType(dto);
@@ -263,13 +257,10 @@ public class RegisterService {
 
 		List<ChatUserDetails> sessions = chatUsersDetailsRepo.findByUsername(username);
 
-		log.info("111 - removeOldSessionIfNeeded" + sessions);
-
 		if (sessions == null || sessions.isEmpty())
 			return;
 
 		ChatUserDetails deletable = findDeletableChatUsersDetails(sessions, deviceType);
-		log.info("111 - deletable" + deletable);
 
 		if (deletable == null)
 			return;
@@ -287,8 +278,6 @@ public class RegisterService {
 	private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> list, String deviceType) {
 
 		boolean incomingWeb = GatewayConstants.DEVICE_WEB.equalsIgnoreCase(deviceType);
-
-		log.info("111 - incomingWeb" + incomingWeb);
 
 		return list.stream().filter(s -> incomingWeb == GatewayConstants.DEVICE_WEB.equalsIgnoreCase(s.getDeviceType())).min(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).orElse(null);
 	}

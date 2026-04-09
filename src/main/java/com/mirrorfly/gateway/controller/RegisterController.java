@@ -35,7 +35,6 @@ public class RegisterController {
 	public Response<String> registerNewUser(@RequestBody RegisterRequestDto registerRequestDto, @RequestHeader String userdomain) {
 		Objects.requireNonNull(registerRequestDto, "RegisterData must not be null");
 		log.info("registerRequestDtoregisterRequestDto" + registerRequestDto);
-		log.info("111 - userdomainuserdomain" + userdomain);
 		return this.registerService.registerNewUser(userdomain, registerRequestDto);
 	}
 
