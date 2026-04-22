@@ -25,12 +25,11 @@ public class Swagger3Config {
 								.url("http://springdoc.org")))
 				.components(new Components().addSecuritySchemes("apiKey",
 						new SecurityScheme().type(Type.APIKEY).in(In.HEADER).name("Authorization")))
-				.addSecurityItem(new io.swagger.v3.oas.models.security.SecurityRequirement().addList("apiKey"))
-				.addServersItem(new Server().url("/api/gateway/"));
+				.addSecurityItem(new io.swagger.v3.oas.models.security.SecurityRequirement().addList("apiKey"));
 	}
 
 	@Bean
 	public GroupedOpenApi customOpenAPI() {
-		return GroupedOpenApi.builder().group("api").packagesToScan("com.mirrorfly.gatewayservice").build();
+		return GroupedOpenApi.builder().group("api").packagesToScan("com.mirrorfly.gateway.controller").build();
 	}
 }
