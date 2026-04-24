@@ -29,6 +29,6 @@ public class Swagger3Config {
 
 	@Bean
 	public GroupedOpenApi customOpenAPI() {
-		return GroupedOpenApi.builder().group("api").packagesToScan("com.mirrorfly.gateway.controller").build();
+		return GroupedOpenApi.builder().group("api").packagesToScan("com.mirrorfly.gateway").build();
 	}
 }
