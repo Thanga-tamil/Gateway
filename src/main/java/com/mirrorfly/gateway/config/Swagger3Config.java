@@ -19,7 +19,7 @@ public class Swagger3Config {
 	public OpenAPI openAPI() {
 		return new OpenAPI()
 				.info(new io.swagger.v3.oas.models.info.Info().title("Gateway Service API")
-						.description("MirrorFly Gateway Service API Documentation").version("v0.0.1")
+						.description("Dazway Gateway Service API Documentation").version("v0.0.1")
 						.license(new io.swagger.v3.oas.models.info.License().name("Apache 2.0")
 								.url("http://springdoc.org")))
 				.components(new Components().addSecuritySchemes("apiKey",
