@@ -25,7 +25,7 @@ public class Swagger3Config {
 				.components(new Components().addSecuritySchemes("apiKey",
 						new SecurityScheme().type(Type.APIKEY).in(In.HEADER).name("Authorization")))
 				.addSecurityItem(new io.swagger.v3.oas.models.security.SecurityRequirement().addList("apiKey"))
-				.addServersItem(new Server().url("/api/v1/"));
+				.addServersItem(new Server().url("/"));
 	}
 
 	@Bean
