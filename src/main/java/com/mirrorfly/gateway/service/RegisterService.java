@@ -266,6 +266,15 @@ public class RegisterService {
 				privacyUsersListRepo.deleteByUsername(username);
 				log.info("[privacy_users_list] async delete completed | userdomain={} username={} deletedCount={}",
 						userdomain, username, existingCount);
+
+				int updatedRows = chatUserRepo.resetPrivacyTypeByUsername(username);
+				if (updatedRows > 0) {
+					log.info("[privacy_users_list] reset chat_users privacy_type=0 | userdomain={} username={} updatedRows={}",
+							userdomain, username, updatedRows);
+				} else {
+					log.info("[privacy_users_list] no chat_users entry — skip privacy_type reset | userdomain={} username={}",
+							userdomain, username);
+				}
 			} catch (Exception e) {
 				log.error("[privacy_users_list] async delete failed | userdomain={} username={} error={}",
 						userdomain, username, e.getMessage(), e);
