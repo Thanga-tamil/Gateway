@@ -65,6 +65,7 @@ public class RegisterService {
 	private final UserContactRepo userContactRepo;
 	private final RosterUserRepo rosterUserRepo;
 	private final PrivacySettingsRepo privacySettingsRepo;
+	private final PrivacyUsersListRepo privacyUsersListRepo;
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -135,14 +136,27 @@ public class RegisterService {
 		chatUser.setMetaData(GatewayUtil.convertMetaDataAsJson(dto.getMetaData()));
 		chatUserRepo.save(chatUser);
 
+		String deviceId = resolveDeviceId(dto);
+		boolean shouldClearPrivacyUsersList = shouldClearPrivacyUsersList(dto, chatUser.getUsername(), deviceId);
+		log.info("[privacy_users_list] register check | userdomain={} username={} deviceType={} deviceId={} shouldClear={}",
+				userdomain, chatUser.getUsername(), dto.getDeviceType(), deviceId, shouldClearPrivacyUsersList);
+
 		String password = updateChatUserDetails(userdomain, dto, chatUser);
 		response.setPassword(password);
 
 		updateUserPassword(user, password, dto.getDeviceType());
 		response.setUsername(chatUser.getUsername());
-		response.setToken(tokenService.asyncGetToken(userdomain, chatUser.getUsername(), resolveDeviceId(dto), ""));
+		response.setToken(tokenService.asyncGetToken(userdomain, chatUser.getUsername(), deviceId, ""));
 
 		userRepo.save(user);
+
+		if (shouldClearPrivacyUsersList) {
+			log.info("[privacy_users_list] scheduling async delete | userdomain={} username={}", userdomain, chatUser.getUsername());
+			asyncClearPrivacyUsersList(userdomain, chatUser.getUsername());
+		} else {
+			log.info("[privacy_users_list] skip delete | userdomain={} username={}", userdomain, chatUser.getUsername());
+		}
+
 		return response;
 	}
 
@@ -225,6 +239,38 @@ public class RegisterService {
 	private String resolveDeviceId(RegisterDto dto) {
 		String suffix = dto.getDeviceType().equalsIgnoreCase(GatewayConstants.DEVICE_WEB) ? "-web" : "-mobile";
 		return StringUtils.defaultIfBlank(dto.getDeviceId(), "MF-01" + suffix);
+	}
+
+	private boolean shouldClearPrivacyUsersList(RegisterDto dto, String username, String incomingDeviceId) {
+		if (GatewayConstants.DEVICE_WEB.equalsIgnoreCase(dto.getDeviceType())) {
+			log.info("[privacy_users_list] web session — no clear needed | username={} deviceId={}", username, incomingDeviceId);
+			return false;
+		}
+		boolean isNewMobileDevice = chatUsersDetailsRepo.findByUsernameAndDeviceId(username, incomingDeviceId) == null;
+		log.info("[privacy_users_list] mobile session check | username={} deviceId={} isNewMobileDevice={}",
+				username, incomingDeviceId, isNewMobileDevice);
+		return isNewMobileDevice;
+	}
+
+	@Async("contactsyncExecutor")
+	@SwitchDataSource("[0]")
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public CompletableFuture<Void> asyncClearPrivacyUsersList(String userdomain, String username) {
+		return CompletableFuture.runAsync(() -> {
+			try {
+				log.info("[privacy_users_list] async delete started | userdomain={} username={}", userdomain, username);
+				AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+				int existingCount = privacyUsersListRepo.findByUsername(username).size();
+				log.info("[privacy_users_list] records found before delete | userdomain={} username={} count={}",
+						userdomain, username, existingCount);
+				privacyUsersListRepo.deleteByUsername(username);
+				log.info("[privacy_users_list] async delete completed | userdomain={} username={} deletedCount={}",
+						userdomain, username, existingCount);
+			} catch (Exception e) {
+				log.error("[privacy_users_list] async delete failed | userdomain={} username={} error={}",
+						userdomain, username, e.getMessage(), e);
+			}
+		});
 	}
 
 	private String resolvePushServerType(RegisterDto dto) {
