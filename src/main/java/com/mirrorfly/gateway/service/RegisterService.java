@@ -65,6 +65,7 @@ public class RegisterService {
 	private final UserContactRepo userContactRepo;
 	private final RosterUserRepo rosterUserRepo;
 	private final PrivacySettingsRepo privacySettingsRepo;
+	private final PrivacyUsersListRepo privacyUsersListRepo;
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -135,14 +136,27 @@ public class RegisterService {
 		chatUser.setMetaData(GatewayUtil.convertMetaDataAsJson(dto.getMetaData()));
 		chatUserRepo.save(chatUser);
 
+		String deviceId = resolveDeviceId(dto);
+		boolean shouldClearPrivacyUsersList = shouldClearPrivacyUsersList(dto, chatUser.getUsername(), deviceId);
+		log.info("[privacy_users_list] register check | userdomain={} username={} deviceType={} deviceId={} shouldClear={}",
+				userdomain, chatUser.getUsername(), dto.getDeviceType(), deviceId, shouldClearPrivacyUsersList);
+
 		String password = updateChatUserDetails(userdomain, dto, chatUser);
 		response.setPassword(password);
 
 		updateUserPassword(user, password, dto.getDeviceType());
 		response.setUsername(chatUser.getUsername());
-		response.setToken(tokenService.asyncGetToken(userdomain, chatUser.getUsername(), resolveDeviceId(dto), ""));
+		response.setToken(tokenService.asyncGetToken(userdomain, chatUser.getUsername(), deviceId, ""));
 
 		userRepo.save(user);
+
+		if (shouldClearPrivacyUsersList) {
+			log.info("[privacy_users_list] scheduling async delete | userdomain={} username={}", userdomain, chatUser.getUsername());
+			asyncClearPrivacyUsersList(userdomain, chatUser.getUsername());
+		} else {
+			log.info("[privacy_users_list] skip delete | userdomain={} username={}", userdomain, chatUser.getUsername());
+		}
+
 		return response;
 	}
 
@@ -227,6 +241,59 @@ public class RegisterService {
 		return StringUtils.defaultIfBlank(dto.getDeviceId(), "MF-01" + suffix);
 	}
 
+	private boolean shouldClearPrivacyUsersList(RegisterDto dto, String username, String incomingDeviceId) {
+		if (GatewayConstants.DEVICE_WEB.equalsIgnoreCase(dto.getDeviceType())) {
+			log.info("[privacy_users_list] web session — no clear needed | username={} deviceId={}", username, incomingDeviceId);
+			return false;
+		}
+
+		// Only clear when DB already has mobile sessions for this user,
+		// and none of the stored device_ids match the incoming device_id.
+		List<ChatUserDetails> existingSessions = chatUsersDetailsRepo.findByUsername(username);
+		if (existingSessions == null || existingSessions.isEmpty()) {
+			log.info("[privacy_users_list] no existing chat_users_details rows — skip clear | username={} incomingDeviceId={}",
+					username, incomingDeviceId);
+			return false;
+		}
+
+		boolean hasIncomingDevice = existingSessions.stream()
+				.anyMatch(s -> incomingDeviceId.equals(s.getDeviceId()));
+		log.info("[privacy_users_list] mobile session check | username={} incomingDeviceId={} hasIncomingDevice={}",
+				username, incomingDeviceId, hasIncomingDevice);
+
+		return !hasIncomingDevice;
+	}
+
+	@Async("contactsyncExecutor")
+	@SwitchDataSource("[0]")
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public CompletableFuture<Void> asyncClearPrivacyUsersList(String userdomain, String username) {
+		return CompletableFuture.runAsync(() -> {
+			try {
+				log.info("[privacy_users_list] async delete started | userdomain={} username={}", userdomain, username);
+				AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+				int existingCount = privacyUsersListRepo.findByUsername(username).size();
+				log.info("[privacy_users_list] records found before delete | userdomain={} username={} count={}",
+						userdomain, username, existingCount);
+				privacyUsersListRepo.deleteByUsername(username);
+				log.info("[privacy_users_list] async delete completed | userdomain={} username={} deletedCount={}",
+						userdomain, username, existingCount);
+
+				int updatedRows = chatUserRepo.resetPrivacyTypeByUsername(username);
+				if (updatedRows > 0) {
+					log.info("[privacy_users_list] reset chat_users privacy_type=0 | userdomain={} username={} updatedRows={}",
+							userdomain, username, updatedRows);
+				} else {
+					log.info("[privacy_users_list] no chat_users entry — skip privacy_type reset | userdomain={} username={}",
+							userdomain, username);
+				}
+			} catch (Exception e) {
+				log.error("[privacy_users_list] async delete failed | userdomain={} username={} error={}",
+						userdomain, username, e.getMessage(), e);
+			}
+		});
+	}
+
 	private String resolvePushServerType(RegisterDto dto) {
 		if (GatewayConstants.DEVICE_ANDROID.equalsIgnoreCase(dto.getDeviceType()))
 			return "fcm";
@@ -281,22 +348,6 @@ public class RegisterService {
 
 		return list.stream().filter(s -> incomingWeb == GatewayConstants.DEVICE_WEB.equalsIgnoreCase(s.getDeviceType())).min(Comparator.comparing(ChatUserDetails::getLastLoggedInAt)).orElse(null);
 	}
-
-	// private ChatUserDetails findDeletableChatUsersDetails(List<ChatUserDetails> sessions, String deviceType) {
-
-    // boolean incomingWeb = GatewayConstants.DEVICE_WEB.equalsIgnoreCase(deviceType);
-
-    // // If new login is WEB → do not delete anything
-    // if (incomingWeb) {
-    //     return null;
-    // }
-
-    // // If new login is MOBILE → delete existing mobile session
-    // return sessions.stream()
-    //         .filter(s -> !GatewayConstants.DEVICE_WEB.equalsIgnoreCase(s.getDeviceType()))
-    //         .min(Comparator.comparing(ChatUserDetails::getLastLoggedInAt))
-    //         .orElse(null);
-// }
 
 	/** ---------- Validation Method -------------- */
 
@@ -382,7 +433,10 @@ public class RegisterService {
 			
 			if (StringUtils.isNotBlank(contactNo)) {
 
-				List<UserContact> contacts = userContactRepo.findByMobileNumber(contactNo);
+				// Reverse the contact number for efficient index lookup on mobile_number_reversed_trim
+				String reversedContactNo = new StringBuilder(contactNo.trim()).reverse().toString();
+
+				List<UserContact> contacts = userContactRepo.findByMobileNumber(reversedContactNo);
 
 				if (contacts != null && !contacts.isEmpty()) {
 
