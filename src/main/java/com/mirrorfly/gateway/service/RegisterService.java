@@ -246,10 +246,22 @@ public class RegisterService {
 			log.info("[privacy_users_list] web session — no clear needed | username={} deviceId={}", username, incomingDeviceId);
 			return false;
 		}
-		boolean isNewMobileDevice = chatUsersDetailsRepo.findByUsernameAndDeviceId(username, incomingDeviceId) == null;
-		log.info("[privacy_users_list] mobile session check | username={} deviceId={} isNewMobileDevice={}",
-				username, incomingDeviceId, isNewMobileDevice);
-		return isNewMobileDevice;
+
+		// Only clear when DB already has mobile sessions for this user,
+		// and none of the stored device_ids match the incoming device_id.
+		List<ChatUserDetails> existingSessions = chatUsersDetailsRepo.findByUsername(username);
+		if (existingSessions == null || existingSessions.isEmpty()) {
+			log.info("[privacy_users_list] no existing chat_users_details rows — skip clear | username={} incomingDeviceId={}",
+					username, incomingDeviceId);
+			return false;
+		}
+
+		boolean hasIncomingDevice = existingSessions.stream()
+				.anyMatch(s -> incomingDeviceId.equals(s.getDeviceId()));
+		log.info("[privacy_users_list] mobile session check | username={} incomingDeviceId={} hasIncomingDevice={}",
+				username, incomingDeviceId, hasIncomingDevice);
+
+		return !hasIncomingDevice;
 	}
 
 	@Async("contactsyncExecutor")
