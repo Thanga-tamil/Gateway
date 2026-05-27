@@ -81,4 +81,7 @@ public class ChatUser implements Serializable {
 	@Column(columnDefinition = "JSON", name = "metadata")
 	private String metaData;
 
+	@Column(name = "privacy_type")
+	private Integer privacyType;
+
 }

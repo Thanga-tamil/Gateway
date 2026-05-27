@@ -43,4 +43,9 @@ public interface ChatUserRepo extends JpaRepository<ChatUser, String> {
 	@Query("Update ChatUser c set c.metaData=:metaData where c.userIdentifier = :userIdentifier")
 	public void updateMetaData(@Param("metaData") String metaData, @Param("userIdentifier") String userIdentifier);
 
+	@Transactional
+	@Modifying
+	@Query("UPDATE ChatUser c SET c.privacyType = 0 WHERE c.username = :username")
+	int resetPrivacyTypeByUsername(@Param("username") String username);
+
 }
