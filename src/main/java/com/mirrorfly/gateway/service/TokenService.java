@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import com.mirrorfly.gateway.util.JwtKeyCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,9 @@ public class TokenService {
 
 	@Autowired
 	private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private JwtKeyCache jwtKeyCache;
 
 	@SwitchDataSource(value = "[0]")
 	public String validateToken(String userdomain, String token) {
@@ -76,50 +80,49 @@ public class TokenService {
 	 * no token exists, it creates a new token, saves it in the database and Redis,
 	 * and returns it.
 	 */
-	@SwitchDataSource(value = "[0]")
-	public String asyncGetToken(String userdomain, String username, String deviceType, String clientIp) {
+    @SwitchDataSource(value = "[0]")
+    public String asyncGetToken(String userdomain, String username, String deviceType, String clientIp) {
 
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+        AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
-		Optional<TokenDetail> existingTokenOpt = tokenRepo.findFirstByUsername(username);
+        Optional<TokenDetail> existingTokenOpt = tokenRepo.findFirstByUsername(username);
 
-		TokenDetail tokenDetail;
+        TokenDetail tokenDetail;
 
-		if (existingTokenOpt.isPresent()) {
-			tokenDetail = existingTokenOpt.get();
-			tokenDetail.setDevicetype(deviceType);
-			tokenDetail.setClientIp(clientIp);
-			tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
-			tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
-			tokenRepo.save(tokenDetail);
+        if (existingTokenOpt.isPresent()) {
+            tokenDetail = existingTokenOpt.get();
+            tokenDetail.setDevicetype(deviceType);
+            tokenDetail.setClientIp(clientIp);
+            tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
+            tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
+            tokenRepo.save(tokenDetail);
 
-			try {
-				stringRedisTemplate.expire(tokenDetail.getToken(), 1, TimeUnit.HOURS);
-			} catch (Exception e) {
-				log.error("Redis TTL update failed: {}", e.getMessage());
-			}
-			return tokenDetail.getToken();
-		}
+            try {
+                stringRedisTemplate.expire(tokenDetail.getToken(), 1, TimeUnit.HOURS);
+            } catch (Exception e) {
+                log.error("Redis TTL update failed: {}", e.getMessage());
+            }
+            return tokenDetail.getToken();
+        }
 
-		tokenDetail = new TokenDetail();
-		tokenDetail.setUsername(username);
-		tokenDetail.setDevicetype(deviceType);
-		tokenDetail.setClientIp(clientIp);
-		tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
-		tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
+        tokenDetail = new TokenDetail();
+        tokenDetail.setUsername(username);
+        tokenDetail.setDevicetype(deviceType);
+        tokenDetail.setClientIp(clientIp);
+        tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
+        tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
 
-		String newToken = GenerateToken.generateToken(tokenDetail);
-		tokenDetail.setToken(newToken);
-		tokenRepo.save(tokenDetail);
-
-		try {
-			stringRedisTemplate.opsForValue().set(newToken, username, 1, TimeUnit.HOURS);
-		} catch (Exception e) {
-			log.error("Redis save failed: {}", e.getMessage());
-		}
-
-		return newToken;
-	}
+        byte[] secretKey = jwtKeyCache.getSecret();
+        String newToken = GenerateToken.generateToken(tokenDetail.getUsername(), secretKey);
+        tokenDetail.setToken(newToken);
+        tokenRepo.save(tokenDetail);
+        try {
+            stringRedisTemplate.opsForValue().set(newToken, username, 1, TimeUnit.HOURS);
+        } catch (Exception e) {
+            log.error("Redis save failed: {}", e.getMessage());
+        }
+        return newToken;
+    }
 
 	@SwitchDataSource(value = "[0]")
 	private String getTokenFromDB(String userdomain, String header) {
