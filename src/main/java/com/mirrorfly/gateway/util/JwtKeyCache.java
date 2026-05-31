@@ -34,8 +34,9 @@ public class JwtKeyCache {
         String jwkContent = Files.readString(Paths.get(jwtKeyPath));
 
         JsonNode jwk = mapper.readTree(jwkContent);
-
         String k = jwk.get("k").asText();
+        
+        System.out.println("Jwt secret key loaded into in_memory");
         this.secret = Base64.getUrlDecoder().decode(k);
     }
 
