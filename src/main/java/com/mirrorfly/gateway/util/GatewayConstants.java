@@ -278,6 +278,8 @@ public class GatewayConstants {
 
     public static final String SOCKET_ID_NOT_FOUND = "Socket Id invalid";
 
+	public static final String XMPP_DOMAIN_NOT_FOUND = "XMPP domain not found";
+
 	private GatewayConstants() {
 	}
 }

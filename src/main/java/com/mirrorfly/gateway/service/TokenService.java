@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import com.mirrorfly.gateway.exception.BadDataException;
 import com.mirrorfly.gateway.util.JwtKeyCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -30,8 +31,11 @@ public class TokenService {
 	@Autowired
 	private StringRedisTemplate stringRedisTemplate;
 
-    @Autowired
+	@Autowired
     private JwtKeyCache jwtKeyCache;
+
+	@Autowired
+	private DataStore dataStore;
 
 	@SwitchDataSource(value = "[0]")
 	public String validateToken(String userdomain, String token) {
@@ -112,8 +116,10 @@ public class TokenService {
         tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
         tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
 
+		String xmppDomain = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain"))
+												.orElseThrow(() -> new BadDataException(GatewayConstants.XMPP_DOMAIN_NOT_FOUND));
         byte[] secretKey = jwtKeyCache.getSecret();
-        String newToken = GenerateToken.generateToken(tokenDetail.getUsername(), secretKey);
+        String newToken = GenerateToken.generateToken(tokenDetail.getUsername(), xmppDomain, secretKey);
         tokenDetail.setToken(newToken);
         tokenRepo.save(tokenDetail);
         try {
