@@ -30,7 +30,7 @@ public class GenerateToken {
 		Algorithm algorithm = Algorithm.HMAC256(SecretKey);
 
 		long now = System.currentTimeMillis();
-		Date expiresAt = new Date(now + (24L * 60 * 60 * 1000)); // 24 hours
+		Date expiresAt = new Date(now + (60L * 60 * 1000)); // 1 hour
 
 		return JWT.create()
 				.withClaim("jid", jid)
