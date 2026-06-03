@@ -102,7 +102,7 @@ public class TokenService {
 
         if (existingTokenOpt.isPresent()) {
             tokenDetail = existingTokenOpt.get();
-
+			String existingToken = tokenDetail.getToken();
 			tokenDetail.setJid(jid); // update jid in existing records
 			tokenDetail.setToken(newToken);
 			tokenDetail.setClientIp(clientIp);
@@ -112,6 +112,7 @@ public class TokenService {
             tokenRepo.save(tokenDetail);
 
             try {
+				stringRedisTemplate.delete(existingToken);
 				stringRedisTemplate.opsForValue().set(newToken, jid, 1, TimeUnit.HOURS);
             } catch (Exception e) {
                 log.error("Redis TTL update failed: {}", e.getMessage());
