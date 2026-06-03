@@ -26,12 +26,11 @@ public class GenerateToken {
 	 * @param tokenDetail for login time new token will be generated.
 	 * @return generated token
 	 */
-	public static String generateToken(String username, String xmppDomain, byte[] SecretKey) {
+	public static String generateToken(String jid, byte[] SecretKey) {
 		Algorithm algorithm = Algorithm.HMAC256(SecretKey);
 
 		long now = System.currentTimeMillis();
 		Date expiresAt = new Date(now + (24L * 60 * 60 * 1000)); // 24 hours
-		String jid = username.concat("@").concat(xmppDomain);
 
 		return JWT.create()
 				.withClaim("jid", jid)

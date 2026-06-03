@@ -119,11 +119,12 @@ public class TokenService {
 		String xmppDomain = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain"))
 												.orElseThrow(() -> new BadDataException(GatewayConstants.XMPP_DOMAIN_NOT_FOUND));
         byte[] secretKey = jwtKeyCache.getSecret();
-        String newToken = GenerateToken.generateToken(tokenDetail.getUsername(), xmppDomain, secretKey);
+		String jid = username.concat("@").concat(xmppDomain);
+        String newToken = GenerateToken.generateToken(jid, secretKey);
         tokenDetail.setToken(newToken);
         tokenRepo.save(tokenDetail);
         try {
-            stringRedisTemplate.opsForValue().set(newToken, username, 1, TimeUnit.HOURS);
+            stringRedisTemplate.opsForValue().set(newToken, jid, 1, TimeUnit.HOURS);
         } catch (Exception e) {
             log.error("Redis save failed: {}", e.getMessage());
         }
