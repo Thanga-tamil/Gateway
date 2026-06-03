@@ -192,7 +192,7 @@ public class LoginService {
 
         String token = "";
         log.info("is external authentication call? {}", loginRequestDto.getExtAuth());
-        if (loginRequestDto.getExtAuth()) {
+        if (!loginRequestDto.getExtAuth()) {
             token = tokenService.asyncGetToken(userdomain, chatUserDetails.getUsername(), deviceId, "");
         }
 
