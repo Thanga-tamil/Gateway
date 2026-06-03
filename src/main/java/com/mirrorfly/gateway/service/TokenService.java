@@ -89,20 +89,30 @@ public class TokenService {
 
         AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
+		String xmppDomain = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain"))
+				.orElseThrow(() -> new BadDataException(GatewayConstants.XMPP_DOMAIN_NOT_FOUND));
+
         Optional<TokenDetail> existingTokenOpt = tokenRepo.findFirstByUsername(username);
 
         TokenDetail tokenDetail;
 
+		byte[] secretKey = jwtKeyCache.getSecret();
+		String jid = username.concat("@").concat(xmppDomain);
+		String newToken = GenerateToken.generateToken(jid, secretKey);
+
         if (existingTokenOpt.isPresent()) {
             tokenDetail = existingTokenOpt.get();
-            tokenDetail.setDevicetype(deviceType);
-            tokenDetail.setClientIp(clientIp);
-            tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
-            tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
+
+			tokenDetail.setJid(jid); // update jid in existing records
+			tokenDetail.setToken(newToken);
+			tokenDetail.setClientIp(clientIp);
+			tokenDetail.setDevicetype(deviceType);
+			tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
+			tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
             tokenRepo.save(tokenDetail);
 
             try {
-                stringRedisTemplate.expire(tokenDetail.getToken(), 1, TimeUnit.HOURS);
+				stringRedisTemplate.opsForValue().set(newToken, jid, 1, TimeUnit.HOURS);
             } catch (Exception e) {
                 log.error("Redis TTL update failed: {}", e.getMessage());
             }
@@ -110,18 +120,13 @@ public class TokenService {
         }
 
         tokenDetail = new TokenDetail();
-        tokenDetail.setUsername(username);
-        tokenDetail.setDevicetype(deviceType);
-        tokenDetail.setClientIp(clientIp);
-        tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
-        tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
-
-		String xmppDomain = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain"))
-												.orElseThrow(() -> new BadDataException(GatewayConstants.XMPP_DOMAIN_NOT_FOUND));
-        byte[] secretKey = jwtKeyCache.getSecret();
-		String jid = username.concat("@").concat(xmppDomain);
-        String newToken = GenerateToken.generateToken(jid, secretKey);
-        tokenDetail.setToken(newToken);
+		tokenDetail.setJid(jid);
+		tokenDetail.setToken(newToken);
+		tokenDetail.setUsername(username);
+		tokenDetail.setClientIp(clientIp);
+		tokenDetail.setDevicetype(deviceType);
+		tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
+		tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
         tokenRepo.save(tokenDetail);
         try {
             stringRedisTemplate.opsForValue().set(newToken, jid, 1, TimeUnit.HOURS);

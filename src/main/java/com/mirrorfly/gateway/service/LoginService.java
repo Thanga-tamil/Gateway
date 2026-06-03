@@ -189,8 +189,13 @@ public class LoginService {
         chatUserDetails.setLastLoggedInAt(LocalDateTime.now());
         
         String deviceId = StringUtils.isNotEmpty(chatUserDetails.getDeviceId()) ? chatUserDetails.getDeviceId() : "MF-01";
-        String token = tokenService.asyncGetToken(userdomain, chatUserDetails.getUsername(), deviceId, "");
-        
+
+        String token = "";
+        log.info("is external authentication call? {}", loginRequestDto.getExtAuth());
+        if (loginRequestDto.getExtAuth()) {
+            token = tokenService.asyncGetToken(userdomain, chatUserDetails.getUsername(), deviceId, "");
+        }
+
         chatUsersDetailsRepo.save(chatUserDetails);
        
         LoginDetailsDto data = new LoginDetailsDto();
