@@ -42,7 +42,11 @@ public class TokenService {
 		log.info("requesting token: " + token);
 		try {
 			String u = stringRedisTemplate.opsForValue().get(token);
-			return u != null ? u : getTokenFromDB(userdomain, token);
+			if (u != null && u.contains("@")) {
+				return u.substring(0, u.indexOf('@'));
+			} else {
+				return getTokenFromDB(userdomain, token);
+			}
 		} catch (Exception e) {
 			log.error("Error in redis connection {}", e.getMessage());
 			return getTokenFromDB(userdomain, token);
