@@ -52,8 +52,16 @@ public class AccessGatewayFilter implements GlobalFilter {
 				|| exchange.getRequest().getPath().toString().contains("moderation/groupList")
 				|| exchange.getRequest().getPath().toString().contains("moderation/membersList")
 				|| exchange.getRequest().getPath().toString().contains("moderation/reportList")
+				|| exchange.getRequest().getPath().toString().contains("moderation/media/download")
+				|| exchange.getRequest().getPath().toString().contains("moderation/media/delete")
+				|| exchange.getRequest().getPath().toString().contains("moderation/media/getDeletedHistoryMessage")
 				|| exchange.getRequest().getPath().toString().contains("actuator/health")
-				|| exchange.getRequest().getPath().toString().contains("flyadmin/heartbeat")) {
+				|| exchange.getRequest().getPath().toString().contains("flyadmin/heartbeat")
+				|| exchange.getRequest().getPath().toString().contains("/api/v2/auth/initiate")
+				|| exchange.getRequest().getPath().toString().contains("/api/v2/auth/verify")
+				|| exchange.getRequest().getPath().toString().contains("/api/v2/auth/refresh")
+				|| exchange.getRequest().getPath().toString().contains("/api/v2/auth/qr-login")
+				|| exchange.getRequest().getPath().toString().contains("/api/v2/auth/xmpp/validate")) {
 			ServerHttpRequest.Builder builder = request.mutate();
 			return chain.filter(exchange.mutate().request(builder.build()).build());
 		}

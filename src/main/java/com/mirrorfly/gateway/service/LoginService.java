@@ -9,8 +9,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -78,6 +81,11 @@ public class LoginService {
 	
 	private static final String WEB = "web";
 
+	@Autowired
+	@Lazy
+	private LoginService self;
+
+	@Transactional
 	@SwitchDataSource(value = "[0]")
 	public Response<LoginDetailsDto> login(String userdomain, LoginDto loginRequestDto) {
 	
@@ -108,9 +116,7 @@ public class LoginService {
 			}
 		}
 
-		// Update last login
 		chatUserDetails.setLastLoggedInAt(LocalDateTime.now());
-		chatUsersDetailsRepo.save(chatUserDetails);
 
 		String deviceId = StringUtils.isNotEmpty(chatUserDetails.getDeviceId()) ? chatUserDetails.getDeviceId() : "MF-01";
 		String token = tokenService.asyncGetToken(userdomain, chatUserDetails.getUsername(), deviceId, "");
@@ -139,7 +145,7 @@ public class LoginService {
 
 		return CompletableFuture.supplyAsync(() -> {
 			try {
-				return processLogin(userdomain, loginRequestDto);
+				return self.processLogin(userdomain, loginRequestDto);
 			} catch (BadDataException e) {
 				return buildErrorResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage());
 			} catch (ForbiddenException e) {
@@ -157,7 +163,9 @@ public class LoginService {
 		return resp;
 	}
 	 
-    private Response<LoginDetailsDto> processLogin(String userdomain, LoginDto loginRequestDto) {
+	@Transactional
+	@SwitchDataSource(value = "[0]")
+    public Response<LoginDetailsDto> processLogin(String userdomain, LoginDto loginRequestDto) {
 
         // ------- Your login logic here ----------
         AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
@@ -182,11 +190,9 @@ public class LoginService {
         }
 
         chatUserDetails.setLastLoggedInAt(LocalDateTime.now());
-        
+
         String deviceId = StringUtils.isNotEmpty(chatUserDetails.getDeviceId()) ? chatUserDetails.getDeviceId() : "MF-01";
         String token = tokenService.asyncGetToken(userdomain, chatUserDetails.getUsername(), deviceId, "");
-        
-        chatUsersDetailsRepo.save(chatUserDetails);
        
         LoginDetailsDto data = new LoginDetailsDto();
         data.setToken(token);

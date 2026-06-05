@@ -1,12 +1,12 @@
 package com.mirrorfly.gateway.service;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
@@ -77,48 +77,50 @@ public class TokenService {
 	 * and returns it.
 	 */
 	@SwitchDataSource(value = "[0]")
+	@Transactional
 	public String asyncGetToken(String userdomain, String username, String deviceType, String clientIp) {
 
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
-		Optional<TokenDetail> existingTokenOpt = tokenRepo.findFirstByUsername(username);
+		LocalDateTime now = GatewayUtil.getCurrentDateTime();
+		LocalDateTime expiry = now.plusHours(1);
 
-		TokenDetail tokenDetail;
+		TokenDetail tokenDetail = tokenRepo.findTop1ByUsernameAndDevicetypeOrderByIdDesc(username, deviceType)
+				.map(existingToken -> {
+					existingToken.setDevicetype(deviceType);
+					existingToken.setClientIp(clientIp);
+					existingToken.setUpdatedAt(now);
+					existingToken.setTokenExpiryTime(expiry);
+					return tokenRepo.save(existingToken);
+				})
+				.orElseGet(() -> {
+					TokenDetail newToken = new TokenDetail();
+					newToken.setUsername(username);
+					newToken.setDevicetype(deviceType);
+					newToken.setClientIp(clientIp);
+					newToken.setCreatedAt(now);
+					newToken.setUpdatedAt(now);
+					newToken.setTokenExpiryTime(expiry);
+					newToken.setToken(GenerateToken.generateToken(newToken));
+					return tokenRepo.save(newToken);
+				});
 
-		if (existingTokenOpt.isPresent()) {
-			tokenDetail = existingTokenOpt.get();
-			tokenDetail.setDevicetype(deviceType);
-			tokenDetail.setClientIp(clientIp);
-			tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
-			tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
-			tokenRepo.save(tokenDetail);
-
-			try {
-				stringRedisTemplate.expire(tokenDetail.getToken(), 1, TimeUnit.HOURS);
-			} catch (Exception e) {
-				log.error("Redis TTL update failed: {}", e.getMessage());
-			}
-			return tokenDetail.getToken();
-		}
-
-		tokenDetail = new TokenDetail();
-		tokenDetail.setUsername(username);
-		tokenDetail.setDevicetype(deviceType);
-		tokenDetail.setClientIp(clientIp);
-		tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
-		tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
-
-		String newToken = GenerateToken.generateToken(tokenDetail);
-		tokenDetail.setToken(newToken);
-		tokenRepo.save(tokenDetail);
-
+		String token = tokenDetail.getToken();
 		try {
-			stringRedisTemplate.opsForValue().set(newToken, username, 1, TimeUnit.HOURS);
+			stringRedisTemplate.opsForValue().set(token, username, 1, TimeUnit.HOURS);
 		} catch (Exception e) {
 			log.error("Redis save failed: {}", e.getMessage());
 		}
 
-		return newToken;
+		return token;
+	}
+
+	@SwitchDataSource(value = "[0]")
+	@Transactional
+	public void cleanupUnusedTokens(String userdomain, String username) {
+		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+		int count = tokenRepo.deleteByUnUsedTokenByUsername(username);
+		log.info("Un-used access tokens deletion count:: {} for user:: {}", count, username);
 	}
 
 	@SwitchDataSource(value = "[0]")
