@@ -89,32 +89,22 @@ public class TokenService {
 	 * no token exists, it creates a new token, saves it in the database and Redis,
 	 * and returns it.
 	 */
-	/*
-	 * maintain same expiry time in jwt claim, redis, & db;
-	*/
     @SwitchDataSource(value = "[0]")
-    public String asyncGetToken(String domain, String username, String deviceType, String clientIp) {
+    public String asyncGetToken(String userdomain, String username, String deviceType, String clientIp) {
 
-        AbstractRoutingDataSourceImpl.setDatabaseName(domain);
+        AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
 		String xmppDomain =
-				Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(domain, "xmppDomain"))
+				Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain"))
 						.orElseThrow(() -> new BadDataException(GatewayConstants.XMPP_DOMAIN_NOT_FOUND));
 
 		byte[] secretKey = jwtKeyCache.getSecret();
 		String jid = username.concat("@").concat(xmppDomain);
 		String newToken = GenerateToken.generateToken(jid, secretKey);
-		TokenDetail tokenDetail = tokenRepo.findTokenDetailByUsernameAndDeviceType(username, deviceType);
+
+		saveToken(jid, newToken, username, clientIp, deviceType);
 
         try {
-            Optional.ofNullable(tokenDetail).ifPresentOrElse(
-                    existingEntity ->
-                    {
-                        stringRedisTemplate.delete(existingEntity.getToken());
-                        saveToken(jid, newToken, username, clientIp, deviceType, existingEntity, true);
-                    },
-                    () -> saveToken(jid, newToken, username, clientIp, deviceType, new TokenDetail(), false));
-
             stringRedisTemplate.opsForValue().set(newToken, jid, 1, TimeUnit.HOURS);
         } catch (Exception e) {
             log.error("Redis save failed: {}", e.getMessage());
@@ -122,9 +112,7 @@ public class TokenService {
         return newToken;
     }
 
-	private void saveToken(String jid, String newToken, String username,
-                           String clientIp, String deviceType,
-                           TokenDetail tokenDetail, boolean isExisting) {
+	private void saveToken(String jid, String newToken, String username, String clientIp, String deviceType) {
 		// Allow to insert a new token record on each call
 
 		// client side has this parallel login API
@@ -132,26 +120,15 @@ public class TokenService {
 
 		// which might cause deadlock issue if we try to
 		// maintain single entry in access token table
+		TokenDetail tokenDetail = new TokenDetail();
 
-        if (isExisting){
-            tokenDetail.setJid(jid);
-            tokenDetail.setToken(newToken);
-            tokenDetail.setClientIp(clientIp);
-            tokenDetail.setUpdatedAt(GatewayUtil.getCurrentDateTime());
-            tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
-
-			log.info("Existing TokenDetail entity updated for user: {}", username.concat("/".concat(deviceType)));
-        } else {
-            tokenDetail.setJid(jid);
-            tokenDetail.setToken(newToken);
-            tokenDetail.setUsername(username);
-            tokenDetail.setClientIp(clientIp);
-            tokenDetail.setDevicetype(deviceType);
-            tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
-            tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
-
-			log.info("New TokenDetail entity created for user: {}", username.concat("/".concat(deviceType)));
-        }
+		tokenDetail.setJid(jid);
+		tokenDetail.setToken(newToken);
+		tokenDetail.setUsername(username);
+		tokenDetail.setClientIp(clientIp);
+		tokenDetail.setDevicetype(deviceType);
+		tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
+		tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
 
 		tokenRepo.save(tokenDetail);
 	}
