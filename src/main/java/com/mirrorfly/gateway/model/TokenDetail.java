@@ -37,7 +37,7 @@ public class TokenDetail implements Serializable {
 	private LocalDateTime tokenExpiryTime;
 
 	@Column(name = "device_type")
-	private String devicetype;
+	private String deviceType;
 
 	@Column(name = "client_ip")
 	private String clientIp;
