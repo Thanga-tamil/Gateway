@@ -223,7 +223,7 @@ public class LoginService {
 		}
 
 		// Determine device ID
-		String deviceId = StringUtils.defaultIfBlank(tokenDetail.getDeviceType(), "MF-01");
+		String deviceId = StringUtils.defaultIfBlank(tokenDetail.getDevicetype(), "MF-01");
 
 		// Fetch user session details
 		ChatUserDetails chatUserDetail = chatUsersDetailsRepo.findByUsernameAndDeviceId(tokenDetail.getUsername(), deviceId);

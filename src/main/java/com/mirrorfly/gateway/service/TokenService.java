@@ -146,7 +146,7 @@ public class TokenService {
             tokenDetail.setToken(newToken);
             tokenDetail.setUsername(username);
             tokenDetail.setClientIp(clientIp);
-            tokenDetail.setDeviceType(deviceType);
+            tokenDetail.setDevicetype(deviceType);
             tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
             tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
 
