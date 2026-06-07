@@ -39,18 +39,19 @@ public class TokenService {
 
 	@SwitchDataSource(value = "[0]")
 	public String validateToken(String userdomain, String token) {
-		log.info("requesting token: " + token);
+        log.info("requesting token: {}", token);
 		try {
 			String u = stringRedisTemplate.opsForValue().get(token);
-			if (u != null && u.contains("@")) {
-				return u.substring(0, u.indexOf('@'));
-			} else {
-				return getTokenFromDB(userdomain, token);
-			}
+			return u != null ? mayExtractUserId(u) : getTokenFromDB(userdomain, token);
 		} catch (Exception e) {
 			log.error("Error in redis connection {}", e.getMessage());
 			return getTokenFromDB(userdomain, token);
 		}
+	}
+
+	private String mayExtractUserId(String u) {
+		int index = u.indexOf('@');
+		return index >= 0 ? u.substring(0, index) : u;
 	}
 
 	public void delete(String token) {
@@ -93,46 +94,16 @@ public class TokenService {
 
         AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
-		String xmppDomain = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain"))
-				.orElseThrow(() -> new BadDataException(GatewayConstants.XMPP_DOMAIN_NOT_FOUND));
-
-        Optional<TokenDetail> existingTokenOpt = tokenRepo.findFirstByUsername(username);
-
-        TokenDetail tokenDetail;
+		String xmppDomain =
+				Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain"))
+						.orElseThrow(() -> new BadDataException(GatewayConstants.XMPP_DOMAIN_NOT_FOUND));
 
 		byte[] secretKey = jwtKeyCache.getSecret();
 		String jid = username.concat("@").concat(xmppDomain);
 		String newToken = GenerateToken.generateToken(jid, secretKey);
 
-        if (existingTokenOpt.isPresent()) {
-            tokenDetail = existingTokenOpt.get();
-			String existingToken = tokenDetail.getToken();
-			tokenDetail.setJid(jid); // update jid in existing records
-			tokenDetail.setToken(newToken);
-			tokenDetail.setClientIp(clientIp);
-			tokenDetail.setDevicetype(deviceType);
-			tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
-			tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
-            tokenRepo.save(tokenDetail);
+		saveToken(jid, newToken, username, clientIp, deviceType);
 
-            try {
-				stringRedisTemplate.delete(existingToken);
-				stringRedisTemplate.opsForValue().set(newToken, jid, 1, TimeUnit.HOURS);
-            } catch (Exception e) {
-                log.error("Redis TTL update failed: {}", e.getMessage());
-            }
-            return tokenDetail.getToken();
-        }
-
-        tokenDetail = new TokenDetail();
-		tokenDetail.setJid(jid);
-		tokenDetail.setToken(newToken);
-		tokenDetail.setUsername(username);
-		tokenDetail.setClientIp(clientIp);
-		tokenDetail.setDevicetype(deviceType);
-		tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
-		tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
-        tokenRepo.save(tokenDetail);
         try {
             stringRedisTemplate.opsForValue().set(newToken, jid, 1, TimeUnit.HOURS);
         } catch (Exception e) {
@@ -140,6 +111,27 @@ public class TokenService {
         }
         return newToken;
     }
+
+	private void saveToken(String jid, String newToken, String username, String clientIp, String deviceType) {
+		// Allow to insert a new token record on each call
+
+		// client side has this parallel login API
+		// call behavior on xmpp reconnection & config api call
+
+		// which might cause deadlock issue if we try to
+		// maintain single entry in access token table
+		TokenDetail tokenDetail = new TokenDetail();
+
+		tokenDetail.setJid(jid);
+		tokenDetail.setToken(newToken);
+		tokenDetail.setUsername(username);
+		tokenDetail.setClientIp(clientIp);
+		tokenDetail.setDevicetype(deviceType);
+		tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
+		tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
+
+		tokenRepo.save(tokenDetail);
+	}
 
 	@SwitchDataSource(value = "[0]")
 	private String getTokenFromDB(String userdomain, String header) {

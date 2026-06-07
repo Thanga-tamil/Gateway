@@ -14,6 +14,4 @@ public interface TokenRepo extends JpaRepository<TokenDetail, Long> {
 
 	public TokenDetail findTop1ByTokenOrderByIdDesc(String header);
 
-	public Optional<TokenDetail> findFirstByUsername(String username);
-
 }
