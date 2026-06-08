@@ -165,13 +165,20 @@ public class TokenService {
 	@SwitchDataSource(value = "[0]")
 	public void deleteToken(String userdomain, String authorization) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-		TokenDetail token = tokenRepo.findByToken(authorization);
-		if (token != null) {
+
+		List<TokenDetail> tokens = tokenRepo.findByToken(authorization);
+
+		if (!tokens.isEmpty()) {
 			try {
-				stringRedisTemplate.delete(authorization);
-				tokenRepo.delete(token);
+				List<String> redisKeys = tokens.stream()
+						.map(TokenDetail::getToken)
+						.toList();
+
+				stringRedisTemplate.delete(redisKeys);
+				tokenRepo.deleteAll(tokens);
+
 			} catch (Exception e) {
-				log.error("Error while removing token from Redis", e);
+				log.error("Error while removing tokens from Redis", e);
 			}
 		} else {
 			log.warn("Token not found in database: {}", authorization);
