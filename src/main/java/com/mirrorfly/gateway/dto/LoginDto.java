@@ -26,4 +26,6 @@ public class LoginDto {
 
 	private String type;
 
+	private Boolean extAuth = false;
+
 }

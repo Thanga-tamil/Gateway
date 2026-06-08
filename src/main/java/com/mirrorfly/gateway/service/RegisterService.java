@@ -146,7 +146,6 @@ public class RegisterService {
 
 		updateUserPassword(user, password, dto.getDeviceType());
 		response.setUsername(chatUser.getUsername());
-		tokenService.cleanupUnusedTokens(userdomain, chatUser.getUsername());
 		response.setToken(tokenService.asyncGetToken(userdomain, chatUser.getUsername(), deviceId, ""));
 
 		userRepo.save(user);

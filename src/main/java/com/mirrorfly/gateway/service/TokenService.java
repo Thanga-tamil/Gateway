@@ -1,12 +1,14 @@
 package com.mirrorfly.gateway.service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.util.JwtKeyCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.mirrorfly.gateway.datasourcerouter.AbstractRoutingDataSourceImpl;
 import com.mirrorfly.gateway.datasourcerouter.SwitchDataSource;
@@ -29,16 +31,27 @@ public class TokenService {
 	@Autowired
 	private StringRedisTemplate stringRedisTemplate;
 
+	@Autowired
+    private JwtKeyCache jwtKeyCache;
+
+	@Autowired
+	private DataStore dataStore;
+
 	@SwitchDataSource(value = "[0]")
 	public String validateToken(String userdomain, String token) {
-		log.info("requesting token: " + token);
+        log.info("requesting token: {}", token);
 		try {
 			String u = stringRedisTemplate.opsForValue().get(token);
-			return u != null ? u : getTokenFromDB(userdomain, token);
+			return u != null ? mayExtractUserId(u) : getTokenFromDB(userdomain, token);
 		} catch (Exception e) {
 			log.error("Error in redis connection {}", e.getMessage());
 			return getTokenFromDB(userdomain, token);
 		}
+	}
+
+	private String mayExtractUserId(String u) {
+		int index = u.indexOf('@');
+		return index >= 0 ? u.substring(0, index) : u;
 	}
 
 	public void delete(String token) {
@@ -76,51 +89,48 @@ public class TokenService {
 	 * no token exists, it creates a new token, saves it in the database and Redis,
 	 * and returns it.
 	 */
-	@SwitchDataSource(value = "[0]")
-	@Transactional
-	public String asyncGetToken(String userdomain, String username, String deviceType, String clientIp) {
+    @SwitchDataSource(value = "[0]")
+    public String asyncGetToken(String userdomain, String username, String deviceType, String clientIp) {
 
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+        AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
-		LocalDateTime now = GatewayUtil.getCurrentDateTime();
-		LocalDateTime expiry = now.plusHours(1);
+		String xmppDomain =
+				Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain"))
+						.orElseThrow(() -> new BadDataException(GatewayConstants.XMPP_DOMAIN_NOT_FOUND));
 
-		TokenDetail tokenDetail = tokenRepo.findTop1ByUsernameAndDevicetypeOrderByIdDesc(username, deviceType)
-				.map(existingToken -> {
-					existingToken.setDevicetype(deviceType);
-					existingToken.setClientIp(clientIp);
-					existingToken.setUpdatedAt(now);
-					existingToken.setTokenExpiryTime(expiry);
-					return tokenRepo.save(existingToken);
-				})
-				.orElseGet(() -> {
-					TokenDetail newToken = new TokenDetail();
-					newToken.setUsername(username);
-					newToken.setDevicetype(deviceType);
-					newToken.setClientIp(clientIp);
-					newToken.setCreatedAt(now);
-					newToken.setUpdatedAt(now);
-					newToken.setTokenExpiryTime(expiry);
-					newToken.setToken(GenerateToken.generateToken(newToken));
-					return tokenRepo.save(newToken);
-				});
+		byte[] secretKey = jwtKeyCache.getSecret();
+		String jid = username.concat("@").concat(xmppDomain);
+		String newToken = GenerateToken.generateToken(jid, secretKey);
 
-		String token = tokenDetail.getToken();
-		try {
-			stringRedisTemplate.opsForValue().set(token, username, 1, TimeUnit.HOURS);
-		} catch (Exception e) {
-			log.error("Redis save failed: {}", e.getMessage());
-		}
+		saveToken(jid, newToken, username, clientIp, deviceType);
 
-		return token;
-	}
+        try {
+            stringRedisTemplate.opsForValue().set(newToken, jid, 1, TimeUnit.HOURS);
+        } catch (Exception e) {
+            log.error("Redis save failed: {}", e.getMessage());
+        }
+        return newToken;
+    }
 
-	@SwitchDataSource(value = "[0]")
-	@Transactional
-	public void cleanupUnusedTokens(String userdomain, String username) {
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-		int count = tokenRepo.deleteByUnUsedTokenByUsername(username);
-		log.info("Un-used access tokens deletion count:: {} for user:: {}", count, username);
+	private void saveToken(String jid, String newToken, String username, String clientIp, String deviceType) {
+		// Allow to insert a new token record on each call
+
+		// client side has this parallel login API
+		// call behavior on xmpp reconnection & config api call
+
+		// which might cause deadlock issue if we try to
+		// maintain single entry in access token table
+		TokenDetail tokenDetail = new TokenDetail();
+
+		tokenDetail.setJid(jid);
+		tokenDetail.setToken(newToken);
+		tokenDetail.setUsername(username);
+		tokenDetail.setClientIp(clientIp);
+		tokenDetail.setDevicetype(deviceType);
+		tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
+		tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
+
+		tokenRepo.save(tokenDetail);
 	}
 
 	@SwitchDataSource(value = "[0]")
