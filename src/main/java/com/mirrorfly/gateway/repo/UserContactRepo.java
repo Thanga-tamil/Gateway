@@ -17,7 +17,4 @@ public interface UserContactRepo extends JpaRepository<UserContact, String>, Cru
     @Query("SELECT uc FROM UserContact uc WHERE uc.mobileNumberReversedTrim LIKE CONCAT(:reversedMobileNumber, '%') GROUP BY uc.username")
     List<UserContact> findByMobileNumber(@Param("reversedMobileNumber") String reversedMobileNumber);
 
-    @Query("SELECT uc FROM UserContact uc WHERE uc.mobileNumber LIKE CONCAT('%', :mobileNumber) group by uc.username")
-    List<UserContact> findByMobileNumberOld(@Param("mobileNumber") String mobileNumber);
-
 }
