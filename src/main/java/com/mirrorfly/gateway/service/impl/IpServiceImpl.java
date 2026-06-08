@@ -13,6 +13,7 @@ import com.mirrorfly.gateway.util.GatewayConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.validator.routines.InetAddressValidator;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import java.util.*;
@@ -108,28 +109,15 @@ public class IpServiceImpl implements IpService {
     }
 
 
-    public static boolean isValidIp(String ip) {
+    private boolean isValidIp(String ip) {
         if (ip == null || ip.isBlank()) {
             return false;
         }
 
-        ip = ip.trim();
-
-
-        String ipv4Regex =
-                "^((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}" +
-                        "(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)$";
-
-
-        String ipv6Regex =
-                "^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$";
-
-        boolean valid = ip.matches(ipv4Regex) || ip.matches(ipv6Regex);
-
-        return valid;
+        return InetAddressValidator.getInstance().isValid(ip.trim());
     }
 
-    public static boolean isValidCountryCode(String countryCode) {
+    private boolean isValidCountryCode(String countryCode) {
         if (countryCode == null || countryCode.isBlank()) {
             return false;
         }
