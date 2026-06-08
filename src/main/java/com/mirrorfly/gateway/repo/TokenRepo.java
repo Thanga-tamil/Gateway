@@ -1,5 +1,6 @@
 package com.mirrorfly.gateway.repo;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +13,6 @@ public interface TokenRepo extends JpaRepository<TokenDetail, Long> {
 
 	public TokenDetail findByToken(String header);
 
-	public TokenDetail findTop1ByTokenOrderByIdDesc(String header);
+	List<TokenDetail> findTop1ByTokenOrderByIdDesc(String header);
 
 }

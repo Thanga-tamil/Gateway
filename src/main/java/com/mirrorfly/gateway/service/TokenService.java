@@ -1,6 +1,7 @@
 package com.mirrorfly.gateway.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -136,7 +137,7 @@ public class TokenService {
 	@SwitchDataSource(value = "[0]")
 	private String getTokenFromDB(String userdomain, String header) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-		TokenDetail token = tokenRepo.findTop1ByTokenOrderByIdDesc(header);
+		TokenDetail token = getTokenDetail(userdomain, header);
 		if (token == null)
 			return null;
 		if (LocalDateTime.now().isAfter(token.getTokenExpiryTime())) {
@@ -179,7 +180,9 @@ public class TokenService {
 
 	@SwitchDataSource(value = "[0]")
 	public TokenDetail getTokenDetail(String userdomain, String token) {
-		return tokenRepo.findTop1ByTokenOrderByIdDesc(token);
+		return tokenRepo.findTop1ByTokenOrderByIdDesc(token)
+				.stream()
+				.findFirst()
+				.orElse(null);
 	}
-
 }
