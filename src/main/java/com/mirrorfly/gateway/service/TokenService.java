@@ -1,9 +1,12 @@
 package com.mirrorfly.gateway.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import com.mirrorfly.gateway.exception.BadDataException;
+import com.mirrorfly.gateway.util.JwtKeyCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -29,16 +32,27 @@ public class TokenService {
 	@Autowired
 	private StringRedisTemplate stringRedisTemplate;
 
+	@Autowired
+    private JwtKeyCache jwtKeyCache;
+
+	@Autowired
+	private DataStore dataStore;
+
 	@SwitchDataSource(value = "[0]")
 	public String validateToken(String userdomain, String token) {
-		log.info("requesting token: " + token);
+        log.info("requesting token: {}", token);
 		try {
 			String u = stringRedisTemplate.opsForValue().get(token);
-			return u != null ? u : getTokenFromDB(userdomain, token);
+			return u != null ? mayExtractUserId(u) : getTokenFromDB(userdomain, token);
 		} catch (Exception e) {
 			log.error("Error in redis connection {}", e.getMessage());
 			return getTokenFromDB(userdomain, token);
 		}
+	}
+
+	private String mayExtractUserId(String u) {
+		int index = u.indexOf('@');
+		return index >= 0 ? u.substring(0, index) : u;
 	}
 
 	public void delete(String token) {
@@ -76,55 +90,54 @@ public class TokenService {
 	 * no token exists, it creates a new token, saves it in the database and Redis,
 	 * and returns it.
 	 */
-	@SwitchDataSource(value = "[0]")
-	public String asyncGetToken(String userdomain, String username, String deviceType, String clientIp) {
+    @SwitchDataSource(value = "[0]")
+    public String asyncGetToken(String userdomain, String username, String deviceType, String clientIp) {
 
-		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
+        AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
-		Optional<TokenDetail> existingTokenOpt = tokenRepo.findFirstByUsername(username);
+		String xmppDomain =
+				Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "xmppDomain"))
+						.orElseThrow(() -> new BadDataException(GatewayConstants.XMPP_DOMAIN_NOT_FOUND));
 
-		TokenDetail tokenDetail;
+		byte[] secretKey = jwtKeyCache.getSecret();
+		String jid = username.concat("@").concat(xmppDomain);
+		String newToken = GenerateToken.generateToken(jid, secretKey);
 
-		if (existingTokenOpt.isPresent()) {
-			tokenDetail = existingTokenOpt.get();
-			tokenDetail.setDevicetype(deviceType);
-			tokenDetail.setClientIp(clientIp);
-			tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
-			tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
-			tokenRepo.save(tokenDetail);
+		saveToken(jid, newToken, username, clientIp, deviceType);
 
-			try {
-				stringRedisTemplate.expire(tokenDetail.getToken(), 1, TimeUnit.HOURS);
-			} catch (Exception e) {
-				log.error("Redis TTL update failed: {}", e.getMessage());
-			}
-			return tokenDetail.getToken();
-		}
+        try {
+            stringRedisTemplate.opsForValue().set(newToken, jid, 1, TimeUnit.HOURS);
+        } catch (Exception e) {
+            log.error("Redis save failed: {}", e.getMessage());
+        }
+        return newToken;
+    }
 
-		tokenDetail = new TokenDetail();
+	private void saveToken(String jid, String newToken, String username, String clientIp, String deviceType) {
+		// Allow to insert a new token record on each call
+
+		// client side has this parallel login API
+		// call behavior on xmpp reconnection & config api call
+
+		// which might cause deadlock issue if we try to
+		// maintain single entry in access token table
+		TokenDetail tokenDetail = new TokenDetail();
+
+		tokenDetail.setJid(jid);
+		tokenDetail.setToken(newToken);
 		tokenDetail.setUsername(username);
-		tokenDetail.setDevicetype(deviceType);
 		tokenDetail.setClientIp(clientIp);
+		tokenDetail.setDevicetype(deviceType);
 		tokenDetail.setCreatedAt(GatewayUtil.getCurrentDateTime());
 		tokenDetail.setTokenExpiryTime(GatewayUtil.getCurrentDateTime().plusHours(1));
 
-		String newToken = GenerateToken.generateToken(tokenDetail);
-		tokenDetail.setToken(newToken);
 		tokenRepo.save(tokenDetail);
-
-		try {
-			stringRedisTemplate.opsForValue().set(newToken, username, 1, TimeUnit.HOURS);
-		} catch (Exception e) {
-			log.error("Redis save failed: {}", e.getMessage());
-		}
-
-		return newToken;
 	}
 
 	@SwitchDataSource(value = "[0]")
 	private String getTokenFromDB(String userdomain, String header) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-		TokenDetail token = tokenRepo.findTop1ByTokenOrderByIdDesc(header);
+		TokenDetail token = getTokenDetail(userdomain, header);
 		if (token == null)
 			return null;
 		if (LocalDateTime.now().isAfter(token.getTokenExpiryTime())) {
@@ -152,13 +165,20 @@ public class TokenService {
 	@SwitchDataSource(value = "[0]")
 	public void deleteToken(String userdomain, String authorization) {
 		AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
-		TokenDetail token = tokenRepo.findByToken(authorization);
-		if (token != null) {
+
+		List<TokenDetail> tokens = tokenRepo.findByToken(authorization);
+
+		if (!tokens.isEmpty()) {
 			try {
-				stringRedisTemplate.delete(authorization);
-				tokenRepo.delete(token);
+				List<String> redisKeys = tokens.stream()
+						.map(TokenDetail::getToken)
+						.toList();
+
+				stringRedisTemplate.delete(redisKeys);
+				tokenRepo.deleteAll(tokens);
+
 			} catch (Exception e) {
-				log.error("Error while removing token from Redis", e);
+				log.error("Error while removing tokens from Redis", e);
 			}
 		} else {
 			log.warn("Token not found in database: {}", authorization);
@@ -167,7 +187,9 @@ public class TokenService {
 
 	@SwitchDataSource(value = "[0]")
 	public TokenDetail getTokenDetail(String userdomain, String token) {
-		return tokenRepo.findTop1ByTokenOrderByIdDesc(token);
+		return tokenRepo.findTop1ByTokenOrderByIdDesc(token)
+				.stream()
+				.findFirst()
+				.orElse(null);
 	}
-
 }

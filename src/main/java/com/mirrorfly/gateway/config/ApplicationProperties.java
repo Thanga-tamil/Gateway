@@ -154,4 +154,8 @@ public class ApplicationProperties {
 		return env.getProperty("admin_secret_key");
 	}
 
+	public String getJwtKeyPath() {
+		return env.getProperty("jwt_secret_key");
+	}
+
 }

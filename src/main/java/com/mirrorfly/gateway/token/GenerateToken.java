@@ -1,14 +1,12 @@
 package com.mirrorfly.gateway.token;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.mirrorfly.gateway.util.GatewayConstants;
+
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.UUID;
-
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.mirrorfly.gateway.model.TokenDetail;
-import com.mirrorfly.gateway.util.GatewayConstants;
-import com.mirrorfly.gateway.util.GatewayUtil;
 
 /**
  * A Container class to generate token for authorization purpose. And with a
@@ -28,20 +26,16 @@ public class GenerateToken {
 	 * @param tokenDetail for login time new token will be generated.
 	 * @return generated token
 	 */
-	public static String generateToken(TokenDetail tokenDetail) {
-		Algorithm algorithm = Algorithm.HMAC256("mirror_gateway");
-		long nowMillis = System.currentTimeMillis();
-		Date expiresAt = new Date(nowMillis);
-		return JWT.create().withIssuer("auth0").withExpiresAt(expiresAt)
-				.withClaim("tempData", GatewayUtil.getAlphaNumericString(20))
-				.withClaim("user", tokenDetail.getUsername()).sign(algorithm); // String -> token
-	}
+	public static String generateToken(String jid, byte[] SecretKey) {
+		Algorithm algorithm = Algorithm.HMAC256(SecretKey);
 
-	public static String generateFileToken(String filename) {
-		Algorithm algorithm = Algorithm.HMAC256("mirror_gateway");
-		Date expiresAt = new Date();
-		return JWT.create().withIssuer("auth0").withExpiresAt(expiresAt).withClaim("filename", filename)
-				.sign(algorithm); // String -> file token
+		long now = System.currentTimeMillis();
+		Date expiresAt = new Date(now + (60L * 60 * 1000)); // 1 hour
+
+		return JWT.create()
+				.withClaim("jid", jid)
+				.withExpiresAt(expiresAt)
+				.sign(algorithm);
 	}
 
 	public static String generateOtpToken() {
