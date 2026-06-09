@@ -162,4 +162,12 @@ public class ApplicationProperties {
 		return env.getProperty("jwt_secret_key");
 	}
 
+	public String getAndroidPackageName() {
+		return env.getProperty("android.package.name");
+	}
+
+	public String getIosAppId() {
+		return env.getProperty("ios.app.id");
+	}
+
 }
