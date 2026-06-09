@@ -55,7 +55,7 @@ public class AccessGatewayFilter implements GlobalFilter {
 				|| exchange.getRequest().getPath().toString().contains("moderation/media/download")
 				|| exchange.getRequest().getPath().toString().contains("moderation/media/delete")
 				|| exchange.getRequest().getPath().toString().contains("moderation/media/getDeletedHistoryMessage")
-				|| exchange.getRequest().getPath().toString().contains("actuator/health")
+				|| isActuatorEndpoint(exchange.getRequest().getPath().toString())
 				|| exchange.getRequest().getPath().toString().contains("flyadmin/heartbeat")
 				|| exchange.getRequest().getPath().toString().contains("/api/v2/auth/initiate")
 				|| exchange.getRequest().getPath().toString().contains("/api/v2/auth/verify")
@@ -134,6 +134,13 @@ public class AccessGatewayFilter implements GlobalFilter {
 	 * @param
 	 * @throws IOException
 	 */
+	private boolean isActuatorEndpoint(String path) {
+		return path.contains("actuator/health")
+				|| path.contains("actuator/info")
+				|| path.contains("actuator/metrics")
+				|| path.contains("actuator/prometheus");
+	}
+
 	private Mono<Void> unauthorized(ServerWebExchange serverWebExchange) {
 		try {
 			serverWebExchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
