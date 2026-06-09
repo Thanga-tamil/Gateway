@@ -135,10 +135,13 @@ public class AccessGatewayFilter implements GlobalFilter {
 	 * @throws IOException
 	 */
 	private boolean isActuatorEndpoint(String path) {
-		return path.contains("actuator/health")
-				|| path.contains("actuator/info")
-				|| path.contains("actuator/metrics")
-				|| path.contains("actuator/prometheus");
+		String normalized = path.toLowerCase();
+		return normalized.contains("actuator/health")
+				|| normalized.contains("actuator/info")
+				|| normalized.contains("actuator/metrics")
+				|| normalized.contains("actuator/prometheus")
+				|| normalized.endsWith("/prometheus")
+				|| normalized.endsWith("/prometheus/");
 	}
 
 	private Mono<Void> unauthorized(ServerWebExchange serverWebExchange) {
