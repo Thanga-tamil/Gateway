@@ -44,7 +44,8 @@ public class AccessGatewayFilter implements GlobalFilter {
 			return Mono.empty();
 		}
 
-		if (exchange.getRequest().getPath().toString().contains("swagger")
+		if (exchange.getRequest().getPath().toString().contains(".well-known")
+				|| exchange.getRequest().getPath().toString().contains("swagger")
 				|| exchange.getRequest().getPath().toString().contains("webjars")
 				|| exchange.getRequest().getPath().toString().contains("api-docs")
 				|| exchange.getRequest().getPath().toString().contains("swagger-resources")

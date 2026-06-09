@@ -150,12 +150,24 @@ public class ApplicationProperties {
 		return env.getProperty("domain.ting");
 	}
 
+	public String getWebFallbackUrl() {
+		return env.getProperty("web.fallback.url");
+	}
+
 	public String getAdminSecretKey() {
 		return env.getProperty("admin_secret_key");
 	}
 
 	public String getJwtKeyPath() {
 		return env.getProperty("jwt_secret_key");
+	}
+
+	public String getAndroidPackageName() {
+		return env.getProperty("android.package.name");
+	}
+
+	public String getIosAppId() {
+		return env.getProperty("ios.app.id");
 	}
 
 }
