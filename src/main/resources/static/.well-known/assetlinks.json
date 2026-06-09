@@ -11,10 +11,7 @@
     "relation_extensions": {
       "delegate_permission/common.handle_all_urls": {
         "dynamic_app_link_components": [
-          { "/": "/invite" },
-          { "/": "/invite/*" },
-          { "/": "/login" },
-          { "/": "/login/*" }
+          { "/": "/invite" }
         ]
       }
     }
