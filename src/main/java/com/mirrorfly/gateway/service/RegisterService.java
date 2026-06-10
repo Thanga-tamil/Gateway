@@ -339,7 +339,7 @@ public class RegisterService {
 		spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletable.getUsername(), deletable.getDeviceId());
 
 		try {
-			List<TokenDetail> tokens = tokenRepo.findUsernameAndDevicetype(username, deletable.getDeviceId());
+			List<TokenDetail> tokens = tokenRepo.findByUsernameAndDevicetype(username, deletable.getDeviceId());
 
 			if (!tokens.isEmpty()) {
 				try {
