@@ -15,4 +15,5 @@ public interface TokenRepo extends JpaRepository<TokenDetail, Long> {
 
 	List<TokenDetail> findTop1ByTokenOrderByIdDesc(String header);
 
+	List<TokenDetail> findUsernameAndDevicetype(String username, String deviceId);
 }

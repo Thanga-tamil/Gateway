@@ -14,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -66,6 +67,8 @@ public class RegisterService {
 	private final RosterUserRepo rosterUserRepo;
 	private final PrivacySettingsRepo privacySettingsRepo;
 	private final PrivacyUsersListRepo privacyUsersListRepo;
+	private final TokenRepo tokenRepo;
+	private final StringRedisTemplate stringRedisTemplate;
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -336,9 +339,24 @@ public class RegisterService {
 		spoolRepo.deleteOfflilneRecordsByUsernameAndDeviceId(deletable.getUsername(), deletable.getDeviceId());
 
 		try {
+			List<TokenDetail> tokens = tokenRepo.findUsernameAndDevicetype(username, deletable.getDeviceId());
+
+			if (!tokens.isEmpty()) {
+				try {
+					List<String> redisKeys = tokens.stream()
+							.map(TokenDetail::getToken)
+							.toList();
+
+					stringRedisTemplate.delete(redisKeys);
+					tokenRepo.deleteAll(tokens);
+
+				} catch (Exception e) {
+					log.error("[Register] Error while removing tokens from Redis", e);
+				}
+			}
 			queueService.sendUserSessionLogoutActivity(DataHelperUtils.prepareIQPayload(domain, deletable.getUsername(), deletable.getDeviceId(), Collections.singleton(deletable.getSocketId()), Boolean.FALSE));
 		} catch (JsonProcessingException e) {
-			log.error("IQ logout failed :: " + e.getMessage());
+            log.error("IQ logout failed :: {}", e.getMessage());
 		}
 	}
 
