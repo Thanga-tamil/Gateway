@@ -167,7 +167,7 @@ public class LoginService {
         // ------- Your login logic here ----------
         AbstractRoutingDataSourceImpl.setDatabaseName(userdomain);
 
-		String licenseKey = Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
+		String licenseKey = "DBYBps8EKEBUUGVEqK3bjruTk64iDx"; //Optional.ofNullable((String) dataStore.getConnectionConfigDataByDomainAndKey(userdomain, "licenseKey")).orElseThrow(() -> new BadDataException(GatewayConstants.LICENSE_NOT_AVAIL));
 
         String password = decryptPassword(loginRequestDto.getPassword(), licenseKey);
 
